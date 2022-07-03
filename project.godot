@@ -11,7 +11,31 @@ config_version=4
 [application]
 
 config/name="Image Tagger"
+run/main_scene="res://scenes/main.tscn"
+run/low_processor_mode=true
+boot_splash/show_image=false
 config/icon="res://assets/icon.png"
+config/auto_accept_quit=false
+
+[autoload]
+
+Database="*res://globals/Database.cs"
+
+[debug]
+
+gdscript/warnings/unused_variable=false
+gdscript/warnings/unused_argument=false
+gdscript/warnings/unused_signal=false
+gdscript/warnings/return_value_discarded=false
+
+[display]
+
+window/size/width=1920
+window/size/height=1080
+window/dpi/allow_hidpi=true
+window/per_pixel_transparency/allowed=true
+window/per_pixel_transparency/enabled=true
+window/stretch/mode="2d"
 
 [importer_defaults]
 
@@ -39,4 +63,5 @@ texture={
 
 [rendering]
 
+2d/snapping/use_gpu_pixel_snap=true
 environment/default_environment="res://misc/default_env.tres"
