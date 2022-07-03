@@ -7,11 +7,12 @@
 [node name="preview" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+rect_clip_content = true
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource( 1 )
-viewport_display = NodePath("viewport_display")
+viewport_display = NodePath("margin/vbox/viewport_display")
 
 [node name="Timer" type="Timer" parent="."]
 
@@ -21,15 +22,6 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-
-[node name="viewport_display" type="TextureRect" parent="."]
-anchor_right = 1.0
-anchor_bottom = 1.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-expand = true
-stretch_mode = 7
-script = ExtResource( 2 )
 
 [node name="margin" type="MarginContainer" parent="."]
 anchor_right = 1.0
@@ -52,75 +44,78 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="space" type="Control" parent="margin/vbox"]
+[node name="viewport_display" type="TextureRect" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 1012.0
-mouse_filter = 2
+margin_bottom = 1018.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+expand = true
+stretch_mode = 7
+script = ExtResource( 2 )
 
-[node name="panel" type="PanelContainer" parent="margin/vbox"]
-margin_top = 1016.0
+[node name="hsep" type="HSeparator" parent="margin/vbox"]
+margin_top = 1022.0
+margin_right = 1910.0
+margin_bottom = 1026.0
+mouse_filter = 2
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox"]
+margin_top = 1030.0
 margin_right = 1910.0
 margin_bottom = 1070.0
 mouse_filter = 2
-
-[node name="flow" type="HFlowContainer" parent="margin/vbox/panel"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 1903.0
-margin_bottom = 47.0
-mouse_filter = 2
 custom_constants/hseparation = 10
 
-[node name="visibility" type="Button" parent="margin/vbox/panel/flow"]
-margin_right = 44.0
+[node name="visibility" type="Button" parent="margin/vbox/flow"]
+margin_right = 42.0
 margin_bottom = 40.0
-text = "HIDE"
+hint_tooltip = "[F3]
+toggles visibility of these settings"
+text = "Hide"
 
-[node name="space" type="Control" parent="margin/vbox/panel/flow"]
-margin_left = 54.0
-margin_right = 1153.0
+[node name="space" type="Control" parent="margin/vbox/flow"]
+margin_left = 52.0
+margin_right = 1167.0
 margin_bottom = 40.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="smooth_pixel" type="CheckButton" parent="margin/vbox/panel/flow"]
-margin_left = 1163.0
-margin_right = 1327.0
+[node name="smooth_pixel" type="CheckButton" parent="margin/vbox/flow"]
+margin_left = 1177.0
+margin_right = 1341.0
 margin_bottom = 40.0
 disabled = true
 text = "Smooth Pixel"
 
-[node name="filter" type="CheckButton" parent="margin/vbox/panel/flow"]
-margin_left = 1337.0
-margin_right = 1450.0
+[node name="filter" type="CheckButton" parent="margin/vbox/flow"]
+margin_left = 1351.0
+margin_right = 1464.0
 margin_bottom = 40.0
 text = "Filter"
 
-[node name="fxaa" type="CheckButton" parent="margin/vbox/panel/flow"]
-margin_left = 1460.0
-margin_right = 1573.0
+[node name="fxaa" type="CheckButton" parent="margin/vbox/flow"]
+margin_left = 1474.0
+margin_right = 1587.0
 margin_bottom = 40.0
 text = "FXAA"
 
-[node name="edge_mix" type="CheckButton" parent="margin/vbox/panel/flow"]
-margin_left = 1583.0
-margin_right = 1720.0
+[node name="edge_mix" type="CheckButton" parent="margin/vbox/flow"]
+margin_left = 1597.0
+margin_right = 1734.0
 margin_bottom = 40.0
 text = "Edge Mix"
 
-[node name="color_grading" type="CheckButton" parent="margin/vbox/panel/flow"]
-margin_left = 1730.0
-margin_right = 1896.0
+[node name="color_grading" type="CheckButton" parent="margin/vbox/flow"]
+margin_left = 1744.0
+margin_right = 1910.0
 margin_bottom = 40.0
 text = "Color Grading"
 
-[connection signal="gui_input" from="viewport_display" to="viewport_display" method="_on_viewport_display_gui_input"]
-[connection signal="pressed" from="margin/vbox/panel/flow/visibility" to="margin" method="_on_visibility_pressed"]
-[connection signal="toggled" from="margin/vbox/panel/flow/smooth_pixel" to="." method="_on_smooth_pixel_toggled"]
-[connection signal="toggled" from="margin/vbox/panel/flow/filter" to="." method="_on_filter_toggled"]
-[connection signal="toggled" from="margin/vbox/panel/flow/fxaa" to="." method="_on_fxaa_toggled"]
-[connection signal="toggled" from="margin/vbox/panel/flow/edge_mix" to="." method="_on_edge_mix_toggled"]
-[connection signal="toggled" from="margin/vbox/panel/flow/color_grading" to="." method="_on_color_grading_toggled"]
+[connection signal="gui_input" from="margin/vbox/viewport_display" to="margin/vbox/viewport_display" method="_on_viewport_display_gui_input"]
+[connection signal="pressed" from="margin/vbox/flow/visibility" to="margin" method="_on_visibility_pressed"]
+[connection signal="toggled" from="margin/vbox/flow/smooth_pixel" to="." method="_on_smooth_pixel_toggled"]
+[connection signal="toggled" from="margin/vbox/flow/filter" to="." method="_on_filter_toggled"]
+[connection signal="toggled" from="margin/vbox/flow/fxaa" to="." method="_on_fxaa_toggled"]
+[connection signal="toggled" from="margin/vbox/flow/edge_mix" to="." method="_on_edge_mix_toggled"]
+[connection signal="toggled" from="margin/vbox/flow/color_grading" to="." method="_on_color_grading_toggled"]

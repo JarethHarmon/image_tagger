@@ -74,7 +74,7 @@ func _on_viewport_display_gui_input(event:InputEvent) -> void:
 			camera.zoom = default_camera_zoom
 			camera.offset = default_camera_offset
 			camera.rotation_degrees = 0 
-			#Signals.emit_signal("resize_preview_image")
+			Signals.emit_signal("resize_preview_image")
 		else: # dragging
 			if event.is_pressed(): dragging = true
 			else: dragging = false

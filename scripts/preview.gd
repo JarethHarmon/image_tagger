@@ -11,12 +11,12 @@ export (NodePath) onready var image_grid = get_node(image_grid)
 export (NodePath) onready var preview = get_node(preview)
 export (NodePath) onready var viewport_display = get_node(viewport_display)
 
-onready var display:TextureRect = $viewport_display
-onready var smooth_pixel_button:CheckButton = $margin/vbox/panel/flow/smooth_pixel
-onready var filter_button:CheckButton = $margin/vbox/panel/flow/filter
-onready var fxaa_button:CheckButton = $margin/vbox/panel/flow/fxaa
-onready var edge_mix_button:CheckButton = $margin/vbox/panel/flow/edge_mix
-onready var color_grading_button:CheckButton = $margin/vbox/panel/flow/color_grading
+onready var display:TextureRect = $margin/vbox/viewport_display
+onready var smooth_pixel_button:CheckButton = $margin/vbox/flow/smooth_pixel
+onready var filter_button:CheckButton = $margin/vbox/flow/filter
+onready var fxaa_button:CheckButton = $margin/vbox/flow/fxaa
+onready var edge_mix_button:CheckButton = $margin/vbox/flow/edge_mix
+onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
 
 var current_image:Texture
 var current_path:String
@@ -27,6 +27,8 @@ func _ready() -> void:
 	display.edge_mix = edge_mix
 	display.fxaa = fxaa
 	display.initialize(camera)
+	
+	Signals.connect("resize_preview_image", self, "resize_current_image")
 	
 	# connect to settings_loaded signal here
 	_on_settings_loaded()

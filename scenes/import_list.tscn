@@ -1,0 +1,74 @@
+[gd_scene format=2]
+
+[node name="import_list" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_clip_content = true
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="panel" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="all_button" type="Button" parent="margin/vbox"]
+margin_right = 1910.0
+margin_bottom = 20.0
+text = "ALL"
+
+[node name="hsep1" type="HSeparator" parent="margin/vbox"]
+margin_top = 24.0
+margin_right = 1910.0
+margin_bottom = 28.0
+mouse_filter = 2
+
+[node name="scroll" type="ScrollContainer" parent="margin/vbox"]
+margin_top = 32.0
+margin_right = 1910.0
+margin_bottom = 1058.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/scroll"]
+margin_right = 1910.0
+margin_bottom = 1026.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hsep2" type="HSeparator" parent="margin/vbox"]
+margin_top = 1062.0
+margin_right = 1910.0
+margin_bottom = 1066.0
+mouse_filter = 2
+
+[node name="settings" type="HBoxContainer" parent="margin/vbox"]
+margin_top = 1070.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+mouse_filter = 2
+size_flags_horizontal = 3

@@ -1,0 +1,206 @@
+[gd_scene format=2]
+
+[node name="thumbnail_list" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_clip_content = true
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="panel" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="sort_buttons" type="HFlowContainer" parent="margin/vbox"]
+margin_right = 1910.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="sort_label" type="Label" parent="margin/vbox/sort_buttons"]
+margin_top = 3.0
+margin_right = 53.0
+margin_bottom = 17.0
+text = "Sort By: "
+
+[node name="sort_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
+margin_left = 57.0
+margin_right = 145.0
+margin_bottom = 20.0
+text = "File Hash"
+items = [ "File Hash", null, false, 0, null, "File Path", null, false, 1, null, "File Size", null, false, 2, null, "File Creation Time", null, false, 3, null, "Tag Count", null, false, 4, null ]
+selected = 0
+
+[node name="order_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
+margin_left = 149.0
+margin_right = 244.0
+margin_bottom = 20.0
+text = "Ascending"
+items = [ "Ascending", null, false, 0, null, "Descending", null, false, 1, null ]
+selected = 0
+
+[node name="space" type="Control" parent="margin/vbox/sort_buttons"]
+margin_left = 248.0
+margin_right = 1740.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="select_all" type="Button" parent="margin/vbox/sort_buttons"]
+margin_left = 1744.0
+margin_right = 1832.0
+margin_bottom = 20.0
+text = "  Select All  "
+
+[node name="default" type="Button" parent="margin/vbox/sort_buttons"]
+margin_left = 1836.0
+margin_right = 1910.0
+margin_bottom = 20.0
+text = "  Default  "
+
+[node name="hsep1" type="HSeparator" parent="margin/vbox"]
+margin_top = 24.0
+margin_right = 1910.0
+margin_bottom = 28.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="search_buttons" type="HFlowContainer" parent="margin/vbox"]
+margin_top = 32.0
+margin_right = 1910.0
+margin_bottom = 56.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="clear_all" type="Button" parent="margin/vbox/search_buttons"]
+margin_right = 81.0
+margin_bottom = 24.0
+text = "  Clear All  "
+
+[node name="vbox" type="VBoxContainer" parent="margin/vbox/search_buttons"]
+margin_left = 85.0
+margin_right = 1836.0
+margin_bottom = 24.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="include_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
+margin_right = 1751.0
+margin_bottom = 24.0
+placeholder_text = "[Include All] of these comma-separated tags..."
+
+[node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
+visible = false
+margin_right = 1825.0
+margin_bottom = 24.0
+placeholder_text = "[Include Any] of these comma-separated tags..."
+
+[node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
+visible = false
+margin_top = 56.0
+margin_right = 1825.0
+margin_bottom = 80.0
+placeholder_text = "[Exclude All] of these comma-separated tags..."
+
+[node name="search" type="Button" parent="margin/vbox/search_buttons"]
+margin_left = 1840.0
+margin_right = 1910.0
+margin_bottom = 24.0
+text = "  Search  "
+
+[node name="hsep2" type="HSeparator" parent="margin/vbox"]
+margin_top = 60.0
+margin_right = 1910.0
+margin_bottom = 64.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="thumbnails" type="ItemList" parent="margin/vbox"]
+margin_top = 68.0
+margin_right = 1910.0
+margin_bottom = 1038.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+select_mode = 1
+allow_rmb_select = true
+max_columns = 200
+same_column_width = true
+fixed_column_width = 240
+icon_mode = 0
+fixed_icon_size = Vector2( 240, 240 )
+
+[node name="Timer" type="Timer" parent="margin/vbox/thumbnails"]
+
+[node name="hsep3" type="HSeparator" parent="margin/vbox"]
+margin_top = 1042.0
+margin_right = 1910.0
+margin_bottom = 1046.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="page_buttons" type="HFlowContainer" parent="margin/vbox"]
+margin_top = 1050.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="prev_page" type="Button" parent="margin/vbox/page_buttons"]
+margin_right = 56.0
+margin_bottom = 20.0
+text = "  Prev  "
+
+[node name="space1" type="Control" parent="margin/vbox/page_buttons"]
+margin_left = 60.0
+margin_right = 950.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="page_label" type="Label" parent="margin/vbox/page_buttons"]
+margin_left = 954.0
+margin_top = 3.0
+margin_right = 954.0
+margin_bottom = 17.0
+align = 1
+
+[node name="space2" type="Control" parent="margin/vbox/page_buttons"]
+margin_left = 958.0
+margin_right = 1848.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="next_page" type="Button" parent="margin/vbox/page_buttons"]
+margin_left = 1852.0
+margin_right = 1910.0
+margin_bottom = 20.0
+text = "  Next  "
