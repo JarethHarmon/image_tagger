@@ -14,3 +14,6 @@ func _notification(what) -> void:
 		print_debug("exiting program")
 		get_tree().quit()
 
+func _ready() -> void:
+	randomize()
+	

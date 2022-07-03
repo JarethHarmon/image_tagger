@@ -1,11 +1,12 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://themes/theme_4 (arial font).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
+[ext_resource path="res://scenes/tag_list.tscn" type="PackedScene" id=3]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
-colors = PoolColorArray( 0, 0, 0, 1, 0.129412, 0.129412, 0.129412, 1 )
+colors = PoolColorArray( 0.67451, 0.67451, 0.67451, 1, 0.129412, 0.129412, 0.129412, 1 )
 
 [sub_resource type="GradientTexture2D" id=2]
 gradient = SubResource( 1 )
@@ -23,6 +24,25 @@ mouse_filter = 2
 theme = ExtResource( 1 )
 script = ExtResource( 2 )
 
+[node name="background_color" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = SubResource( 2 )
+expand = true
+
+[node name="background_image" type="TextureRect" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand = true
+stretch_mode = 6
+
 [node name="margin" type="MarginContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -34,21 +54,50 @@ custom_constants/margin_top = 5
 custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="background_color" type="TextureRect" parent="."]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-texture = SubResource( 2 )
-expand = true
-stretch_mode = 6
 
-[node name="background_image" type="TextureRect" parent="."]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="settings" type="HFlowContainer" parent="margin/vbox"]
+margin_right = 1910.0
+mouse_filter = 2
+
+[node name="hsplit" type="HSplitContainer" parent="margin/vbox"]
+margin_top = 4.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="left" type="VSplitContainer" parent="margin/vbox/hsplit"]
+margin_right = 951.0
+margin_bottom = 1066.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="right" type="VSplitContainer" parent="margin/vbox/hsplit"]
+margin_left = 959.0
+margin_right = 1910.0
+margin_bottom = 1066.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 240
+
+[node name="preview" type="Control" parent="margin/vbox/hsplit/right"]
+margin_right = 951.0
+margin_bottom = 769.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-expand = true
-stretch_mode = 6
+
+[node name="tag_list" parent="margin/vbox/hsplit/right" instance=ExtResource( 3 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 777.0
+margin_right = 951.0
+margin_bottom = 1066.0
