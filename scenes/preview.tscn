@@ -1,0 +1,126 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://scripts/preview.gd" type="Script" id=1]
+[ext_resource path="res://scripts/viewport_display.gd" type="Script" id=2]
+[ext_resource path="res://scenes/preview_buttons.gd" type="Script" id=3]
+
+[node name="preview" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 1 )
+viewport_display = NodePath("viewport_display")
+
+[node name="Timer" type="Timer" parent="."]
+
+[node name="panel" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="viewport_display" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand = true
+stretch_mode = 7
+script = ExtResource( 2 )
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+script = ExtResource( 3 )
+
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="space" type="Control" parent="margin/vbox"]
+margin_right = 1910.0
+margin_bottom = 1012.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="panel" type="PanelContainer" parent="margin/vbox"]
+margin_top = 1016.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+mouse_filter = 2
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/panel"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1903.0
+margin_bottom = 47.0
+mouse_filter = 2
+custom_constants/hseparation = 10
+
+[node name="visibility" type="Button" parent="margin/vbox/panel/flow"]
+margin_right = 44.0
+margin_bottom = 40.0
+text = "HIDE"
+
+[node name="space" type="Control" parent="margin/vbox/panel/flow"]
+margin_left = 54.0
+margin_right = 1153.0
+margin_bottom = 40.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="smooth_pixel" type="CheckButton" parent="margin/vbox/panel/flow"]
+margin_left = 1163.0
+margin_right = 1327.0
+margin_bottom = 40.0
+disabled = true
+text = "Smooth Pixel"
+
+[node name="filter" type="CheckButton" parent="margin/vbox/panel/flow"]
+margin_left = 1337.0
+margin_right = 1450.0
+margin_bottom = 40.0
+text = "Filter"
+
+[node name="fxaa" type="CheckButton" parent="margin/vbox/panel/flow"]
+margin_left = 1460.0
+margin_right = 1573.0
+margin_bottom = 40.0
+text = "FXAA"
+
+[node name="edge_mix" type="CheckButton" parent="margin/vbox/panel/flow"]
+margin_left = 1583.0
+margin_right = 1720.0
+margin_bottom = 40.0
+text = "Edge Mix"
+
+[node name="color_grading" type="CheckButton" parent="margin/vbox/panel/flow"]
+margin_left = 1730.0
+margin_right = 1896.0
+margin_bottom = 40.0
+text = "Color Grading"
+
+[connection signal="gui_input" from="viewport_display" to="viewport_display" method="_on_viewport_display_gui_input"]
+[connection signal="pressed" from="margin/vbox/panel/flow/visibility" to="margin" method="_on_visibility_pressed"]
+[connection signal="toggled" from="margin/vbox/panel/flow/smooth_pixel" to="." method="_on_smooth_pixel_toggled"]
+[connection signal="toggled" from="margin/vbox/panel/flow/filter" to="." method="_on_filter_toggled"]
+[connection signal="toggled" from="margin/vbox/panel/flow/fxaa" to="." method="_on_fxaa_toggled"]
+[connection signal="toggled" from="margin/vbox/panel/flow/edge_mix" to="." method="_on_edge_mix_toggled"]
+[connection signal="toggled" from="margin/vbox/panel/flow/color_grading" to="." method="_on_color_grading_toggled"]

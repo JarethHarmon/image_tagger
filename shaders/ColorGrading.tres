@@ -1,0 +1,29 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+render_mode unshaded;
+
+uniform vec4 ColorGradeHigh : hint_color = vec4(0.5f, 0.5f, 0.5f, 1.0f); // for light colors
+uniform vec4 ColorGradeLow : hint_color = vec4(0.5f, 0.5f, 0.5f, 1.0f); // for dark colors
+uniform float ColorGradeFalloff : hint_range(-2.0f, 2.0f) = 0.0f;
+
+vec3 ColorGrade(vec3 color, vec4 grade_low, vec4 grade_high, float falloff) {
+	float grey = (color.r + color.g + color.b) / 3.0f;
+	vec4 grade = mix(grade_low, grade_high, pow(grey, falloff));
+	vec3 w = (2.0f * color - 1.0f);
+	w = 0.25f - clamp(w * w, 0.0f, 1.0f) * 0.25f;
+	
+	return mix(vec3(grey), color, grade.a) + (grade.rgb * 2.0f - 1.0f) * w;
+}
+
+void fragment() {
+	COLOR = textureLod(SCREEN_TEXTURE, SCREEN_UV, 0.0f);
+	COLOR.rgb = ColorGrade(COLOR.rgb, ColorGradeLow, ColorGradeHigh, pow(2.0f, -ColorGradeFalloff));
+}"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/ColorGradeHigh = Color( 0, 0, 0, 1 )
+shader_param/ColorGradeLow = Color( 1, 1, 1, 1 )
+shader_param/ColorGradeFalloff = 0.0

@@ -1,0 +1,109 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://assets/icon.png" type="Texture" id=1]
+[ext_resource path="res://shaders/EdgeMix.tres" type="Material" id=2]
+[ext_resource path="res://shaders/ColorGrading.tres" type="Material" id=3]
+[ext_resource path="res://shaders/FXAA.tres" type="Material" id=4]
+[ext_resource path="res://shaders/Halftone.tres" type="Material" id=5]
+
+[node name="preview_viewport" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="image_grid" type="GridContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/vseparation = 0
+custom_constants/hseparation = 0
+
+[node name="image_0" type="TextureRect" parent="image_grid"]
+margin_right = 1920.0
+margin_bottom = 1080.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource( 1 )
+expand = true
+stretch_mode = 4
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2( 960, 540 )
+rotating = true
+current = true
+
+[node name="ColorGrading" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="ColorGrading"]
+copy_mode = 2
+rect = Rect2( 0, 0, 0, 0 )
+
+[node name="Shader" type="ColorRect" parent="ColorGrading"]
+modulate = Color( 1, 1, 1, 0.376471 )
+material = ExtResource( 3 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="EdgeMix" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="EdgeMix"]
+copy_mode = 2
+rect = Rect2( 0, 0, 0, 0 )
+
+[node name="Shader" type="ColorRect" parent="EdgeMix"]
+modulate = Color( 1, 1, 1, 0.376471 )
+material = ExtResource( 2 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="FXAA" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="FXAA"]
+copy_mode = 2
+rect = Rect2( 0, 0, 0, 0 )
+
+[node name="Shader" type="ColorRect" parent="FXAA"]
+material = ExtResource( 4 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Control4" type="Control" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="Control4"]
+copy_mode = 2
+rect = Rect2( 0, 0, 0, 0 )
+
+[node name="Shader" type="ColorRect" parent="Control4"]
+material = ExtResource( 5 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2

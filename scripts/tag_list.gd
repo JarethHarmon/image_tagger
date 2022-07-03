@@ -1,8 +1,8 @@
 extends Control
 
-onready var tag_flow:HFlowContainer = $panel/margin/vbox/margin/flow
-onready var tag_entry:LineEdit = $panel/margin/vbox/hbox/tag_entry
-onready var delimiter_entry:LineEdit = $panel/margin/vbox/hbox/vbox/delimiter_entry
+onready var tag_flow:HFlowContainer = $margin/vbox/margin/flow
+onready var tag_entry:LineEdit = $margin/vbox/hbox/tag_entry
+onready var delimiter_entry:LineEdit = $margin/vbox/hbox/vbox/delimiter_entry
 
 var current_tags:Dictionary = {}
 
@@ -24,7 +24,7 @@ func tag_entered(text:String) -> void:
 		if current_tags.has(tag): continue
 		current_tags[tag] = null
 		var b:Button = Button.new()
-		b.text = tag.strip_edges()
+		b.text = " " + tag.strip_edges() + " "
 		var color:Color = Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), 1.0)
 		if use_colored_text: b.set("custom_colors/font_color", color * 2.0)
 		if use_colored_backgrounds: b.self_modulate = color * 2.0

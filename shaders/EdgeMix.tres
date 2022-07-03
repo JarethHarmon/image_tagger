@@ -1,0 +1,35 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+// Edge Detection & Default Filter
+
+uniform float LineSize : hint_range(0, 100) = 0;
+uniform float Threshold : hint_range(0, 50) = 0;
+uniform float LineWeight : hint_range(0, 1) = 0.0;
+uniform float GradationSize : hint_range(0, 10) = 2.5;
+uniform float Weight : hint_range(0, 1) = 0.5;
+
+void fragment() {
+	float size = LineSize /10000.0;
+	float limit = Threshold / 100.0;
+	vec3 col = textureLod(SCREEN_TEXTURE, SCREEN_UV, 0.0).rgb;
+	
+	float depth_left = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(-size, 0)).r;
+	float depth_right = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(size, 0)).r;
+	float depth_down = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(0, -size)).r;
+	float depth_up = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(0, size)).r;
+	float depth_diff = abs(depth_left - depth_right);
+	depth_diff += abs(depth_up - depth_down);
+	
+	if (depth_diff > limit) COLOR = vec4(0.0, 0.0, 0.0, 1.0) * LineWeight;
+	else COLOR = vec4(textureLod(SCREEN_TEXTURE, SCREEN_UV, GradationSize).rgb, Weight);
+}"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/LineSize = 0.0
+shader_param/Threshold = 0.0
+shader_param/LineWeight = 0.0
+shader_param/GradationSize = 2.5
+shader_param/Weight = 0.5

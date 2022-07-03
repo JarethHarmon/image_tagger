@@ -17,11 +17,9 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="margin" type="MarginContainer" parent="panel"]
-margin_left = 7.0
-margin_top = 7.0
-margin_right = 1913.0
-margin_bottom = 1073.0
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -30,57 +28,57 @@ custom_constants/margin_top = 5
 custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="vbox" type="VBoxContainer" parent="panel/margin"]
+[node name="vbox" type="VBoxContainer" parent="margin"]
 margin_left = 5.0
 margin_top = 5.0
-margin_right = 1901.0
-margin_bottom = 1061.0
+margin_right = 1915.0
+margin_bottom = 1075.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="hbox" type="HBoxContainer" parent="panel/margin/vbox"]
-margin_right = 1896.0
+[node name="hbox" type="HBoxContainer" parent="margin/vbox"]
+margin_right = 1910.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="tag_entry" type="LineEdit" parent="panel/margin/vbox/hbox"]
-margin_right = 1834.0
+[node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
+margin_right = 1848.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
 placeholder_text = "Type delimiter-separated tags..."
 
-[node name="vbox" type="VBoxContainer" parent="panel/margin/vbox/hbox"]
-margin_left = 1838.0
-margin_right = 1896.0
+[node name="vbox" type="VBoxContainer" parent="margin/vbox/hbox"]
+margin_left = 1852.0
+margin_right = 1910.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_vertical = 3
 
-[node name="label" type="Label" parent="panel/margin/vbox/hbox/vbox"]
+[node name="label" type="Label" parent="margin/vbox/hbox/vbox"]
 visible = false
 margin_right = 65.0
 margin_bottom = 14.0
 text = "Delimiter:"
 
-[node name="delimiter_entry" type="LineEdit" parent="panel/margin/vbox/hbox/vbox"]
+[node name="delimiter_entry" type="LineEdit" parent="margin/vbox/hbox/vbox"]
 margin_right = 58.0
 margin_bottom = 24.0
 grow_horizontal = 0
 text = ","
 align = 1
 
-[node name="hsep" type="HSeparator" parent="panel/margin/vbox"]
+[node name="hsep" type="HSeparator" parent="margin/vbox"]
 margin_top = 28.0
-margin_right = 1896.0
+margin_right = 1910.0
 margin_bottom = 32.0
 mouse_filter = 2
 
-[node name="margin" type="MarginContainer" parent="panel/margin/vbox"]
+[node name="margin" type="MarginContainer" parent="margin/vbox"]
 margin_top = 36.0
-margin_right = 1896.0
-margin_bottom = 1056.0
+margin_right = 1910.0
+margin_bottom = 1070.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -89,11 +87,11 @@ custom_constants/margin_top = 5
 custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="flow" type="HFlowContainer" parent="panel/margin/vbox/margin"]
+[node name="flow" type="HFlowContainer" parent="margin/vbox/margin"]
 margin_left = 5.0
 margin_top = 5.0
-margin_right = 1891.0
-margin_bottom = 1015.0
+margin_right = 1905.0
+margin_bottom = 1029.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
