@@ -1,0 +1,15 @@
+# Godot-specific ignores
+.import/
+*.import
+*.cfg
+
+# Mono-specific ignores
+.mono/
+data_*/
+
+# File-specific ignores
+*.txt
+*.bak
+bin/
+**/dev/*
+!**/dev/src
