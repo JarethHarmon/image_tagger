@@ -1,5 +1,7 @@
 extends Control
 
+# maybe have an option button with a list of default delimiter options (comma, dot, ::, etc)
+
 onready var tag_flow:HFlowContainer = $margin/vbox/margin/scroll/flow
 onready var tag_entry:LineEdit = $margin/vbox/hbox/tag_entry
 onready var delimiter_entry:LineEdit = $margin/vbox/hbox/vbox/delimiter_entry

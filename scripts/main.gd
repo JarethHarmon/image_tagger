@@ -17,4 +17,3 @@ func _notification(what) -> void:
 func _ready() -> void:
 	randomize()
 	get_viewport().transparent_bg = true
-

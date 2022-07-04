@@ -35,9 +35,95 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="sort_buttons" type="HFlowContainer" parent="margin/vbox"]
+[node name="hsep1" type="HSeparator" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 20.0
+margin_bottom = 4.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="search_buttons" type="HFlowContainer" parent="margin/vbox"]
+margin_top = 8.0
+margin_right = 1910.0
+margin_bottom = 94.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="vbox1" type="VBoxContainer" parent="margin/vbox/search_buttons"]
+margin_right = 81.0
+margin_bottom = 86.0
+mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="clear_all" type="Button" parent="margin/vbox/search_buttons/vbox1"]
+margin_right = 81.0
+margin_bottom = 62.0
+size_flags_vertical = 3
+text = "  Clear All  "
+
+[node name="default" type="Button" parent="margin/vbox/search_buttons/vbox1"]
+margin_top = 66.0
+margin_right = 81.0
+margin_bottom = 86.0
+text = "  Default  "
+
+[node name="vbox2" type="VBoxContainer" parent="margin/vbox/search_buttons"]
+margin_left = 85.0
+margin_right = 1798.0
+margin_bottom = 86.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="include_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
+margin_right = 1713.0
+margin_bottom = 26.0
+clear_button_enabled = true
+placeholder_text = "[Include All] of these comma-separated tags..."
+
+[node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
+margin_top = 30.0
+margin_right = 1713.0
+margin_bottom = 56.0
+clear_button_enabled = true
+placeholder_text = "[Include Any] of these comma-separated tags..."
+
+[node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
+margin_top = 60.0
+margin_right = 1713.0
+margin_bottom = 86.0
+clear_button_enabled = true
+placeholder_text = "[Exclude All] of these comma-separated tags..."
+
+[node name="vbox3" type="VBoxContainer" parent="margin/vbox/search_buttons"]
+margin_left = 1802.0
+margin_right = 1910.0
+margin_bottom = 86.0
+mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="search" type="Button" parent="margin/vbox/search_buttons/vbox3"]
+margin_right = 108.0
+margin_bottom = 68.0
+size_flags_vertical = 3
+text = "  Search  "
+
+[node name="advanced_search" type="LinkButton" parent="margin/vbox/search_buttons/vbox3"]
+margin_top = 72.0
+margin_right = 108.0
+margin_bottom = 86.0
+text = "Advanced Search"
+
+[node name="hsep2" type="HSeparator" parent="margin/vbox"]
+margin_top = 98.0
+margin_right = 1910.0
+margin_bottom = 102.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="sort_buttons" type="HFlowContainer" parent="margin/vbox"]
+margin_top = 106.0
+margin_right = 1910.0
+margin_bottom = 126.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
@@ -65,84 +151,27 @@ selected = 0
 
 [node name="space" type="Control" parent="margin/vbox/sort_buttons"]
 margin_left = 248.0
-margin_right = 1740.0
+margin_right = 1818.0
 margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="select_all" type="Button" parent="margin/vbox/sort_buttons"]
-margin_left = 1744.0
-margin_right = 1832.0
+margin_left = 1822.0
+margin_right = 1910.0
 margin_bottom = 20.0
 text = "  Select All  "
 
-[node name="default" type="Button" parent="margin/vbox/sort_buttons"]
-margin_left = 1836.0
+[node name="hsep3" type="HSeparator" parent="margin/vbox"]
+margin_top = 130.0
 margin_right = 1910.0
-margin_bottom = 20.0
-text = "  Default  "
-
-[node name="hsep1" type="HSeparator" parent="margin/vbox"]
-margin_top = 24.0
-margin_right = 1910.0
-margin_bottom = 28.0
-mouse_filter = 2
-size_flags_horizontal = 3
-
-[node name="search_buttons" type="HFlowContainer" parent="margin/vbox"]
-margin_top = 32.0
-margin_right = 1910.0
-margin_bottom = 56.0
-mouse_filter = 2
-size_flags_horizontal = 3
-
-[node name="clear_all" type="Button" parent="margin/vbox/search_buttons"]
-margin_right = 81.0
-margin_bottom = 24.0
-text = "  Clear All  "
-
-[node name="vbox" type="VBoxContainer" parent="margin/vbox/search_buttons"]
-margin_left = 85.0
-margin_right = 1836.0
-margin_bottom = 24.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="include_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
-margin_right = 1751.0
-margin_bottom = 24.0
-placeholder_text = "[Include All] of these comma-separated tags..."
-
-[node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
-visible = false
-margin_right = 1825.0
-margin_bottom = 24.0
-placeholder_text = "[Include Any] of these comma-separated tags..."
-
-[node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox"]
-visible = false
-margin_top = 56.0
-margin_right = 1825.0
-margin_bottom = 80.0
-placeholder_text = "[Exclude All] of these comma-separated tags..."
-
-[node name="search" type="Button" parent="margin/vbox/search_buttons"]
-margin_left = 1840.0
-margin_right = 1910.0
-margin_bottom = 24.0
-text = "  Search  "
-
-[node name="hsep2" type="HSeparator" parent="margin/vbox"]
-margin_top = 60.0
-margin_right = 1910.0
-margin_bottom = 64.0
+margin_bottom = 134.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="thumbnails" type="ItemList" parent="margin/vbox"]
-margin_top = 68.0
+margin_top = 138.0
 margin_right = 1910.0
 margin_bottom = 1038.0
 size_flags_horizontal = 3
@@ -157,7 +186,7 @@ fixed_icon_size = Vector2( 240, 240 )
 
 [node name="Timer" type="Timer" parent="margin/vbox/thumbnails"]
 
-[node name="hsep3" type="HSeparator" parent="margin/vbox"]
+[node name="hsep4" type="HSeparator" parent="margin/vbox"]
 margin_top = 1042.0
 margin_right = 1910.0
 margin_bottom = 1046.0
