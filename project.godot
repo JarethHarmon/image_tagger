@@ -8,13 +8,25 @@
 
 config_version=4
 
+_global_script_classes=[ {
+"base": "Node",
+"class": "Gob",
+"language": "NativeScript",
+"path": "res://addons/gob/gob.gdns"
+} ]
+_global_script_class_icons={
+"Gob": ""
+}
+
 [application]
 
 config/name="Image Tagger"
+config/description="Image Tagger"
 run/main_scene="res://scenes/main.tscn"
 run/low_processor_mode=true
 boot_splash/show_image=false
-config/icon="res://assets/icon.png"
+config/icon="res://assets/buffer-01.png"
+config/windows_native_icon="res://assets/buffer-01.ico"
 config/auto_accept_quit=false
 
 [autoload]

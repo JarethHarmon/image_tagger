@@ -35,95 +35,9 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="hsep1" type="HSeparator" parent="margin/vbox"]
-margin_right = 1910.0
-margin_bottom = 4.0
-mouse_filter = 2
-size_flags_horizontal = 3
-
-[node name="search_buttons" type="HFlowContainer" parent="margin/vbox"]
-margin_top = 8.0
-margin_right = 1910.0
-margin_bottom = 94.0
-mouse_filter = 2
-size_flags_horizontal = 3
-
-[node name="vbox1" type="VBoxContainer" parent="margin/vbox/search_buttons"]
-margin_right = 81.0
-margin_bottom = 86.0
-mouse_filter = 2
-size_flags_vertical = 3
-
-[node name="clear_all" type="Button" parent="margin/vbox/search_buttons/vbox1"]
-margin_right = 81.0
-margin_bottom = 62.0
-size_flags_vertical = 3
-text = "  Clear All  "
-
-[node name="default" type="Button" parent="margin/vbox/search_buttons/vbox1"]
-margin_top = 66.0
-margin_right = 81.0
-margin_bottom = 86.0
-text = "  Default  "
-
-[node name="vbox2" type="VBoxContainer" parent="margin/vbox/search_buttons"]
-margin_left = 85.0
-margin_right = 1798.0
-margin_bottom = 86.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="include_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
-margin_right = 1713.0
-margin_bottom = 26.0
-clear_button_enabled = true
-placeholder_text = "[Include All] of these comma-separated tags..."
-
-[node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
-margin_top = 30.0
-margin_right = 1713.0
-margin_bottom = 56.0
-clear_button_enabled = true
-placeholder_text = "[Include Any] of these comma-separated tags..."
-
-[node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
-margin_top = 60.0
-margin_right = 1713.0
-margin_bottom = 86.0
-clear_button_enabled = true
-placeholder_text = "[Exclude All] of these comma-separated tags..."
-
-[node name="vbox3" type="VBoxContainer" parent="margin/vbox/search_buttons"]
-margin_left = 1802.0
-margin_right = 1910.0
-margin_bottom = 86.0
-mouse_filter = 2
-size_flags_vertical = 3
-
-[node name="search" type="Button" parent="margin/vbox/search_buttons/vbox3"]
-margin_right = 108.0
-margin_bottom = 68.0
-size_flags_vertical = 3
-text = "  Search  "
-
-[node name="advanced_search" type="LinkButton" parent="margin/vbox/search_buttons/vbox3"]
-margin_top = 72.0
-margin_right = 108.0
-margin_bottom = 86.0
-text = "Advanced Search"
-
-[node name="hsep2" type="HSeparator" parent="margin/vbox"]
-margin_top = 98.0
-margin_right = 1910.0
-margin_bottom = 102.0
-mouse_filter = 2
-size_flags_horizontal = 3
-
 [node name="sort_buttons" type="HFlowContainer" parent="margin/vbox"]
-margin_top = 106.0
 margin_right = 1910.0
-margin_bottom = 126.0
+margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
@@ -164,14 +78,14 @@ margin_bottom = 20.0
 text = "  Select All  "
 
 [node name="hsep3" type="HSeparator" parent="margin/vbox"]
-margin_top = 130.0
+margin_top = 24.0
 margin_right = 1910.0
-margin_bottom = 134.0
+margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="thumbnails" type="ItemList" parent="margin/vbox"]
-margin_top = 138.0
+margin_top = 32.0
 margin_right = 1910.0
 margin_bottom = 1038.0
 size_flags_horizontal = 3
