@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://themes/dark_sharp (arial).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
@@ -9,6 +9,9 @@
 [ext_resource path="res://scenes/thumbnail_list.tscn" type="PackedScene" id=7]
 [ext_resource path="res://scripts/hsplit.gd" type="Script" id=8]
 [ext_resource path="res://scenes/organization.tscn" type="PackedScene" id=9]
+[ext_resource path="res://scenes/core_buttons.tscn" type="PackedScene" id=10]
+[ext_resource path="res://scenes/import.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scripts/popups.gd" type="Script" id=12]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
@@ -74,62 +77,11 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="core_buttons" type="Control" parent="margin/vbox"]
+[node name="core_buttons" parent="margin/vbox" instance=ExtResource( 10 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
 margin_right = 1910.0
 margin_bottom = 40.0
-rect_min_size = Vector2( 0, 40 )
-rect_clip_content = true
-mouse_filter = 2
-size_flags_horizontal = 3
-
-[node name="panel" type="PanelContainer" parent="margin/vbox/core_buttons"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="margin" type="MarginContainer" parent="margin/vbox/core_buttons"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-custom_constants/margin_right = 5
-custom_constants/margin_top = 5
-custom_constants/margin_left = 5
-custom_constants/margin_bottom = 5
-
-[node name="flow" type="HFlowContainer" parent="margin/vbox/core_buttons/margin"]
-margin_left = 5.0
-margin_top = 5.0
-margin_right = 1905.0
-margin_bottom = 35.0
-mouse_filter = 2
-custom_constants/hseparation = 5
-
-[node name="file_button" type="Button" parent="margin/vbox/core_buttons/margin/flow"]
-margin_right = 63.0
-margin_bottom = 29.0
-text = "  File  "
-
-[node name="edit_button" type="Button" parent="margin/vbox/core_buttons/margin/flow"]
-margin_left = 68.0
-margin_right = 132.0
-margin_bottom = 29.0
-text = "  Edit  "
-
-[node name="view_button" type="Button" parent="margin/vbox/core_buttons/margin/flow"]
-margin_left = 137.0
-margin_right = 209.0
-margin_bottom = 29.0
-text = "  View  "
-
-[node name="help_button" type="Button" parent="margin/vbox/core_buttons/margin/flow"]
-margin_left = 214.0
-margin_right = 284.0
-margin_bottom = 29.0
-text = "  Help  "
 
 [node name="import_list" parent="margin/vbox" instance=ExtResource( 6 )]
 anchor_right = 0.0
@@ -223,6 +175,32 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="popups" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+custom_constants/margin_right = 50
+custom_constants/margin_top = 50
+custom_constants/margin_left = 50
+custom_constants/margin_bottom = 50
+script = ExtResource( 12 )
+
+[node name="ppanel_import" type="PopupPanel" parent="popups"]
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="import" parent="popups/ppanel_import" instance=ExtResource( 11 )]
+margin_left = 1.0
+margin_top = 1.0
+margin_right = -1.0
+margin_bottom = -1.0
 
 [node name="Label" type="Label" parent="."]
 margin_left = 97.0

@@ -16,6 +16,7 @@ using CoenM.ImageHash.HashAlgorithms;
 
 public class ImageType
 {
+	// primarily for types with better built-in support, any random types and those the user adds will be assigend 'other'
 	public const int jpg = 0;
 	public const int png = 1;
 	// ...
@@ -24,17 +25,17 @@ public class ImageType
 
 public class HashInfo
 {
-	public string komi_hash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
-	public string gob_path { get; set; }			// the path the file uses if it is copied/moved by the program to a central location
+	public string komiHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
+	public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
 	
-	public string diff_hash { get; set; }			// the CoenM.ImageHash::DifferenceHash() of the thumbnail
-	public int[] color_hash { get; set; }			// the ColorHash() of the thumbnail (manually serialize it to use 8-bit integers if needed)
+	public string diffHash { get; set; }			// the CoenM.ImageHash::DifferenceHash() of the thumbnail
+	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail (manually serialize it to use 8-bit integers if needed)
 	
-	public int image_settings { get; set; }			// a FLAG integer used for toggling filter, etc
-	public int file_type { get; set; }				// see ImageType
-	public long file_size { get; set; }				// the length of the file in bytes
-	public long file_creation_time { get; set; }	// the time the file was created in ticks
-	public long file_upload_time { get; set; }		// the time the file was uploaded to the database in ticks
+	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
+	public int type { get; set; }					// see ImageType
+	public long size { get; set; }					// the length of the file in bytes
+	public long creationTime { get; set; }			// the time the file was created in ticks
+	public long uploadTime { get; set; }			// the time the file was uploaded to the database in ticks
 	
 	public HashSet<string> paths { get; set; }
 	public HashSet<string> tags { get; set; }
@@ -110,5 +111,7 @@ public class Database : Node
 	{
 		globals = (Node) GetNode("/root/Globals");
 	}
+	
+	
 	
 }

@@ -1,0 +1,206 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://scripts/import.gd" type="Script" id=1]
+[ext_resource path="res://scripts/path_list.gd" type="Script" id=2]
+
+[sub_resource type="StyleBoxFlat" id=2191]
+bg_color = Color( 0, 0, 0, 0.501961 )
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color( 0, 0, 0, 1 )
+
+[node name="import" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 1 )
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vsplit" type="VSplitContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = 240
+
+[node name="path_list" type="PanelContainer" parent="margin/vsplit"]
+margin_right = 1910.0
+margin_bottom = 769.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 2 )
+
+[node name="margin" type="MarginContainer" parent="margin/vsplit/path_list"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1903.0
+margin_bottom = 762.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="vbox" type="VBoxContainer" parent="margin/vsplit/path_list/margin"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 1886.0
+margin_bottom = 745.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hsplit1" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox"]
+margin_right = 1876.0
+margin_bottom = 20.0
+split_offset = 360
+dragger_visibility = 1
+
+[node name="hsplit11" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox/hsplit1"]
+margin_right = 1292.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -550
+dragger_visibility = 1
+
+[node name="button1" type="Button" parent="margin/vsplit/path_list/margin/vbox/hsplit1/hsplit11"]
+margin_right = 90.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 40, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "#"
+
+[node name="button2" type="Button" parent="margin/vsplit/path_list/margin/vbox/hsplit1/hsplit11"]
+margin_left = 102.0
+margin_right = 1292.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 80, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Path"
+
+[node name="hsplit12" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox/hsplit1"]
+margin_left = 1304.0
+margin_right = 1876.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+dragger_visibility = 1
+
+[node name="button3" type="Button" parent="margin/vsplit/path_list/margin/vbox/hsplit1/hsplit12"]
+margin_right = 280.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 90, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "File Type"
+
+[node name="button4" type="Button" parent="margin/vsplit/path_list/margin/vbox/hsplit1/hsplit12"]
+margin_left = 292.0
+margin_right = 572.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 90, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "File Size"
+
+[node name="hsplit2" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox"]
+margin_top = 24.0
+margin_right = 1876.0
+margin_bottom = 735.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/autohide = 0
+split_offset = 360
+
+[node name="hsplit21" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox/hsplit2"]
+margin_right = 1292.0
+margin_bottom = 711.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/autohide = 0
+split_offset = -550
+
+[node name="index_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
+margin_right = 90.0
+margin_bottom = 711.0
+rect_min_size = Vector2( 40, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/bg_focus = SubResource( 2191 )
+custom_styles/bg = SubResource( 2191 )
+select_mode = 1
+
+[node name="path_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
+margin_left = 102.0
+margin_right = 1292.0
+margin_bottom = 711.0
+rect_min_size = Vector2( 80, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/bg_focus = SubResource( 2191 )
+custom_styles/bg = SubResource( 2191 )
+select_mode = 1
+
+[node name="hsplit22" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox/hsplit2"]
+margin_left = 1304.0
+margin_right = 1876.0
+margin_bottom = 711.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/autohide = 0
+
+[node name="type_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
+margin_right = 280.0
+margin_bottom = 711.0
+rect_min_size = Vector2( 90, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/bg_focus = SubResource( 2191 )
+custom_styles/bg = SubResource( 2191 )
+select_mode = 1
+
+[node name="size_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
+margin_left = 292.0
+margin_right = 572.0
+margin_bottom = 711.0
+rect_min_size = Vector2( 90, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/bg_focus = SubResource( 2191 )
+custom_styles/bg = SubResource( 2191 )
+select_mode = 1
+
+[node name="panel2" type="PanelContainer" parent="margin/vsplit"]
+margin_top = 781.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2" to="margin/vsplit/path_list" method="_on_hsplit2_dragged"]
+[connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21" to="margin/vsplit/path_list" method="_on_hsplit21_dragged"]
+[connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22" to="margin/vsplit/path_list" method="_on_hsplit22_dragged"]
