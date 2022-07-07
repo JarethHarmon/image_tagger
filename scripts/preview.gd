@@ -40,6 +40,12 @@ func _on_settings_loaded() -> void:
 	fxaa_button.pressed = Globals.settings.use_fxaa
 	color_grading_button.pressed = Globals.settings.use_color_grading
 	edge_mix_button.pressed = Globals.settings.use_edge_mix
+	
+	_on_filter_toggled(Globals.settings.use_filter)
+	_on_fxaa_toggled(Globals.settings.use_fxaa)
+	_on_edge_mix_toggled(Globals.settings.use_edge_mix)
+	_on_color_grading_toggled(Globals.settings.use_color_grading)
+	_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
 
 func clear_image_preview() -> void:
 	for child in image_grid.get_children():

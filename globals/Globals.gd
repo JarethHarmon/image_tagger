@@ -3,10 +3,10 @@ extends Node
 var settings:Dictionary = {
   # Shaders
 	"use_smooth_pixel" : true,
-	"use_filter" : true,
+	"use_filter" : false,
 	"use_color_grading" : true,
-	"use_fxaa" : true,
-	"use_edge_mix" : true,
+	"use_fxaa" : false,
+	"use_edge_mix" : false,
 }
 
 func get_komi_hash(path:String) -> String: 
