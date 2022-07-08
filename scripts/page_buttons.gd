@@ -25,6 +25,7 @@ func _ready() -> void:
 func change_page(page:int) -> void: 
 	if (page < 1): return
 	if (page > max_pages): return
+	if (current_page == page): return
 	current_page = page
 	Signals.emit_signal("page_changed", page)
 	page_label.text = String(current_page) + " / " + String(max_pages)

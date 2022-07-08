@@ -13,3 +13,7 @@ signal file_button_pressed
 signal edit_button_pressed
 signal view_button_pressed
 signal help_button_pressed
+
+# nodes_readied
+signal page_label_ready(node_path)
+

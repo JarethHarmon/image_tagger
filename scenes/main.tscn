@@ -177,6 +177,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="popups" type="MarginContainer" parent="."]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
@@ -186,6 +187,31 @@ custom_constants/margin_top = 50
 custom_constants/margin_left = 50
 custom_constants/margin_bottom = 50
 script = ExtResource( 12 )
+__meta__ = {
+"_edit_group_": true
+}
+
+[node name="background" type="Control" parent="popups"]
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="bg_darken" type="ColorRect" parent="popups/background"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -50.0
+margin_top = -50.0
+margin_right = 50.0
+margin_bottom = 50.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 0, 0, 0, 0.627451 )
 
 [node name="ppanel_import" type="PopupPanel" parent="popups"]
 margin_left = 50.0
@@ -215,6 +241,7 @@ margin_right = 521.0
 margin_bottom = 877.0
 
 [connection signal="dragged" from="margin/vbox/hsplit" to="margin/vbox/hsplit" method="_on_hsplit_dragged"]
+[connection signal="popup_hide" from="popups/ppanel_import" to="popups" method="_on_ppanel_import_popup_hide"]
 
 [editable path="preview_container"]
 [editable path="preview_container/ViewportContainer/Viewport/preview_viewport"]

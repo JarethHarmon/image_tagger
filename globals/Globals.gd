@@ -1,13 +1,96 @@
 extends Node
 
+# All : all images that have been imported into the program
+# ImportGroup : all images related to the chosen import tab (images that were imported at the same time)
+# ImageGroup : images that have been associated with each other by the user (pages of a comic for example)
+
+# IMPORTING:
+#	o starts from 'import' node
+#	o scans the given folders for images matching the users (optional) specifications
+#	o when the user presses 'Begin Import' , create a new import button and set its text :  ' Import (success, success/found) ' ie  ' Import (35, 35/781)
+#	o if the user clicks the import button it should show the numbers for : found, success, duplicate, ignored, failed  ; and should load the successful thumbnails (maybe re-query whenever one finishes importing)
+#	o once the import finishes it should update the button to ' Import (success) ' ; but clicking on it would still show the full counts (success/fail/etc)
+
+
+enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, TagCount, Random }
+enum OrderBy { Ascending, Descending }
+enum TypeId { All, ImportGroup, ImageGroup }
+
+var current_load_id:String = "all"
+var current_type_id:int = TypeId.All
+
+var currently_importing:bool = false	# whether an import is in progress
+var current_imports:Dictionary = {}		# the list of in-progress imports
+
+var settings_path:String = "user://settings.tres"
+var settings_hash:int = 0
+
 var settings:Dictionary = {
+  # Paths
+	"use_default_metadata_path" : true,
+	"use_default_thumbnail_path" : true,
+	"default_thumbnail_path" : "",
+	"default_metadata_path" : "",
+	"thumbnail_path" : "",
+	"metadata_path" : "",
+	"last_viewed_directory" : "",
+	"last_imported_directory" : "",
+
+  # Sorting
+	"current_sort" : SortBy.FileHash,
+	"current_order" : OrderBy.Ascending,
+
+  # Import
+	"use_recursion" : false,
+
+  # Thumbnails
+	"images_per_page" : 400,
+	"load_threads" : 2,
+	"pages_to_store" : 5,
+
+  # Images
+	"images_to_store" : 10,
+
   # Shaders
 	"use_smooth_pixel" : true,
 	"use_filter" : false,
 	"use_color_grading" : true,
 	"use_fxaa" : false,
 	"use_edge_mix" : false,
+
+  # UI
+	"hsplit_offset" : -175,
+	"left_offset" : -160,
+	"right_offset" : 240,
 }
+
+func _ready() -> void:
+	settings.default_metadata_path = ProjectSettings.globalize_path("user://metadata/")
+	settings.default_thumbnail_path = ProjectSettings.globalize_path("user://metadata/thumbnails")
+	load_settings()
+	if settings.thumbnail_path == "": settings.thumbnail_path = settings.default_thumbnail_path
+	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
+
+func load_settings() -> void:
+	var f:File = File.new()
+	var e:int = f.open(settings_path, File.READ)
+	if e == OK:
+		var temp_settings:Dictionary = str2var(f.get_as_text())
+		# this is to prevent overwriting/removing newly added settings when loading the settings file 
+		# (ie future-proofing against updates that add new settings)
+		for setting in temp_settings.keys():
+			if (settings.has(setting)):
+				settings[setting] = temp_settings[setting]
+		settings_hash = settings.hash()
+	f.close()
+	Signals.call_deferred("emit_signal", "settings_loaded")
+	
+func save_settings() -> void:
+	if (settings.hash() == settings_hash): return	# don't waste time if no changes made since settings were loaded
+	var f:File = File.new()
+	var e:int = f.open(settings_path, File.WRITE)
+	if e == OK: f.store_string(var2str(settings))
+	f.close()
 
 func get_komi_hash(path:String) -> String: 
 	var gob:Gob = Gob.new()
