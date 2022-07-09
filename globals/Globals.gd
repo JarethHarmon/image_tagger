@@ -23,8 +23,8 @@ var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports
 
 var settings_path:String = "user://settings.tres"
-var settings_hash:int = 0
 
+var last_settings:Array = []
 var settings:Dictionary = {
   # Paths
 	"use_default_metadata_path" : true,
@@ -76,17 +76,28 @@ func load_settings() -> void:
 	var e:int = f.open(settings_path, File.READ)
 	if e == OK:
 		var temp_settings:Dictionary = str2var(f.get_as_text())
+		last_settings = create_settings_comparison_array(temp_settings)
 		# this is to prevent overwriting/removing newly added settings when loading the settings file 
 		# (ie future-proofing against updates that add new settings)
 		for setting in temp_settings.keys():
-			if (settings.has(setting)):
+			if settings.has(setting):
 				settings[setting] = temp_settings[setting]
-		settings_hash = settings.hash()
+
 	f.close()
 	Signals.call_deferred("emit_signal", "settings_loaded")
-	
+
+func create_settings_comparison_array(settings_dict:Dictionary) -> Array:
+	var result:Array = []
+	var temp:Array = settings_dict.keys()
+	temp.sort()
+	for setting in temp: 
+		result.append(setting)
+		result.append(settings_dict[setting])
+	return result
+
 func save_settings() -> void:
-	if (settings.hash() == settings_hash): return	# don't waste time if no changes made since settings were loaded
+	if (create_settings_comparison_array(settings) == last_settings): return	# don't waste time if no changes made since settings were loaded
+
 	var f:File = File.new()
 	var e:int = f.open(settings_path, File.WRITE)
 	if e == OK: f.store_string(var2str(settings))

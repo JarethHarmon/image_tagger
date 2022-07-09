@@ -24,7 +24,7 @@ func _begin() -> void:
 	var dir:Directory = Directory.new()
 	if Globals.settings.use_default_metadata_path:
 		var err:int = dir.make_dir_recursive(Globals.settings.default_metadata_path)
-		#if err == OK: Database.SetMetadataPath(Globals.settings.default_metadata_path)
+		if err == OK: Database.SetMetadataPath(Globals.settings.default_metadata_path)
 	
  # make and set default thumbnail folder
 	if Globals.settings.use_default_thumbnail_path:

@@ -18,6 +18,8 @@ using CoenM.ImageHash.HashAlgorithms;
 // this way I also do not need to include diffHash and colorHash inside groups/imports
 
 
+// I think I will remove lists of hashes from every class, now should query directly over hashInfo to find things with specific groupIds/importIds/tagIds/etc
+
 public class ImageType
 {
 	// primarily for types with better built-in support, any random types and those the user adds will be assigend 'other'
@@ -33,7 +35,7 @@ public class HashInfo
 	public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
 	
 	public string diffHash { get; set; }			// the CoenM.ImageHash::DifferenceHash() of the thumbnail
-	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail (manually serialize it to use 8-bit integers if needed)
+	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
 	
 	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
 	public int type { get; set; }					// see ImageType
@@ -41,27 +43,116 @@ public class HashInfo
 	public long creationTime { get; set; }			// the time the file was created in ticks
 	public long uploadTime { get; set; }			// the time the file was uploaded to the database in ticks
 	
-	public HashSet<string> paths { get; set; }
-	public HashSet<string> tags { get; set; }
+	public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
+	public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
+	public HashSet<string> paths { get; set; }		// every path the image has been found at on the user's computer
+	public HashSet<string> tags { get; set; }		// every tag that has been applied to the image
 	public Dictionary<string, int> ratings { get; set; }	// rating_name : rating/10
 }
 
 /* holds metadata for an import */
-public class ImportInfo {}
-
-
-/* alternative to below : keep a hashset of imports that an image was found in, query entire image list for those that were in that specific import when user wants to search inside that import */
-/* holds the hashes associated with an import (structured this way for easier querying) */
-/* basically holds all the same query-related metadata as HashInfo, just not the extra stuff */
-public class ImportGroup {}
-
-
-public class GroupInfo {}
-public class TagInfo {}
-
-public class Hash
+public class ImportInfo
 {
-	public static int[] ColorHash(string path, int accuracy=1)
+	public string importId { get; set; }			// the ID of this import
+	public int successCount { get; set; }			// the number of successfully imported image in this import
+	public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
+	public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
+	public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
+}
+
+public class GroupInfo
+{
+	public string groupId { get; set; }				// the ID of this group
+	public int count { get; set; }					// the number of images in this group
+	public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
+}
+
+public class TagInfo
+{
+	public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
+	public string tagName { get; set; }				// the displayed name for this tag
+	public string tagParents { get; set; }			// tags that should be auto-applied if this tag is applied
+}
+
+public class Database : Node
+{
+	
+/*=========================================================================================
+									   Variables
+=========================================================================================*/
+	public Node globals;
+	public bool useJournal = true;
+	public string metadataPath;
+	public void SetMetadataPath(string path) { metadataPath = path; }
+	
+	public LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
+	public ILiteCollection<HashInfo> colHashes;
+	public ILiteCollection<ImportInfo> colImports;
+	public ILiteCollection<GroupInfo> colGroups;
+	public ILiteCollection<TagInfo> colTags;
+	
+	public Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();
+	public Dictionary<string, ImportInfo> dictImports = new Dictionary<string, ImportInfo>();
+	public Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
+	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
+	
+/*=========================================================================================
+									 Initialization
+=========================================================================================*/
+	public override void _Ready() 
+	{
+		globals = (Node) GetNode("/root/Globals");
+	}
+	
+	public int Create() 
+	{
+		try {
+			if (useJournal) {
+				dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
+				BsonMapper.Global.Entity<HashInfo>().Id(x => x.imageHash);
+				colHashes = dbHashes.GetCollection<HashInfo>("hashes");
+				colHashes.EnsureIndex("tags_index", "$.tags[*]", false);
+				
+				dbImports = new LiteDatabase(metadataPath + "import_info.db");
+				BsonMapper.Global.Entity<ImportInfo>().Id(x => x.importId);
+				colImports = dbImports.GetCollection<ImportInfo>("imports");
+				
+				dbGroups = new LiteDatabase(metadataPath + "group_info.db");
+				BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);		// for now I am imagining groups as being much smaller in scale (large associations should be done with tags)
+				colGroups = dbGroups.GetCollection<GroupInfo>("groups");
+				
+				dbTags = new LiteDatabase(metadataPath + "tag_info.db");
+				BsonMapper.Global.Entity<TagInfo>().Id(x => x.tagId);
+				colTags = dbTags.GetCollection<TagInfo>("tags");				
+			} 
+			return 0;
+		} 
+		catch (Exception ex) { GD.Print("Database::Create() : ", ex); return 1; }
+	}
+	public void Destroy() 
+	{
+		dbHashes.Dispose();
+		dbImports.Dispose();
+		dbGroups.Dispose();
+		dbTags.Dispose();
+	}
+	
+/*=========================================================================================
+									   Hashing
+=========================================================================================*/
+	public string SHA256Hash(string path) 
+	{
+		return (string)globals.Call("get_sha256", path);
+	}
+	public string SHA512Hash(string path)
+	{
+		return (string)globals.Call("get_sha512", path);
+	}
+	public string KomiHash(string path) 
+	{
+		return (string)globals.Call("get_komi_hash", path);
+	}
+	public int[] ColorHash(string path, int accuracy=1)
 	{
 	// made this up as I went, took a large number of iterations but it works pretty well
 	// hash: ~4x faster than DifferenceHash, simi: ~55x slower than DifferenceHash (still ~0.6s/1M comparisons though)
@@ -83,7 +174,7 @@ public class Hash
 		}
 		return colors;
 	}
-	public static float ColorSimilarity(int[] h1, int[] h2)
+	public float ColorSimilarity(int[] h1, int[] h2)
 	{
 		float sum = 0f;
 		int count = 0, same = 0, num1 = 0, num2 = 0;
@@ -118,65 +209,9 @@ public class Hash
 			return algo.Hash(stream);
 		} catch (Exception ex) { GD.Print("Database::GetDifferenceHash() : ", ex); return 0; }
 	}
-}
-
-public class Database : Node
-{
-	public Node globals;
-	public bool useJournal = true;
-	public string metadataPath;
-	
-	public LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
-	public ILiteCollection<HashInfo> colHashes;
-	public ILiteCollection<ImportInfo> colImports;
-	public ILiteCollection<GroupInfo> colGroups;
-	public ILiteCollection<TagInfo> colTags;
-	
-	public Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();
-	public Dictionary<string, ImportInfo> dictImports = new Dictionary<string, ImportInfo>();
-	public Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
-	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
-	
-	public override void _Ready() 
+	public double DifferenceSimilarity(ulong h1, ulong h2)
 	{
-		globals = (Node) GetNode("/root/Globals");
+		return CompareHash.Similarity(h1, h2);
 	}
-	
-	public int Create() 
-	{
-		try {
-			if (useJournal) {
-				dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
-				BsonMapper.Global.Entity<HashInfo>().Id(x => x.imageHash);
-				colHashes = dbHashes.GetCollection<HashInfo>("hashes");
-				colHashes.EnsureIndex("tags_index", "$.tags[*]", false);
-				
-				dbImports = new LiteDatabase(metadataPath + "import_info.db");
-				BsonMapper.Global.Entity<ImportInfo>().Id(x => x.importId);
-				BsonMapper.Global.Entity<ImportGroup>().Id(x => x.imageHash);
-				colImports = dbImports.GetCollection<ImportInfo>("imports");
-				
-				dbGroups = new LiteDatabase(metadataPath + "group_info.db");
-				BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);		// for now I am imagining groups as being much smaller in scale (large associations should be done with tags)
-				colGroups = dbGroups.GetCollection<GroupInfo>("groups");
-				
-				dbTags = new LiteDatabase(metadataPath + "tag_info.db");
-				BsonMapper.Global.Entity<TagInfo>().Id(x => x.tagId);
-				colTags = dbTags.GetCollection<TagInfo>("tags");				
-			} 
-			return 0;
-		} 
-		catch (Exception ex) { GD.Print("Database::Create() : ", ex); return 1; }
-	}
-	
-	public void Dispose() 
-	{
-		dbHashes.Dispose();
-		dbImports.Dispose();
-		dbGroups.Dispose();
-		dbTags.Dispose();
-	}
-	
-	
 	
 }
