@@ -12,12 +12,11 @@ extends Node
 #	o once the import finishes it should update the button to ' Import (success) ' ; but clicking on it would still show the full counts (success/fail/etc)
 
 
-enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, TagCount, Random }
+enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagCount, Random }
 enum OrderBy { Ascending, Descending }
-enum TypeId { All, ImportGroup, ImageGroup }
 
-var current_load_id:String = "all"
-var current_type_id:int = TypeId.All
+var current_import_id:String = "all"
+var current_group_id:String = ""
 
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports

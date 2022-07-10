@@ -29,6 +29,23 @@ public class ImageType
 	public const int other = 7;
 }
 
+public class SortBy
+{
+	public const int FileHash = 0;
+	public const int FilePath = 1;
+	public const int FileSize = 2;
+	public const int FileCreationUtc = 3;
+	public const int FileUploadUtc = 4;
+	public const int TagCount = 5;
+	public const int Random = 6;
+}
+public class OrderBy
+{
+	public const int Ascending = 0;
+	public const int Descending = 1;
+}
+
+
 public class HashInfo
 {
 	public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
@@ -40,8 +57,8 @@ public class HashInfo
 	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
 	public int type { get; set; }					// see ImageType
 	public long size { get; set; }					// the length of the file in bytes
-	public long creationTime { get; set; }			// the time the file was created in ticks
-	public long uploadTime { get; set; }			// the time the file was uploaded to the database in ticks
+	public long creationUtc { get; set; }			// the time the file was created in ticks
+	public long uploadTUtc { get; set; }			// the time the file was uploaded to the database in ticks
 	
 	public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
 	public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
@@ -65,13 +82,14 @@ public class GroupInfo
 	public string groupId { get; set; }				// the ID of this group
 	public int count { get; set; }					// the number of images in this group
 	public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
+	public Dictionary<string, int> subGroups { get; set; }	// the groupIds and their listing order for subgroups of this group (for example: chapters of a manga)
 }
 
 public class TagInfo
 {
 	public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
 	public string tagName { get; set; }				// the displayed name for this tag
-	public string tagParents { get; set; }			// tags that should be auto-applied if this tag is applied
+	public HashSet<string> tagParents { get; set; }	// tags that should be auto-applied if this tag is applied
 }
 
 public class Database : Node
@@ -118,7 +136,7 @@ public class Database : Node
 				colImports = dbImports.GetCollection<ImportInfo>("imports");
 				
 				dbGroups = new LiteDatabase(metadataPath + "group_info.db");
-				BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);		// for now I am imagining groups as being much smaller in scale (large associations should be done with tags)
+				BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);
 				colGroups = dbGroups.GetCollection<GroupInfo>("groups");
 				
 				dbTags = new LiteDatabase(metadataPath + "tag_info.db");
@@ -137,6 +155,98 @@ public class Database : Node
 		dbTags.Dispose();
 	}
 	
+	public void CheckpointHashDB() { dbHashes.Checkpoint(); }
+	public void CheckpointImportDB() { dbImports.Checkpoint(); }
+	public void CheckpointGroupDB() { dbGroups.Checkpoint(); }
+	public void CheckpointTagDB() { dbTags.Checkpoint(); }
+	
+/*=========================================================================================
+									Database Access
+=========================================================================================*/
+	private int lastQueriedCount = 0;
+	public int GetLastQueriedCount() { return lastQueriedCount; }
+	
+	public int GetImportSuccessCount(string importId)
+	{
+		try {
+			var tmp = colImports.FindById(importId);
+			if (tmp == null) return 0;
+			return tmp.successCount;
+		} catch (Exception ex) { return 0; }
+	}
+	
+	public string[] QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
+	{
+		try {
+			dictHashes.Clear();
+			var results = new List<string>();
+			var hashInfos = _QueryDatabase(importId, offset, count, tagsAll, tagsAny, tagsNone, sortBy, orderBy, countResults, groupId);
+			if (hashInfos == null) return new string[0];
+			foreach(HashInfo hashInfo in hashInfos) {
+				results.Add(hashInfo.imageHash);
+				dictHashes[hashInfo.imageHash] = hashInfo;
+			}
+			return results.ToArray();
+		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
+	}
+	private List<HashInfo> _QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
+	{
+		try {
+			bool sortByTagCount = false, sortByRandom = false, counted=false;
+			string columnName = "_Id";
+			if (sortBy == SortBy.FileSize) columnName = "size";
+			else if (sortBy == SortBy.FileCreationUtc) columnName = "creationUtc";
+			else if (sortBy == SortBy.FileUploadUtc) columnName = "uploadUtc";
+			else if (sortBy == SortBy.TagCount) sortByTagCount = true;
+			else if (sortBy == SortBy.Random) sortByRandom = true;
+			
+			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
+				lastQueriedCount = GetImportSuccessCount(importId);
+				counted = true;
+				
+				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
+					if (orderBy == OrderBy.Ascending) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
+					else if (orderBy == OrderBy.Descending) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
+					else return null; // default/placeholder, should not be called yet
+				}
+			}
+			
+			var rng = new Random();
+			var query = colHashes.Query();
+			
+			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
+			if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
+			
+			if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
+			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
+			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
+			
+			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
+			
+			if (sortByTagCount) {
+				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
+				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.tags.Count);
+				else return null; // default/placeholder, should not be called yet
+			} else if (sortByRandom) {
+				// not sure yet
+			} else {
+				if (orderBy == OrderBy.Ascending) query = query.OrderBy(columnName);
+				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(columnName);
+				else return null; // default/placeholder, should not be called yet
+			}
+			
+			/* only current hope for supporting tags formatted as
+					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
+				is PredicateBuilder (which is slower I believe) */
+			
+			return query.Skip(offset).Limit(count).ToList();			
+		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }
+	}
+
+/*=========================================================================================
+								 Data Structure Access
+=========================================================================================*/
+
 /*=========================================================================================
 									   Hashing
 =========================================================================================*/

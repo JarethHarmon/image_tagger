@@ -22,6 +22,7 @@ var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P lo
 var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
 var page_queue:Array = []				# [[page_number, load_id, type_id]] :: fifo queue of last M pages
 var thumb_queue:Array = []				# [image_hashes] :: fifo queue of the thumbnails waiting to be loaded for the current page
+var load_threads:Array = []				# array of threads for loading thumbnails
 
 # variables
 var item_index:int = 0					# current index in the item_list
@@ -63,11 +64,12 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 		curr_page_number = 1
 		queried_page_count = 0
 		total_image_count = 0
-	start_query(Globals.current_type_id, Globals.current_load_id, tags_all, tags_any, tags_none)
+	start_query(Globals.current_import_id, Globals.current_group_id, tags_all, tags_any, tags_none)
 
-func start_query(type_id:int, load_id:String, tags_all:Array=[], tags_any:Array=[], tags_none:Array=[]) -> void:
+# need to decide if I should save query settings to history (ie attached on a per-import basis) or if I should apply them globally to any selected import button
+func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_any:Array=[], tags_none:Array=[]) -> void:
 	if starting_load_process: return
-	if load_id == "" or type_id < 0: return
+	if import_id == "": return
 	starting_load_process = true
 	stop_threads()
 	
@@ -77,9 +79,9 @@ func start_query(type_id:int, load_id:String, tags_all:Array=[], tags_any:Array=
 	var num_threads:int = Globals.settings.load_threads
 	var current_sort:int = Globals.settings.current_sort
 	var current_order:int = Globals.settings.current_order
-	var current_page:Array = [curr_page_number, load_id, type_id]
+	var current_page:Array = [curr_page_number, import_id]
 	var thumbnail_path:String = Globals.settings.thumbnail_path
-	var temp_query_settings = [database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order]
+	var temp_query_settings = [import_id, group_id, tags_all, tags_any, tags_none]
 	
   # calculate offset
 	database_offset = (curr_page_number-1) * images_per_page
@@ -88,18 +90,11 @@ func start_query(type_id:int, load_id:String, tags_all:Array=[], tags_any:Array=
 	var count_results:bool = temp_query_settings == last_query_settings
 	last_query_settings = temp_query_settings
 	
-	if type_id == Globals.TypeId.All: pass	
-		# total_count = # even col.Count(Query.All()) is slow, so instead need to manually keep track of the count and store it in a meta-info collection
-		# hash_arr = # query the full database with current offset and settings and get 1 page of hashes
-		# queried_count = # get the full count of all images found by the previous query (optimization::should only count images if something has changed from the previous query) (could make a dict{} of query settings and call .hash() on it, then if hash is different from previous one, update it and get the count again)
-	elif type_id == Globals.TypeId.ImportGroup: pass 
-		# total_count = 
-		# hash_arr = 
-		# queried_count = 
-	elif type_id == Globals.TypeId.ImageGroup: pass 
-		# total_count = 
-		# hash_arr = 
-		# queried_count = 
+	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
+	# type_id and differentiation is being phased out in favor of a single unified query function on Database.cs
+	
+	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
+	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	
 	# display time taken for query
@@ -123,10 +118,20 @@ func start_query(type_id:int, load_id:String, tags_all:Array=[], tags_any:Array=
   # set page image count
 	curr_page_image_count = hash_arr.size()
 	
-	# self.call_deferred("_threadsafe_clear", args, ...)
+	self.call_deferred("_threadsafe_clear", import_id, curr_page_number, curr_page_image_count, queried_page_count, num_threads) 
 	
 # threading
-func stop_threads() -> void: pass
+func stop_threads() -> void:
+	stopping_load_process = true
+	for t in load_threads.size():
+		stop_thread(t)
+
+func stop_thread(thread_id:int) -> void:
+	if load_threads[thread_id].is_active() or load_threads[thread_id].is_alive():
+		load_threads[thread_id].wait_to_finish()
+
+func _threadsafe_clear(import_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
+	pass
 
 
 
