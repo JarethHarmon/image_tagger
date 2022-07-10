@@ -58,7 +58,7 @@ public class HashInfo
 	public int type { get; set; }					// see ImageType
 	public long size { get; set; }					// the length of the file in bytes
 	public long creationUtc { get; set; }			// the time the file was created in ticks
-	public long uploadTUtc { get; set; }			// the time the file was uploaded to the database in ticks
+	public long uploadUtc { get; set; }				// the time the file was uploaded to the database in ticks
 	
 	public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
 	public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
