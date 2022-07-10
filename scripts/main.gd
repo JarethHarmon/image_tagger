@@ -1,5 +1,6 @@
 extends Control
 
+export (NodePath) onready var thumbnails = get_node(thumbnails)
 
 func _input(event:InputEvent) -> void:
 	if event is InputEventKey:
@@ -8,8 +9,12 @@ func _input(event:InputEvent) -> void:
 
 func _notification(what) -> void:
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
-		# database calls
-		# stop threads
+		Database.CheckpointGroupDB()
+		Database.CheckpointHashDB()
+		Database.CheckpointImportDB()
+		Database.CheckpointTagDB()
+		Database.Destroy()
+		thumbnails.stop_threads()
 		Globals.save_settings()
 		print_debug("exiting program")
 		get_tree().quit()
@@ -30,5 +35,11 @@ func _begin() -> void:
 	if Globals.settings.use_default_thumbnail_path:
 		var err:int = dir.make_dir_recursive(Globals.settings.default_thumbnail_path)
 		#if err == OK: ImageOp.SetThumbnailPath(Globals.settings.default_thumbnail_path)
+
+  # create database
+	if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
+	# load import groups from database (and other list metadata)
+	
+	Signals.emit_signal("import_info_load_finished")	
 	
 	

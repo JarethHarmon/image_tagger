@@ -49,9 +49,7 @@ func _curr_page_changed(new_page:int) -> void: curr_page_number = new_page
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
-	
-	var s:String = "".humanize_size(1247843)
-	print(s)
+	Signals.connect("search_pressed", self, "prepare_query")	
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
@@ -93,6 +91,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
 	
+
 	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
