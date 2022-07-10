@@ -55,6 +55,7 @@ public class HashInfo
 	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
 	
 	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
+	public string thumbnailType { get; set; }		// jpg/png
 	public int type { get; set; }					// see ImageType
 	public long size { get; set; }					// the length of the file in bytes
 	public long creationUtc { get; set; }			// the time the file was created in ticks
@@ -194,6 +195,7 @@ public class Database : Node
 		try {
 			bool sortByTagCount = false, sortByRandom = false, counted=false;
 			string columnName = "_Id";
+			
 			if (sortBy == SortBy.FileSize) columnName = "size";
 			else if (sortBy == SortBy.FileCreationUtc) columnName = "creationUtc";
 			else if (sortBy == SortBy.FileUploadUtc) columnName = "uploadUtc";
@@ -211,7 +213,7 @@ public class Database : Node
 				}
 			}
 			
-			var rng = new Random();
+			// var rng = new Random(); // for SortBy.Random (if I can figure out how to do so)
 			var query = colHashes.Query();
 			
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
@@ -246,6 +248,16 @@ public class Database : Node
 /*=========================================================================================
 								 Data Structure Access
 =========================================================================================*/
+	public string GetFileType(string imageHash) 
+	{
+		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].thumbnailType : "";
+	}
+	// returning long would be better, but godot does not marshal long into its 64bit integer type for some reason
+	// instead return as string, convert with .to_int() and convert to size with String.humanize_size(int)
+	public string GetFileSize(string imageHash) 
+	{
+		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].size.ToString() : "";
+	}
 
 /*=========================================================================================
 									   Hashing

@@ -2,6 +2,7 @@ extends ItemList
 
 # constants
 const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
+const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") # want to remove this eventually
 
 # nodes
 var page_label:Label
@@ -91,7 +92,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	last_query_settings = temp_query_settings
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
-	# type_id and differentiation is being phased out in favor of a single unified query function on Database.cs
 	
 	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
@@ -131,7 +131,109 @@ func stop_thread(thread_id:int) -> void:
 		load_threads[thread_id].wait_to_finish()
 
 func _threadsafe_clear(import_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
-	pass
+	starting_load_process = false
+	sc.lock()
+	if self.get_item_count() > 0:
+		yield(get_tree(), "idle_frame")
+		self.clear()
+		yield(get_tree(), "idle_frame")
+		yield(get_tree(), "idle_frame")
+	for i in image_count:
+		self.add_item("") # self.add_item(page_history[[page_number, import_id]][i]) # 
+		self.set_item_icon(i, icon_buffering)
+	# set page label text ( curr_page/total_pages )
+	sc.unlock()
+	prepare_thumbnail_loading(import_id, page_number, num_threads)
 
+func prepare_thumbnail_loading(import_id:String, page_number:int, num_threads:int) -> void:
+	load_threads.clear()
+	for i in num_threads: 
+		load_threads.append(Thread.new())
+	
+	ii.lock() ; item_index = 0 ; ii.unlock()
+	tq.lock()
+	thumb_queue.clear()
+	thumb_queue = page_history[[page_number, import_id]].duplicate()
+	tq.unlock()
+	
+	stopping_load_process = false
+	for t in load_threads.size():
+		if not load_threads[t].is_active():
+			load_threads[t].start(self, "_thread", t)
 
+func _thread(thread_id:int) -> void:
+	while not stopping_load_process:
+		tq.lock()
+		if thumb_queue.empty():
+			tq.unlock()
+			break
+		else:
+			var image_hash:String = thumb_queue.pop_front()
+			tq.unlock() ; ii.lock()
+			var index:int = item_index
+			item_index += 1
+			ii.unlock()
+			load_thumbnail(image_hash, index)
+		OS.delay_msec(50)
+	call_deferred("stop_thread", thread_id)
+
+# thumbnail loading
+func load_thumbnail(image_hash:String, index:int) -> void:
+	th.lock()
+	if thumb_history.has(image_hash):
+		th.unlock()
+		if stopping_load_process: return
+		_threadsafe_set_icon(image_hash, index)
+	else:
+		th.unlock()
+		var f:File = File.new()
+		var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
+		var e:int = f.open(p, File.READ)
+		
+		if stopping_load_process: return
+		if e != OK: 
+			_threadsafe_set_icon(image_hash, index, true)
+			return
+		
+		if stopping_load_process: return
+		var file_type:String = Database.GetFileType(image_hash)
+		if file_type == "":
+			_threadsafe_set_icon(image_hash, index, true)
+			return
+		
+		if stopping_load_process: return
+		var i:Image = Image.new()
+		var b:PoolByteArray = f.get_buffer(f.get_len())
+		if file_type == "png": 
+			e = i.load_png_from_buffer(b)
+		elif file_type == "jpg": 
+			e = i.load_jpg_from_buffer(b)
+		else:
+			_threadsafe_set_icon(image_hash, index, true)
+			return
+		
+		if stopping_load_process: return
+		var it:ImageTexture = ImageTexture.new()
+		it.create_from_image(i, 0) # FLAGS # 4
+		it.set_meta("image_hash", image_hash)
+		
+		th.lock() ; thumb_history[image_hash] = it ; th.unlock()
+		
+		if stopping_load_process: return
+		_threadsafe_set_icon(image_hash, index)
+
+func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
+	var im_tex:Texture
+	if failed: im_tex = icon_broken
+	else:
+		th.lock()
+		im_tex = thumb_history[image_hash]
+		th.unlock()
+	
+	if stopping_load_process: return
+	sc.lock()
+	self.set_item_icon(index, im_tex)
+	var size:String = Database.GetFileSize(image_hash)
+	set_item_tooltip(index, "hash: " + image_hash + "\nsize: " + "-1" if size == "" else String.humanize_size(size.to_int()))
+	sc.unlock()
 
