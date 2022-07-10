@@ -12,6 +12,9 @@ onready var scan_mutex:Mutex = Mutex.new()
 var scan_queue:Array = []
 var scanner_active:bool = false 
 
+func _ready() -> void:
+	Signals.connect("start_scan", self, "queue_append")
+
 # needs to take into accounr a blacklist of folders (can be stored on c# side though)
 func queue_append(scan_folder:String, recursive:bool=true) -> void:
 	scan_queue.append([scan_folder, recursive])
@@ -37,6 +40,7 @@ func _thread() -> void:
 		# need to allow user to remove paths/folders, filter by image size/date, etc
 		# user should be able to find and scan additional folders while the first set is still scanning
 		# once import process starts, user should be able to scan and begin importing new folders while it is running
+		print(image_count)
 		OS.delay_msec(50)
 	call_deferred("_done")
 

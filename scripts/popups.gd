@@ -13,6 +13,7 @@ func _ready() -> void:
 func _file_pressed(position:Vector2) -> void:
 	self.show() 
 	file_context.popup(Rect2(position, Vector2(1,1)))
+	Signals.emit_signal("start_scan", "W:/test", true)
 	#darkened_background.show()
 	#import_panel.popup()
 

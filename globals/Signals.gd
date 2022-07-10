@@ -11,6 +11,8 @@ signal image_import_finished(import_id)
 signal sort_changed
 signal order_changed
 
+signal start_scan(folder, recursive)
+
 # core_buttons
 signal file_button_pressed(position)
 signal edit_button_pressed(position)
