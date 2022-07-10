@@ -1,5 +1,9 @@
 extends HFlowContainer
 
+# consider using a spinbox page # entry instead of using numbered page buttons
+# ie [7]/83 where the user can change the number inside [ ] and press enter to go to that page
+# (have added example version now)
+
 onready var prev_button:Button = $prev_page
 onready var next_button:Button = $next_page
 onready var first_button:Button = $first_page

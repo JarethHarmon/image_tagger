@@ -92,7 +92,7 @@ size_flags_horizontal = 3
 [node name="thumbnails" type="ItemList" parent="margin/vbox"]
 margin_top = 32.0
 margin_right = 1910.0
-margin_bottom = 1038.0
+margin_bottom = 1034.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 select_mode = 1
@@ -107,14 +107,14 @@ script = ExtResource( 3 )
 [node name="Timer" type="Timer" parent="margin/vbox/thumbnails"]
 
 [node name="hsep4" type="HSeparator" parent="margin/vbox"]
-margin_top = 1042.0
+margin_top = 1038.0
 margin_right = 1910.0
-margin_bottom = 1046.0
+margin_bottom = 1042.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="page_buttons" type="HFlowContainer" parent="margin/vbox"]
-margin_top = 1050.0
+margin_top = 1046.0
 margin_right = 1910.0
 margin_bottom = 1070.0
 mouse_filter = 2
@@ -123,13 +123,13 @@ script = ExtResource( 2 )
 
 [node name="prev_page" type="Button" parent="margin/vbox/page_buttons"]
 margin_right = 56.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "  Prev  "
 
 [node name="first_page" type="Button" parent="margin/vbox/page_buttons"]
 margin_left = 60.0
 margin_right = 116.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "  First  "
 
 [node name="space1" type="Control" parent="margin/vbox/page_buttons"]
@@ -144,35 +144,58 @@ size_flags_vertical = 3
 [node name="hbox" type="HBoxContainer" parent="margin/vbox/page_buttons"]
 margin_left = 120.0
 margin_right = 1790.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 grow_horizontal = 2
 mouse_filter = 2
 size_flags_horizontal = 3
+custom_constants/separation = 0
 alignment = 1
 
 [node name="page_1" type="Button" parent="margin/vbox/page_buttons/hbox"]
+visible = false
 margin_left = 757.0
 margin_right = 793.0
 margin_bottom = 20.0
 text = "  1  "
 
 [node name="page_2" type="Button" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 797.0
-margin_right = 833.0
+visible = false
+margin_left = 817.0
+margin_right = 853.0
 margin_bottom = 20.0
 text = "  2  "
 
 [node name="page_3" type="Button" parent="margin/vbox/page_buttons/hbox"]
+visible = false
 margin_left = 837.0
 margin_right = 873.0
 margin_bottom = 20.0
 text = "  3  "
 
 [node name="page_4" type="Button" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 877.0
-margin_right = 913.0
+visible = false
+margin_left = 857.0
+margin_right = 893.0
 margin_bottom = 20.0
 text = "  4  "
+
+[node name="SpinBox" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 783.0
+margin_right = 857.0
+margin_bottom = 24.0
+grow_horizontal = 0
+min_value = 1.0
+max_value = 82.0
+value = 7.0
+rounded = true
+align = 1
+
+[node name="Label" type="Label" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 857.0
+margin_top = 5.0
+margin_right = 886.0
+margin_bottom = 19.0
+text = " / 82"
 
 [node name="vbox" type="VBoxContainer" parent="margin/vbox/page_buttons"]
 visible = false
@@ -198,13 +221,13 @@ size_flags_vertical = 3
 [node name="last_page" type="Button" parent="margin/vbox/page_buttons"]
 margin_left = 1794.0
 margin_right = 1848.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "  Last  "
 
 [node name="next_page" type="Button" parent="margin/vbox/page_buttons"]
 margin_left = 1852.0
 margin_right = 1910.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "  Next  "
 
 [connection signal="pressed" from="margin/vbox/page_buttons/prev_page" to="margin/vbox/page_buttons" method="_on_prev_page_pressed"]

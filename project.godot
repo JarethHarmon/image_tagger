@@ -34,6 +34,8 @@ config/auto_accept_quit=false
 Database="*res://globals/Database.cs"
 Globals="*res://globals/Globals.gd"
 Signals="*res://globals/Signals.gd"
+ImageImporter="*res://globals/ImageImporter.cs"
+ImageScanner="*res://globals/ImageScanner.cs"
 
 [debug]
 

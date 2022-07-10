@@ -201,6 +201,84 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
+[node name="margin" type="MarginContainer" parent="margin/vsplit/panel2"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1903.0
+margin_bottom = 282.0
+mouse_filter = 2
+size_flags_horizontal = 3
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="vbox" type="VBoxContainer" parent="margin/vsplit/panel2/margin"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 1886.0
+margin_bottom = 265.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hbox1" type="HBoxContainer" parent="margin/vsplit/panel2/margin/vbox"]
+margin_right = 1876.0
+margin_bottom = 32.0
+mouse_filter = 2
+size_flags_horizontal = 3
+custom_constants/separation = 10
+
+[node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_right = 1621.0
+margin_bottom = 32.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="add_files" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_left = 1631.0
+margin_right = 1740.0
+margin_bottom = 32.0
+rect_min_size = Vector2( 0, 32 )
+text = "  Choose Files  "
+
+[node name="add_folders" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_left = 1750.0
+margin_right = 1876.0
+margin_bottom = 32.0
+rect_min_size = Vector2( 0, 32 )
+text = "  Choose Folders  "
+
+[node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox"]
+margin_top = 36.0
+margin_right = 1876.0
+margin_bottom = 203.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hbox2" type="HBoxContainer" parent="margin/vsplit/panel2/margin/vbox"]
+margin_top = 207.0
+margin_right = 1876.0
+margin_bottom = 255.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox/hbox2"]
+margin_right = 1741.0
+margin_bottom = 48.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="begin_import" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox2"]
+margin_left = 1745.0
+margin_right = 1876.0
+margin_bottom = 48.0
+rect_min_size = Vector2( 0, 48 )
+text = "  Begin Importing  "
+
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2" to="margin/vsplit/path_list" method="_on_hsplit2_dragged"]
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21" to="margin/vsplit/path_list" method="_on_hsplit21_dragged"]
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22" to="margin/vsplit/path_list" method="_on_hsplit22_dragged"]

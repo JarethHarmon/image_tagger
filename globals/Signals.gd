@@ -12,10 +12,10 @@ signal sort_changed
 signal order_changed
 
 # core_buttons
-signal file_button_pressed
-signal edit_button_pressed
-signal view_button_pressed
-signal help_button_pressed
+signal file_button_pressed(position)
+signal edit_button_pressed(position)
+signal view_button_pressed(position)
+signal help_button_pressed(position)
 
 # nodes_readied
 signal page_label_ready(node_path)

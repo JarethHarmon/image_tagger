@@ -123,103 +123,6 @@ margin_top = 114.0
 margin_right = 711.0
 margin_bottom = 982.0
 
-[node name="vbox" parent="margin/vbox/hsplit/left/thumbnail_list/margin" index="0"]
-margin_right = 706.0
-margin_bottom = 863.0
-
-[node name="sort_buttons" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox" index="0"]
-margin_right = 701.0
-margin_bottom = 29.0
-
-[node name="sort_label" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/sort_buttons" index="0"]
-margin_top = 0.0
-margin_right = 77.0
-margin_bottom = 29.0
-
-[node name="sort_by" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/sort_buttons" index="1"]
-margin_left = 81.0
-margin_right = 186.0
-margin_bottom = 29.0
-
-[node name="order_by" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/sort_buttons" index="2"]
-margin_left = 190.0
-margin_right = 302.0
-margin_bottom = 29.0
-
-[node name="space" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/sort_buttons" index="3"]
-margin_left = 306.0
-margin_right = 587.0
-margin_bottom = 29.0
-
-[node name="select_all" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/sort_buttons" index="4"]
-margin_left = 591.0
-margin_right = 701.0
-margin_bottom = 29.0
-
-[node name="hsep3" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox" index="1"]
-margin_top = 33.0
-margin_right = 701.0
-margin_bottom = 37.0
-
-[node name="thumbnails" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox" index="2"]
-margin_top = 41.0
-margin_right = 701.0
-margin_bottom = 817.0
-
-[node name="hsep4" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox" index="3"]
-margin_top = 821.0
-margin_right = 701.0
-margin_bottom = 825.0
-
-[node name="page_buttons" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox" index="4"]
-margin_top = 829.0
-margin_right = 701.0
-margin_bottom = 858.0
-
-[node name="prev_page" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons" index="0"]
-margin_right = 69.0
-margin_bottom = 29.0
-
-[node name="first_page" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons" index="1"]
-margin_left = 73.0
-margin_right = 141.0
-margin_bottom = 29.0
-
-[node name="hbox" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons" index="3"]
-margin_left = 145.0
-margin_right = 558.0
-margin_bottom = 29.0
-
-[node name="page_1" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons/hbox" index="0"]
-margin_left = 116.0
-margin_right = 158.0
-margin_bottom = 29.0
-
-[node name="page_2" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons/hbox" index="1"]
-margin_left = 162.0
-margin_right = 204.0
-margin_bottom = 29.0
-
-[node name="page_3" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons/hbox" index="2"]
-margin_left = 208.0
-margin_right = 250.0
-margin_bottom = 29.0
-
-[node name="page_4" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons/hbox" index="3"]
-margin_left = 254.0
-margin_right = 296.0
-margin_bottom = 29.0
-
-[node name="last_page" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons" index="6"]
-margin_left = 562.0
-margin_right = 628.0
-margin_bottom = 29.0
-
-[node name="next_page" parent="margin/vbox/hsplit/left/thumbnail_list/margin/vbox/page_buttons" index="7"]
-margin_left = 632.0
-margin_right = 701.0
-margin_bottom = 29.0
-
 [node name="right" type="HSplitContainer" parent="margin/vbox/hsplit"]
 margin_left = 719.0
 margin_right = 1910.0
@@ -275,7 +178,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="popups" type="MarginContainer" parent="."]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
@@ -326,6 +228,17 @@ margin_top = 1.0
 margin_right = -1.0
 margin_bottom = -1.0
 
+[node name="pmenu_file_context" type="PopupMenu" parent="popups"]
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 178.0
+margin_bottom = 92.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
+items = [ "Import Images", null, 0, false, false, 0, 0, null, "", false ]
+hide_on_checkable_item_selection = false
+allow_search = true
+
 [node name="Label" type="Label" parent="."]
 margin_left = 97.0
 margin_top = 519.0
@@ -340,7 +253,7 @@ margin_bottom = 877.0
 
 [connection signal="dragged" from="margin/vbox/hsplit" to="margin/vbox/hsplit" method="_on_hsplit_dragged"]
 [connection signal="popup_hide" from="popups/ppanel_import" to="popups" method="_on_ppanel_import_popup_hide"]
+[connection signal="index_pressed" from="popups/pmenu_file_context" to="popups" method="_on_pmenu_file_context_index_pressed"]
 
 [editable path="preview_container"]
 [editable path="preview_container/ViewportContainer/Viewport/preview_viewport"]
-[editable path="margin/vbox/hsplit/left/thumbnail_list"]
