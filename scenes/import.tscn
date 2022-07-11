@@ -132,7 +132,6 @@ margin_right = 1876.0
 margin_bottom = 735.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/autohide = 0
 split_offset = 360
 
 [node name="hsplit21" type="HSplitContainer" parent="margin/vsplit/path_list/margin/vbox/hsplit2"]
@@ -140,7 +139,6 @@ margin_right = 1292.0
 margin_bottom = 711.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/autohide = 0
 split_offset = -550
 
 [node name="indices" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
@@ -170,7 +168,6 @@ margin_right = 1876.0
 margin_bottom = 711.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/autohide = 0
 
 [node name="types" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
 margin_right = 280.0

@@ -23,6 +23,8 @@ var scanner_active:bool = false
 
 var index:int = 0
 
+var dark_grey:Color = Color(0.14, 0.14, 0.14)
+
 func _ready() -> void:
 	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
@@ -61,7 +63,8 @@ func queue_append(scan_folder:String, recursive:bool=true) -> void:
 	if !scanner_active: start_scanner()
 
 # protecting scan_queue with a mutex is not necessary since the scanner will only be single threaded
-# (it finishes even large folders in a few milliseconds)
+# (it finishes even relatively large folders in a few milliseconds)
+# (it runs on a separate -single- thread)
 func start_scanner() -> void:
 	if scanner_active: return
 	if scan_mutex.try_lock() != OK: return
@@ -92,13 +95,7 @@ func _done() -> void:
 	print("scan finished")
 	
 	var paths_sizes:Array = ImageScanner.GetPathsSizes()
-	for path_size in paths_sizes:
-		var parts:Array = path_size.split("?", false)
-		indices.add_item("  " + String(index))
-		paths.add_item("  " + parts[0])
-		types.add_item("  " + parts[0].get_extension())
-		sizes.add_item("  " + String.humanize_size(parts[1].to_int()))
-		index += 1
+	create_item_lists(paths_sizes)
 
 func _on_add_folders_button_up() -> void: Signals.emit_signal("add_folders")
 func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
@@ -110,12 +107,20 @@ func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
 	var count:int = ImageScanner.ScanFiles(files)
 	var paths_sizes:Array = ImageScanner.GetPathsSizes()
+	create_item_lists(paths_sizes)
+
+func create_item_lists(paths_sizes:Array) -> void:
 	for path_size in paths_sizes:
 		var parts:Array = path_size.split("?", false)
 		indices.add_item("  " + String(index))
 		paths.add_item("  " + parts[0])
 		types.add_item("  " + parts[0].get_extension())
 		sizes.add_item("  " + String.humanize_size(parts[1].to_int()))
+		if index % 2 == 0:
+			indices.set_item_custom_bg_color(index, dark_grey)
+			paths.set_item_custom_bg_color(index, dark_grey)
+			types.set_item_custom_bg_color(index, dark_grey)
+			sizes.set_item_custom_bg_color(index, dark_grey)
 		index += 1
 
 func _on_begin_import_button_up() -> void: 

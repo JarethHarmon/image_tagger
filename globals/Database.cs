@@ -45,7 +45,7 @@ public class OrderBy
 	public const int Descending = 1;
 }
 
-
+// global full_image (id copy/move full images) and thumbnail storage paths should be auto-blacklisted
 public class HashInfo
 {
 	public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)

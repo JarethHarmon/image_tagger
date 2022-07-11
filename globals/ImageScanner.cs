@@ -11,9 +11,13 @@ public class ImageScanner : Node
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
 	// importing will need to access these and then call clear()
-	private List<IEnumerable<System.IO.DirectoryInfo>> folders = new List<IEnumerable<System.IO.DirectoryInfo>>();
-	private Dictionary<string, List<(string, string, long, long)>> files = new Dictionary<string, List<(string, string, long, long)>>();
-
+	private HashSet<IEnumerable<System.IO.DirectoryInfo>> folders = new HashSet<IEnumerable<System.IO.DirectoryInfo>>();
+	private Dictionary<string, HashSet<(string, string, long, long)>> files = new Dictionary<string, HashSet<(string, string, long, long)>>();
+	
+	// stores most recently scanned files
+	private HashSet<(string,string,long,long)> tempFiles = new HashSet<(string,string,long,long)>();
+	private HashSet<(string,string,long,long)> returnedTempFiles = new HashSet<(string,string,long,long)>();
+	
 	/*public void OpenFileBrowser()
 	{
 		var fileDialog = new System.Windows.Forms.OpenFileDialog();
@@ -30,15 +34,20 @@ public class ImageScanner : Node
 	
 	public int ScanFiles(string[] filePaths)
 	{
-		files.Clear();
+		tempFiles.Clear();
 		int imageCount = 0;
 		try {
 			foreach (string path in filePaths) {
 				var fileInfo = new System.IO.FileInfo(@path);
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) { 
 					string dir = fileInfo.Directory.FullName.Replace("\\", "/");
-					if (files.ContainsKey(dir)) files[dir].Add(((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)));
-					else files[dir] = new List<(string,string,long,long)>{(fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)};
+					if (files.ContainsKey(dir)) {
+						files[dir].Add(((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)));
+						tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					} else {
+						files[dir] = new HashSet<(string,string,long,long)>{(fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)};
+						tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					}
 					imageCount++;
 				} 
 			}
@@ -47,10 +56,11 @@ public class ImageScanner : Node
 		catch (Exception ex) { GD.Print("ImageScanner::ScanFiles() : ", ex); return imageCount; }
 	}
 	
+	// has no upper bounds currently, may be worth making it slower and uploading to database
+	// that said, ItemList on the gdscript side uses ~2x more RAM at scale than this script does
 	public int ScanDirectories(string path, bool recursive)
 	{
-		files.Clear();
-		folders.Clear();
+		tempFiles.Clear();
 		try {
 			var dirInfo = new System.IO.DirectoryInfo(@path);
 			int imageCount = _ScanDirectories(dirInfo, recursive);
@@ -63,10 +73,11 @@ public class ImageScanner : Node
 	{
 		int imageCount = 0;
 		try {	
-			var _files = new List<(string, string, long, long)>();
+			var _files = new HashSet<(string, string, long, long)>();
 			foreach (System.IO.FileInfo fileInfo in dirInfo.GetFiles()) {
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) {
 					_files.Add((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
 					imageCount++;
 				}
 			}
@@ -101,10 +112,22 @@ public class ImageScanner : Node
 	public string[] GetPathsSizes()
 	{
 		var results = new List<string>();
-		foreach (string folder in files.Keys)
-			foreach ((string, string, long, long) file in files[folder])
-				results.Add((folder + "/" + file.Item1 + "?" + file.Item4.ToString()).Replace("//", "/"));
+		foreach ((string, string, long, long) file in tempFiles) {
+			if (!returnedTempFiles.Contains(file)) {
+				returnedTempFiles.Add(file);
+				results.Add((file.Item1 + "?" + file.Item4.ToString()).Replace("\\", "/"));
+			}
+		}
 		return results.ToArray();
+	}
+	
+	// called by ImageImporter after retrieving the images to import
+	public void Clear()
+	{
+		files.Clear();
+		folders.Clear();
+		tempFiles.Clear();
+		returnedTempFiles.Clear();
 	}
 	
 }
