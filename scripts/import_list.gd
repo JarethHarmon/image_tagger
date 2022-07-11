@@ -4,12 +4,18 @@ onready var button_list:HBoxContainer = $margin/hbox/scroll/button_list
 
 var buttons:Dictionary = {}
 
+func _ready() -> void:
+	# need to have import get an import_id from ImageImporter 
+	# then pass that and the count along with the signal
+	# then create the button here
+	Signals.connect("new_import_started", self, "create_group_button")
+
 func _on_all_button_button_up() -> void: Signals.emit_signal("group_button_pressed", "all")
 func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("group_button_pressed", import_id)
 
-func create_group_button(import_id:String) -> void:
+func create_group_button(import_id:String, count:int) -> void:
 	var b:Button = Button.new()
-	b.text = "  Import  "
+	b.text = "  Import (0, 0/" + String(count) + ")  " 
 	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
 	button_list.add_child(b)
 	buttons[import_id] = b

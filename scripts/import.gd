@@ -6,6 +6,8 @@ extends Control
 # to filter by image size, remove folders/paths, scan additional folders/paths, filter
 # by file extension, etc (which will all be done on another script)
 
+# should have a toggle to only display the folders (to make it easier to remove from path_list by folder)
+
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
 
 onready var indices:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/indices
@@ -38,6 +40,10 @@ func reset() -> void:
 # they can open the importer again, but it will start a new separate import
 # the previous import will continue in the background and the user can manually pause/stop it
 func _files_dropped(file_paths:Array, _screen:int) -> void:
+	# instead of how it works now:
+	# show the import menu as normal
+	# show a popup asking the user if they want to scan the folders recursively
+	# then do the same things this function currently does (just with recursion defined by the popup instead of the checkbox)
 	var d:Directory = Directory.new()
 	var files:Array = []
 	for file in file_paths:
@@ -46,16 +52,6 @@ func _files_dropped(file_paths:Array, _screen:int) -> void:
 	_files_selected(files)
 	if file_paths.size() > 0: 
 		Signals.emit_signal("show_import_menu")
-		#print(file)
-		# need to check whether the importer is visible
-		# if it is, add these paths to the path list
-		# otherwise open the importer for a new import to begin
-		# Option 1:
-			# just populate the list with any paths that are folders or images
-			# allow user to select folders and press a button to scan them recursively
-		# Option 2:
-			# automatically scan any dropped folders for the presence of images
-			# maybe do both, with a toggle setting for automatic scanning 
 
 # needs to take into accounr a blacklist of folders (can be stored on c# side though)
 func queue_append(scan_folder:String, recursive:bool=true) -> void:
@@ -123,6 +119,8 @@ func _files_selected(files:Array) -> void:
 		index += 1
 
 func _on_begin_import_button_up() -> void: 
+	var import_id:String = ImageImporter.CreateImportID()
+	print(import_id)
+	Signals.emit_signal("new_import_started", import_id, index)
 	reset()
-	Signals.emit_signal("new_import_started")
 

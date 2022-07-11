@@ -15,7 +15,7 @@ func _ready() -> void:
 	Signals.connect("new_import_started", self, "import_started")
 	Signals.connect("show_import_menu", self, "show_import_menu")
 	
-func import_started() -> void:
+func import_started(_import_id:String, _count:int) -> void:
 	self.hide()
 	darkened_background.hide()
 	file_context.hide()

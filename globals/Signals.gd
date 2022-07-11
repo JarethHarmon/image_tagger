@@ -14,7 +14,7 @@ signal order_changed
 signal start_scan(folder, recursive)
 signal files_selected(files)
 signal folder_selected(folder)
-signal new_import_started
+signal new_import_started(import_id, count) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
 
 signal show_import_menu
 
