@@ -10,11 +10,11 @@ public class ImageScanner : Node
 	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG"};
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
+	// importing will need to access these and then call clear()
 	private List<IEnumerable<System.IO.DirectoryInfo>> folders = new List<IEnumerable<System.IO.DirectoryInfo>>();
 	private Dictionary<string, List<(string, string, long, long)>> files = new Dictionary<string, List<(string, string, long, long)>>();
-	private List<(string, string, long, long)> __files = new List<(string, string, long, long)>();
-	
-	public void OpenFileBrowser()
+
+	/*public void OpenFileBrowser()
 	{
 		var fileDialog = new System.Windows.Forms.OpenFileDialog();
 		fileDialog.InitialDirectory = @"C:/"; // set based on Globals.settings
@@ -26,8 +26,7 @@ public class ImageScanner : Node
 				GD.Print(file);
 			}
 		}
-		
-	}
+	}*/
 	
 	public int ScanFiles(string[] filePaths)
 	{
@@ -37,7 +36,9 @@ public class ImageScanner : Node
 			foreach (string path in filePaths) {
 				var fileInfo = new System.IO.FileInfo(@path);
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) { 
-					__files.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					string dir = fileInfo.Directory.FullName.Replace("\\", "/");
+					if (files.ContainsKey(dir)) files[dir].Add(((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)));
+					else files[dir] = new List<(string,string,long,long)>{(fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)};
 					imageCount++;
 				} 
 			}
@@ -100,8 +101,9 @@ public class ImageScanner : Node
 	public string[] GetPathsSizes()
 	{
 		var results = new List<string>();
-		foreach ((string, string, long, long) file in __files)
-			results.Add(file.Item1 + "?" + file.Item4.ToString());
+		foreach (string folder in files.Keys)
+			foreach ((string, string, long, long) file in files[folder])
+				results.Add(file.Item1 + "?" + file.Item4.ToString());
 		return results.ToArray();
 	}
 	
