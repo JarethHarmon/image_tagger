@@ -38,8 +38,15 @@ func reset() -> void:
 # they can open the importer again, but it will start a new separate import
 # the previous import will continue in the background and the user can manually pause/stop it
 func _files_dropped(file_paths:Array, _screen:int) -> void:
+	var d:Directory = Directory.new()
+	var files:Array = []
 	for file in file_paths:
-		print(file)
+		if d.dir_exists(file): _folder_selected(file)
+		else: files.append(file)
+	_files_selected(files)
+	if file_paths.size() > 0: 
+		Signals.emit_signal("show_import_menu")
+		#print(file)
 		# need to check whether the importer is visible
 		# if it is, add these paths to the path list
 		# otherwise open the importer for a new import to begin
@@ -87,6 +94,15 @@ func _done() -> void:
 	scanner_active = false
 	scan_mutex.unlock()
 	print("scan finished")
+	
+	var paths_sizes:Array = ImageScanner.GetPathsSizes()
+	for path_size in paths_sizes:
+		var parts:Array = path_size.split("?", false)
+		indices.add_item("  " + String(index))
+		paths.add_item("  " + parts[0])
+		types.add_item("  " + parts[0].get_extension())
+		sizes.add_item("  " + String.humanize_size(parts[1].to_int()))
+		index += 1
 
 func _on_add_folders_button_up() -> void: Signals.emit_signal("add_folders")
 func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
@@ -95,6 +111,7 @@ func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
 func _folder_selected(folder:String) -> void: queue_append(folder, recursively.pressed)
 # should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
+	if files.size() == 0: return
 	var count:int = ImageScanner.ScanFiles(files)
 	var paths_sizes:Array = ImageScanner.GetPathsSizes()
 	for path_size in paths_sizes:

@@ -16,6 +16,8 @@ signal files_selected(files)
 signal folder_selected(folder)
 signal new_import_started
 
+signal show_import_menu
+
 # core_buttons
 signal file_button_pressed(position)
 signal edit_button_pressed(position)

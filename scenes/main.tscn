@@ -240,7 +240,6 @@ hide_on_checkable_item_selection = false
 allow_search = true
 
 [node name="FileDialog" type="FileDialog" parent="popups"]
-visible = true
 margin_left = 50.0
 margin_top = 50.0
 margin_right = 1870.0
