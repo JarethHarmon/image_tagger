@@ -179,18 +179,18 @@ margin_right = 893.0
 margin_bottom = 20.0
 text = "  4  "
 
-[node name="SpinBox" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
+[node name="current_page" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
 margin_left = 783.0
 margin_right = 857.0
 margin_bottom = 24.0
 grow_horizontal = 0
 min_value = 1.0
 max_value = 82.0
-value = 7.0
+value = 1.0
 rounded = true
 align = 1
 
-[node name="Label" type="Label" parent="margin/vbox/page_buttons/hbox"]
+[node name="total_pages" type="Label" parent="margin/vbox/page_buttons/hbox"]
 margin_left = 857.0
 margin_top = 5.0
 margin_right = 886.0
