@@ -15,7 +15,7 @@ extends Node
 enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagCount, Random }
 enum OrderBy { Ascending, Descending }
 
-var current_import_id:String = "all"
+var current_import_id:String = "All"
 var current_group_id:String = ""
 
 var currently_importing:bool = false	# whether an import is in progress

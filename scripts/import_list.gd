@@ -10,7 +10,7 @@ func _ready() -> void:
 	# then create the button here
 	Signals.connect("new_import_started", self, "create_group_button")
 
-func _on_all_button_button_up() -> void: Signals.emit_signal("group_button_pressed", "all")
+func _on_all_button_button_up() -> void: Signals.emit_signal("group_button_pressed", "All")
 func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("group_button_pressed", import_id)
 
 func create_group_button(import_id:String, count:int) -> void:
