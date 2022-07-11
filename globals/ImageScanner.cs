@@ -12,6 +12,7 @@ public class ImageScanner : Node
 	
 	private List<IEnumerable<System.IO.DirectoryInfo>> folders = new List<IEnumerable<System.IO.DirectoryInfo>>();
 	private Dictionary<string, List<(string, string, long, long)>> files = new Dictionary<string, List<(string, string, long, long)>>();
+	private List<(string, string, long, long)> __files = new List<(string, string, long, long)>();
 	
 	public void OpenFileBrowser()
 	{
@@ -28,13 +29,33 @@ public class ImageScanner : Node
 		
 	}
 	
+	public int ScanFiles(string[] filePaths)
+	{
+		files.Clear();
+		int imageCount = 0;
+		try {
+			foreach (string path in filePaths) {
+				var fileInfo = new System.IO.FileInfo(@path);
+				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) { 
+					__files.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					imageCount++;
+				} 
+			}
+			return imageCount;
+		}
+		catch (Exception ex) { GD.Print("ImageScanner::ScanFiles() : ", ex); return imageCount; }
+	}
+	
 	public int ScanDirectories(string path, bool recursive)
 	{
 		files.Clear();
 		folders.Clear();
-		var dirInfo = new System.IO.DirectoryInfo(@path);
-		int imageCount = _ScanDirectories(dirInfo, recursive);
-		return imageCount;
+		try {
+			var dirInfo = new System.IO.DirectoryInfo(@path);
+			int imageCount = _ScanDirectories(dirInfo, recursive);
+			return imageCount;
+		}
+		catch (Exception ex) { GD.Print("ImageScanner::ScanDirectories() : ", ex); return 0; }
 	}
 	
 	private int _ScanDirectories(System.IO.DirectoryInfo dirInfo, bool recursive)
@@ -74,6 +95,14 @@ public class ImageScanner : Node
 			foreach ((string, string, long, long) file in files[folder])
 				images.Add((folder + "/" + file.Item1, file.Item2, file.Item3, file.Item4));
 		return images;
+	}
+	
+	public string[] GetPathsSizes()
+	{
+		var results = new List<string>();
+		foreach ((string, string, long, long) file in __files)
+			results.Add(file.Item1 + "?" + file.Item4.ToString());
+		return results.ToArray();
 	}
 	
 }

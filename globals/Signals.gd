@@ -14,6 +14,7 @@ signal order_changed
 signal start_scan(folder, recursive)
 signal files_selected(files)
 signal folder_selected(folder)
+signal new_import_started
 
 # core_buttons
 signal file_button_pressed(position)

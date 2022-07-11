@@ -7,7 +7,11 @@ extends Control
 # by file extension, etc (which will all be done on another script)
 
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
+
+onready var indices:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/indices
 onready var paths:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/paths
+onready var types:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22/types
+onready var sizes:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22/sizes
 
 onready var scan_thread:Thread = Thread.new()
 onready var scan_mutex:Mutex = Mutex.new()
@@ -15,11 +19,20 @@ onready var scan_mutex:Mutex = Mutex.new()
 var scan_queue:Array = []
 var scanner_active:bool = false 
 
+var index:int = 0
+
 func _ready() -> void:
 	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
 	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list
 	Signals.connect("folder_selected", self, "_folder_selected")
+
+func reset() -> void:
+	index = 0
+	indices.clear()
+	paths.clear()
+	types.clear()
+	sizes.clear()
 
 # once the user starts importing, the settings are finalized and the importer closes
 # they can open the importer again, but it will start a new separate import
@@ -80,7 +93,19 @@ func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
 
 # should populate path list once scanning finishes
 func _folder_selected(folder:String) -> void: queue_append(folder, recursively.pressed)
-# should populate path list immediately
-func _files_selected(files:Array) -> void: pass
+# should populate path list immediately (actually need to obtain size using c# first)
+func _files_selected(files:Array) -> void:
+	var count:int = ImageScanner.ScanFiles(files)
+	var paths_sizes:Array = ImageScanner.GetPathsSizes()
+	for path_size in paths_sizes:
+		var parts:Array = path_size.split("?", false)
+		indices.add_item("  " + String(index))
+		paths.add_item("  " + parts[0])
+		types.add_item("  " + parts[0].get_extension())
+		sizes.add_item("  " + String.humanize_size(parts[1].to_int()))
+		index += 1
 
+func _on_begin_import_button_up() -> void: 
+	reset()
+	Signals.emit_signal("new_import_started")
 

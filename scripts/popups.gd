@@ -12,6 +12,13 @@ func _ready() -> void:
 	Signals.connect("file_button_pressed", self, "_file_pressed")
 	Signals.connect("add_files", self, "show_file_dialog")
 	Signals.connect("add_folders", self, "show_file_dialog", [true])
+	Signals.connect("new_import_started", self, "import_started")
+
+func import_started() -> void:
+	self.hide()
+	darkened_background.hide()
+	file_context.hide()
+	import_panel.hide()
 
 func _file_pressed(position:Vector2) -> void:
 	self.show() 
