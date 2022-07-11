@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Windows.Forms;
 using Alphaleonis.Win32.Filesystem;
 
 public class ImageScanner : Node
@@ -11,6 +12,21 @@ public class ImageScanner : Node
 	
 	private List<IEnumerable<System.IO.DirectoryInfo>> folders = new List<IEnumerable<System.IO.DirectoryInfo>>();
 	private Dictionary<string, List<(string, string, long, long)>> files = new Dictionary<string, List<(string, string, long, long)>>();
+	
+	public void OpenFileBrowser()
+	{
+		var fileDialog = new System.Windows.Forms.OpenFileDialog();
+		fileDialog.InitialDirectory = @"C:/"; // set based on Globals.settings
+		fileDialog.Title = "Choose Folders or Images";
+		fileDialog.Filter = "image files (*.jpg,*.jpeg,*.png)|*.jpg;*.jpeg;*.png|all files (*.*)|*.*";
+		fileDialog.Multiselect = true;
+		if (fileDialog.ShowDialog() == DialogResult.OK) {
+			foreach (string file in fileDialog.FileNames) {
+				GD.Print(file);
+			}
+		}
+		
+	}
 	
 	public int ScanDirectories(string path, bool recursive)
 	{

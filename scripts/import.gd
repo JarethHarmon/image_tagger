@@ -6,6 +6,9 @@ extends Control
 # to filter by image size, remove folders/paths, scan additional folders/paths, filter
 # by file extension, etc (which will all be done on another script)
 
+onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
+onready var paths:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/paths
+
 onready var scan_thread:Thread = Thread.new()
 onready var scan_mutex:Mutex = Mutex.new()
 
@@ -13,10 +16,31 @@ var scan_queue:Array = []
 var scanner_active:bool = false 
 
 func _ready() -> void:
+	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
+	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list
+	Signals.connect("folder_selected", self, "_folder_selected")
+
+# once the user starts importing, the settings are finalized and the importer closes
+# they can open the importer again, but it will start a new separate import
+# the previous import will continue in the background and the user can manually pause/stop it
+func _files_dropped(file_paths:Array, _screen:int) -> void:
+	for file in file_paths:
+		print(file)
+		# need to check whether the importer is visible
+		# if it is, add these paths to the path list
+		# otherwise open the importer for a new import to begin
+		# Option 1:
+			# just populate the list with any paths that are folders or images
+			# allow user to select folders and press a button to scan them recursively
+		# Option 2:
+			# automatically scan any dropped folders for the presence of images
+			# maybe do both, with a toggle setting for automatic scanning 
 
 # needs to take into accounr a blacklist of folders (can be stored on c# side though)
 func queue_append(scan_folder:String, recursive:bool=true) -> void:
+	if scan_folder == "": return
+	if not Directory.new().dir_exists(scan_folder): return
 	scan_queue.append([scan_folder, recursive])
 	if !scanner_active: start_scanner()
 
@@ -50,4 +74,13 @@ func _done() -> void:
 	scanner_active = false
 	scan_mutex.unlock()
 	print("scan finished")
+
+func _on_add_folders_button_up() -> void: Signals.emit_signal("add_folders")
+func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
+
+# should populate path list once scanning finishes
+func _folder_selected(folder:String) -> void: queue_append(folder, recursively.pressed)
+# should populate path list immediately
+func _files_selected(files:Array) -> void: pass
+
 

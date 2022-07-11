@@ -143,7 +143,7 @@ size_flags_vertical = 3
 custom_constants/autohide = 0
 split_offset = -550
 
-[node name="index_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
+[node name="indices" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
 margin_right = 90.0
 margin_bottom = 711.0
 rect_min_size = Vector2( 40, 0 )
@@ -153,7 +153,7 @@ custom_styles/bg_focus = SubResource( 2191 )
 custom_styles/bg = SubResource( 2191 )
 select_mode = 1
 
-[node name="path_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
+[node name="paths" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21"]
 margin_left = 102.0
 margin_right = 1292.0
 margin_bottom = 711.0
@@ -172,7 +172,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/autohide = 0
 
-[node name="type_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
+[node name="types" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
 margin_right = 280.0
 margin_bottom = 711.0
 rect_min_size = Vector2( 90, 0 )
@@ -182,7 +182,7 @@ custom_styles/bg_focus = SubResource( 2191 )
 custom_styles/bg = SubResource( 2191 )
 select_mode = 1
 
-[node name="size_list" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
+[node name="sizes" type="ItemList" parent="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22"]
 margin_left = 292.0
 margin_right = 572.0
 margin_bottom = 711.0
@@ -225,30 +225,35 @@ size_flags_vertical = 3
 [node name="hbox1" type="HBoxContainer" parent="margin/vsplit/panel2/margin/vbox"]
 margin_right = 1876.0
 margin_bottom = 32.0
+rect_min_size = Vector2( 0, 32 )
 mouse_filter = 2
 size_flags_horizontal = 3
 custom_constants/separation = 10
 
 [node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
-margin_right = 1621.0
+margin_right = 1510.0
 margin_bottom = 32.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="add_files" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
-margin_left = 1631.0
-margin_right = 1740.0
+margin_left = 1520.0
+margin_right = 1629.0
 margin_bottom = 32.0
-rect_min_size = Vector2( 0, 32 )
 text = "  Choose Files  "
 
 [node name="add_folders" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
-margin_left = 1750.0
+margin_left = 1639.0
+margin_right = 1765.0
+margin_bottom = 32.0
+text = "  Choose Folders  "
+
+[node name="recursively" type="CheckBox" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_left = 1775.0
 margin_right = 1876.0
 margin_bottom = 32.0
-rect_min_size = Vector2( 0, 32 )
-text = "  Choose Folders  "
+text = "Recursively"
 
 [node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox"]
 margin_top = 36.0
@@ -262,6 +267,7 @@ size_flags_vertical = 3
 margin_top = 207.0
 margin_right = 1876.0
 margin_bottom = 255.0
+rect_min_size = Vector2( 0, 48 )
 mouse_filter = 2
 size_flags_horizontal = 3
 
@@ -276,9 +282,10 @@ size_flags_vertical = 3
 margin_left = 1745.0
 margin_right = 1876.0
 margin_bottom = 48.0
-rect_min_size = Vector2( 0, 48 )
 text = "  Begin Importing  "
 
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2" to="margin/vsplit/path_list" method="_on_hsplit2_dragged"]
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21" to="margin/vsplit/path_list" method="_on_hsplit21_dragged"]
 [connection signal="dragged" from="margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22" to="margin/vsplit/path_list" method="_on_hsplit22_dragged"]
+[connection signal="button_up" from="margin/vsplit/panel2/margin/vbox/hbox1/add_files" to="." method="_on_add_files_button_up"]
+[connection signal="button_up" from="margin/vsplit/panel2/margin/vbox/hbox1/add_folders" to="." method="_on_add_folders_button_up"]

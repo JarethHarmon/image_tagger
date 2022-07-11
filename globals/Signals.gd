@@ -12,6 +12,8 @@ signal sort_changed
 signal order_changed
 
 signal start_scan(folder, recursive)
+signal files_selected(files)
+signal folder_selected(folder)
 
 # core_buttons
 signal file_button_pressed(position)
@@ -24,5 +26,7 @@ signal page_label_ready(node_path)
 signal import_info_load_finished
 
 # button_pressed
+signal add_files
+signal add_folders
 signal group_button_pressed(import_id)
 signal clear_pressed
