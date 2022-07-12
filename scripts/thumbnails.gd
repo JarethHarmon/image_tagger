@@ -43,13 +43,16 @@ var stopping_load_process:bool = false	# whether a page is attempting to stop lo
 # when a page is removed from page_history, iterate over its hash array and remove those from loaded_thumbnails
 
 # signal connections
-func _curr_page_changed(new_page:int) -> void: curr_page_number = new_page
+func _curr_page_changed(new_page:int) -> void: 
+	curr_page_number = new_page
+	Signals.emit_signal("change_page")
 
 # initialization
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
 	Signals.connect("search_pressed", self, "prepare_query")
+
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]

@@ -16,6 +16,7 @@ enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagC
 enum OrderBy { Ascending, Descending }
 enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
 
+var current_importing_id:String = "" 	# stores import_id of the in-progress import (if there is one) 
 var current_import_id:String = "All"
 var current_group_id:String = ""
 
@@ -46,7 +47,7 @@ var settings:Dictionary = {
 
   # Thumbnails
 	"images_per_page" : 400,
-	"load_threads" : 2,
+	"load_threads" : 5,
 	"pages_to_store" : 5,
 
   # Images

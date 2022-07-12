@@ -73,7 +73,9 @@ func _thread() -> void:
 		var args:Array = import_queue.pop_front()
 		var import_id:String = args[0]
 		var count:int = args[1]
+		Globals.current_importing_id = import_id
 		ImageImporter.ImportImages(import_id, count)
+		Globals.current_importing_id = ""
 		OS.delay_msec(50)
 	call_deferred("_done")
 

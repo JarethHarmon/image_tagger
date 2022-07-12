@@ -20,9 +20,8 @@ onready var scan_mutex:Mutex = Mutex.new()
 
 var scan_queue:Array = []
 var scanner_active:bool = false 
-
+var import_id:String = ""
 var index:int = 0
-
 var dark_grey:Color = Color(0.14, 0.14, 0.14)
 
 func _ready() -> void:
@@ -30,6 +29,7 @@ func _ready() -> void:
 	Signals.connect("start_scan", self, "queue_append")
 	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list
 	Signals.connect("folder_selected", self, "_folder_selected")
+	reset()
 
 func reset() -> void:
 	index = 0
@@ -37,6 +37,7 @@ func reset() -> void:
 	paths.clear()
 	types.clear()
 	sizes.clear()
+	import_id = ImageImporter.CreateImportID()
 
 # once the user starts importing, the settings are finalized and the importer closes
 # they can open the importer again, but it will start a new separate import
@@ -76,7 +77,7 @@ func start_scanner() -> void:
 func _thread() -> void:
 	while not scan_queue.empty():
 		var scan:Array = scan_queue.pop_front()
-		var image_count:int = ImageScanner.ScanDirectories(scan[0], scan[1])
+		var image_count:int = ImageScanner.ScanDirectories(scan[0], scan[1], import_id)
 		# there will only every be one scan im progress/waiting to import at a time
 		# need to store the count and the array of found paths globally somewhere
 		# need to display array of found paths to user (in item list)
@@ -86,6 +87,7 @@ func _thread() -> void:
 		print(image_count)
 		OS.delay_msec(50)
 	call_deferred("_done")
+
 
 func _done() -> void:
 	if scan_thread.is_active() or scan_thread.is_alive():
@@ -105,7 +107,7 @@ func _folder_selected(folder:String) -> void: queue_append(folder, recursively.p
 # should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
-	var count:int = ImageScanner.ScanFiles(files)
+	var count:int = ImageScanner.ScanFiles(files, import_id)
 	var paths_sizes:Array = ImageScanner.GetPathsSizes()
 	create_item_lists(paths_sizes)
 
@@ -129,7 +131,6 @@ func create_item_lists(paths_sizes:Array) -> void:
 		index += 1
 
 func _on_begin_import_button_up() -> void: 
-	var import_id:String = ImageImporter.CreateImportID()
 	print(import_id)
 	Signals.emit_signal("new_import_started", import_id, index)
 	reset()

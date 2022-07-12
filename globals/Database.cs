@@ -17,72 +17,75 @@ using LiteDB;
 
 
 // I think I will remove lists of hashes from every class, now should query directly over hashInfo to find things with specific groupIds/importIds/tagIds/etc
+/*=========================================================================================
+										Classes
+=========================================================================================*/
+	public class SortBy
+	{
+		public const int FileHash = 0;
+		public const int FilePath = 1;
+		public const int FileSize = 2;
+		public const int FileCreationUtc = 3;
+		public const int FileUploadUtc = 4;
+		public const int TagCount = 5;
+		public const int Random = 6;
+	}
+	public class OrderBy
+	{
+		public const int Ascending = 0;
+		public const int Descending = 1;
+	}
 
-public class SortBy
-{
-	public const int FileHash = 0;
-	public const int FilePath = 1;
-	public const int FileSize = 2;
-	public const int FileCreationUtc = 3;
-	public const int FileUploadUtc = 4;
-	public const int TagCount = 5;
-	public const int Random = 6;
-}
-public class OrderBy
-{
-	public const int Ascending = 0;
-	public const int Descending = 1;
-}
+	// global full_image (id copy/move full images) and thumbnail storage paths should be auto-blacklisted
+	public class HashInfo
+	{
+		public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
+		public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
+		
+		public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
+		public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
+		
+		public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
+		public int thumbnailType { get; set; }			// jpg/png
+		public int type { get; set; }					// see ImageType
+		public long size { get; set; }					// the length of the file in bytes
+		public long creationUtc { get; set; }			// the time the file was created in ticks
+		public long uploadUtc { get; set; }				// the time the file was uploaded to the database in ticks
+		
+		public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
+		public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
+		public HashSet<string> paths { get; set; }		// every path the image has been found at on the user's computer
+		public HashSet<string> tags { get; set; }		// every tag that has been applied to the image
+		public Dictionary<string, int> ratings { get; set; }	// rating_name : rating/10
+	}
 
-// global full_image (id copy/move full images) and thumbnail storage paths should be auto-blacklisted
-public class HashInfo
-{
-	public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
-	public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
-	
-	public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
-	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
-	
-	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
-	public int thumbnailType { get; set; }			// jpg/png
-	public int type { get; set; }					// see ImageType
-	public long size { get; set; }					// the length of the file in bytes
-	public long creationUtc { get; set; }			// the time the file was created in ticks
-	public long uploadUtc { get; set; }				// the time the file was uploaded to the database in ticks
-	
-	public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
-	public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
-	public HashSet<string> paths { get; set; }		// every path the image has been found at on the user's computer
-	public HashSet<string> tags { get; set; }		// every tag that has been applied to the image
-	public Dictionary<string, int> ratings { get; set; }	// rating_name : rating/10
-}
+	/* holds metadata for an import */
+	public class ImportInfo
+	{
+		public string importId { get; set; }			// the ID of this import
+		public int successCount { get; set; }			// the number of successfully imported image in this import
+		public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
+		public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
+		public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
+		public bool finished { get; set; }
+		public string importName { get; set; }
+		public long importTime { get; set; }
+	}
 
-/* holds metadata for an import */
-public class ImportInfo
-{
-	public string importId { get; set; }			// the ID of this import
-	public int successCount { get; set; }			// the number of successfully imported image in this import
-	public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
-	public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
-	public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
-	public bool finished { get; set; }
-	public string importName { get; set; }
-}
+	public class GroupInfo
+	{
+		public string groupId { get; set; }				// the ID of this group
+		public int count { get; set; }					// the number of images in this group
+		public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
+		public Dictionary<string, int> subGroups { get; set; }	// the groupIds and their listing order for subgroups of this group (for example: chapters of a manga)
+	}
 
-public class GroupInfo
-{
-	public string groupId { get; set; }				// the ID of this group
-	public int count { get; set; }					// the number of images in this group
-	public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
-	public Dictionary<string, int> subGroups { get; set; }	// the groupIds and their listing order for subgroups of this group (for example: chapters of a manga)
-}
-
-public class TagInfo
-{
-	public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
-	public string tagName { get; set; }				// the displayed name for this tag
-	public HashSet<string> tagParents { get; set; }	// tags that should be auto-applied if this tag is applied
-}
+	public class TagInfo
+	{
+		public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
+		public string tagName { get; set; }				// the displayed name for this tag
+		public HashSet<string> tagParents { get; set; }	// tags that should be auto-applied if this tag is applied
+	}
 
 public class Database : Node
 {
@@ -100,6 +103,7 @@ public class Database : Node
 		public const int OTHER = 7;
 		public const int FAIL = -1;
 	}
+
 /*=========================================================================================
 									   Variables
 =========================================================================================*/
@@ -205,6 +209,7 @@ public class Database : Node
 					duplicateCount = 0,
 					finished = true,
 					importName = "All",
+					importTime = 0,
 				};
 				colImports.Insert(importInfo);
 			}
@@ -230,6 +235,7 @@ public class Database : Node
 				duplicateCount = 0,
 				finished = false,
 				importName = "Import",
+				importTime = DateTime.Now.Ticks,
 			};
 			colImports.Insert(importInfo);
 		} catch(Exception ex) { GD.Print("Database::CreateImportInfo() : ", ex); return; }

@@ -11,13 +11,19 @@ var tags_none:Array = []
 
 func _ready() -> void:
 	search_button.connect("button_up", self, "search_pressed")
-	Signals.connect("page_changed", self, "page_changed")
+	Signals.connect("change_page", self, "page_changed")
 	Signals.connect("group_button_pressed", self, "group_button_pressed")
 	Signals.connect("image_import_finished", self, "refresh_page")
 	Signals.connect("clear_pressed", self, "clear_pressed")
 	Signals.connect("sort_changed", self, "search_pressed")
 	Signals.connect("order_changed", self, "search_pressed")
+	Signals.connect("update_import_button", self, "test")
 	
+# update_import_button(import_id, finished, success_count, total_count, import_name)
+func test(import_id, finished, success_count, total_count, import_name) -> void:
+	if import_id == "": return
+	#if (Globals.current_import_id == import_id): page_changed()
+
 func _on_include_all_text_entered(new_text:String) -> void: search_pressed()
 func _on_include_any_text_entered(new_text:String) -> void: search_pressed()
 func _on_exclude_all_text_entered(new_text:String) -> void: search_pressed()

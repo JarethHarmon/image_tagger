@@ -204,7 +204,7 @@ public class ImageImporter : Node
 	public void ImportImages(string importId, int imageCount)
 	{
 		int successCount = 0, duplicateCount = 0, ignoredCount = 0, failedCount = 0;
-		var images = iscan.GetImages(); 
+		var images = iscan.GetImages(importId); 
 		// imagePath,imageType,imageCreationUtc,imageSize
 		db.CreateImportInfo(importId);
 		foreach ((string,long,long) imageInfo in images) {
@@ -224,11 +224,8 @@ public class ImageImporter : Node
 		signals.Call("emit_signal", "update_import_button", importId, true, successCount, imageCount, db.GetImportName(importId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
-		// checkpoint hash database
-		// checkpoint import database
 	}
-	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster
-	// will need to reorder or remove IsImageCorrupt() call depending on results
+	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster  (hashing is much faster, even the slowest (GDnative sha512) is ~ 10x faster)
 	private int _ImportImage((string,long,long) imageInfo, string importId, int imageCount) 
 	{
 		// I think duplicates should just add path/importid and load like successful images (incrementing duplicate count instead of success count though)
