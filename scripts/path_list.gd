@@ -1,17 +1,17 @@
 extends PanelContainer
 
-onready var hsplit1:HSplitContainer = $margin/vbox/hsplit1
-onready var hsplit11:HSplitContainer = $margin/vbox/hsplit1/hsplit11
-onready var hsplit12:HSplitContainer = $margin/vbox/hsplit1/hsplit12
+onready var hsplit1:HSplitContainer = $vbox/hsplit1
+onready var hsplit11:HSplitContainer = $vbox/hsplit1/hsplit11
+onready var hsplit12:HSplitContainer = $vbox/hsplit1/hsplit12
 
-onready var hsplit2:HSplitContainer = $margin/vbox/hsplit2
-onready var hsplit21:HSplitContainer = $margin/vbox/hsplit2/hsplit21
-onready var hsplit22:HSplitContainer = $margin/vbox/hsplit2/hsplit22
+onready var hsplit2:HSplitContainer = $vbox/hsplit2
+onready var hsplit21:HSplitContainer = $vbox/hsplit2/hsplit21
+onready var hsplit22:HSplitContainer = $vbox/hsplit2/hsplit22
 
-onready var indices:ItemList = $margin/vbox/hsplit2/hsplit21/indices
-onready var paths:ItemList = $margin/vbox/hsplit2/hsplit21/paths
-onready var types:ItemList = $margin/vbox/hsplit2/hsplit22/types
-onready var sizes:ItemList = $margin/vbox/hsplit2/hsplit22/sizes
+onready var indices:ItemList = $vbox/hsplit2/hsplit21/indices
+onready var paths:ItemList = $vbox/hsplit2/hsplit21/paths
+onready var types:ItemList = $vbox/hsplit2/hsplit22/types
+onready var sizes:ItemList = $vbox/hsplit2/hsplit22/sizes
 
 func _ready() -> void:
 	var vscrollbars:Array = [indices.get_v_scroll(), paths.get_v_scroll(), types.get_v_scroll(), sizes.get_v_scroll()]

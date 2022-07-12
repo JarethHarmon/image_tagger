@@ -12,10 +12,11 @@ func _ready() -> void:
 	Signals.connect("file_button_pressed", self, "_file_pressed")
 	Signals.connect("add_files", self, "show_file_dialog")
 	Signals.connect("add_folders", self, "show_file_dialog", [true])
-	Signals.connect("new_import_started", self, "import_started")
+	Signals.connect("new_import_started", self, "hide_popups")
+	Signals.connect("new_import_canceled", self, "hide_popups")
 	Signals.connect("show_import_menu", self, "show_import_menu")
 	
-func import_started(_import_id:String, _count:int) -> void:
+func hide_popups(_import_id:String="", _count:int=0) -> void:
 	self.hide()
 	darkened_background.hide()
 	file_context.hide()

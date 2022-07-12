@@ -10,7 +10,7 @@
 [ext_resource path="res://scripts/hsplit.gd" type="Script" id=8]
 [ext_resource path="res://scenes/organization.tscn" type="PackedScene" id=9]
 [ext_resource path="res://scenes/core_buttons.tscn" type="PackedScene" id=10]
-[ext_resource path="res://scenes/import.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scenes/scanner.tscn" type="PackedScene" id=11]
 [ext_resource path="res://scripts/popups.gd" type="Script" id=12]
 
 [sub_resource type="Gradient" id=1]
@@ -32,7 +32,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 theme = ExtResource( 1 )
 script = ExtResource( 2 )
-thumbnails = NodePath("margin/vbox/hsplit/left/thumbnail_list/margin/vbox/thumbnails")
+thumbnails = NodePath("margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails")
 
 [node name="preview_container" parent="." instance=ExtResource( 5 )]
 margin_left = 3840.0
@@ -116,12 +116,42 @@ anchor_bottom = 0.0
 margin_right = 711.0
 margin_bottom = 106.0
 
-[node name="thumbnail_list" parent="margin/vbox/hsplit/left" instance=ExtResource( 7 )]
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/left"]
 margin_top = 114.0
 margin_right = 711.0
 margin_bottom = 982.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -360
+
+[node name="import_info" type="Control" parent="margin/vbox/hsplit/left/vsplit"]
+margin_right = 711.0
+margin_bottom = 70.0
+rect_clip_content = true
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="panel" type="PanelContainer" parent="margin/vbox/hsplit/left/vsplit/import_info"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="margin/vbox/hsplit/left/vsplit/import_info"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="thumbnail_list" parent="margin/vbox/hsplit/left/vsplit" instance=ExtResource( 7 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 78.0
+margin_right = 711.0
+margin_bottom = 868.0
 
 [node name="right" type="HSplitContainer" parent="margin/vbox/hsplit"]
 margin_left = 719.0
@@ -223,7 +253,7 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="import" parent="popups/ppanel_import" instance=ExtResource( 11 )]
+[node name="scanner" parent="popups/ppanel_import" instance=ExtResource( 11 )]
 margin_left = 1.0
 margin_top = 1.0
 margin_right = -1.0

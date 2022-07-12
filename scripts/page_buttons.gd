@@ -56,4 +56,6 @@ func _on_last_page_pressed() -> void:
 func _on_first_page_pressed() -> void:
 	first_button.release_focus()
 	change_page(1)
-
+func _on_current_page_value_changed(value:int) -> void: 
+	current_page_spinbox.release_focus()
+	change_page(value)

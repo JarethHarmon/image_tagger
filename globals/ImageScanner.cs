@@ -11,7 +11,7 @@ public class ImageScanner : Node
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
 	// importing will need to access these and then call clear()
-	private HashSet<IEnumerable<System.IO.DirectoryInfo>> folders = new HashSet<IEnumerable<System.IO.DirectoryInfo>>();
+	//private HashSet<IEnumerable<System.IO.DirectoryInfo>> folders = new HashSet<IEnumerable<System.IO.DirectoryInfo>>();
 	private Dictionary<string, HashSet<(string, string, long, long)>> files = new Dictionary<string, HashSet<(string, string, long, long)>>();
 	
 	// stores most recently scanned files
@@ -86,7 +86,7 @@ public class ImageScanner : Node
 			if (recursive == false) return imageCount;
 			
 			var enumeratedDirectories = dirInfo.EnumerateDirectories();
-			folders.Add(enumeratedDirectories);
+			//folders.Add(enumeratedDirectories);
 			foreach (System.IO.DirectoryInfo dir in enumeratedDirectories) {
 				if (!dir.FullName.Contains(" ")) { // U+00A0 (this symbol really breaks things for some reason)
 					foreach (string folder in blacklistedFolders)
@@ -106,6 +106,7 @@ public class ImageScanner : Node
 		foreach (string folder in files.Keys) 
 			foreach ((string, string, long, long) file in files[folder])
 				images.Add((folder + "/" + file.Item1, file.Item2, file.Item3, file.Item4));
+		_Clear();
 		return images;
 	}
 	
@@ -122,10 +123,10 @@ public class ImageScanner : Node
 	}
 	
 	// called by ImageImporter after retrieving the images to import
-	public void Clear()
+	private void _Clear()
 	{
 		files.Clear();
-		folders.Clear();
+		//folders.Clear();
 		tempFiles.Clear();
 		returnedTempFiles.Clear();
 	}

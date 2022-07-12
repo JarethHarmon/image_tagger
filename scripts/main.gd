@@ -34,7 +34,7 @@ func _begin() -> void:
  # make and set default thumbnail folder
 	if Globals.settings.use_default_thumbnail_path:
 		var err:int = dir.make_dir_recursive(Globals.settings.default_thumbnail_path)
-		#if err == OK: ImageOp.SetThumbnailPath(Globals.settings.default_thumbnail_path)
+		if err == OK: ImageImporter.SetThumbnailPath(Globals.settings.default_thumbnail_path)
 
   # create database
 	if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)

@@ -10,10 +10,10 @@ extends Control
 
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
 
-onready var indices:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/indices
-onready var paths:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit21/paths
-onready var types:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22/types
-onready var sizes:ItemList = $margin/vsplit/path_list/margin/vbox/hsplit2/hsplit22/sizes
+onready var indices:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices
+onready var paths:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/paths
+onready var types:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit22/types
+onready var sizes:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit22/sizes
 
 onready var scan_thread:Thread = Thread.new()
 onready var scan_mutex:Mutex = Mutex.new()
@@ -116,11 +116,16 @@ func create_item_lists(paths_sizes:Array) -> void:
 		paths.add_item("  " + parts[0])
 		types.add_item("  " + parts[0].get_extension())
 		sizes.add_item("  " + String.humanize_size(parts[1].to_int()))
-		if index % 2 == 0:
-			indices.set_item_custom_bg_color(index, dark_grey)
-			paths.set_item_custom_bg_color(index, dark_grey)
-			types.set_item_custom_bg_color(index, dark_grey)
-			sizes.set_item_custom_bg_color(index, dark_grey)
+		if index % 2 != 0:
+#			indices.set_item_custom_bg_color(index, dark_grey)
+#			paths.set_item_custom_bg_color(index, dark_grey)
+#			types.set_item_custom_bg_color(index, dark_grey)
+#			sizes.set_item_custom_bg_color(index, dark_grey)
+			
+			indices.set_item_custom_fg_color(index, Color.white)
+			paths.set_item_custom_fg_color(index, Color.white)
+			types.set_item_custom_fg_color(index, Color.white)
+			sizes.set_item_custom_fg_color(index, Color.white)
 		index += 1
 
 func _on_begin_import_button_up() -> void: 
@@ -129,3 +134,6 @@ func _on_begin_import_button_up() -> void:
 	Signals.emit_signal("new_import_started", import_id, index)
 	reset()
 
+func _on_cancel_import_button_up() -> void:
+	reset()
+	Signals.emit_signal("new_import_canceled")

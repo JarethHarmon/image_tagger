@@ -232,5 +232,6 @@ text = "  Next  "
 
 [connection signal="pressed" from="margin/vbox/page_buttons/prev_page" to="margin/vbox/page_buttons" method="_on_prev_page_pressed"]
 [connection signal="pressed" from="margin/vbox/page_buttons/first_page" to="margin/vbox/page_buttons" method="_on_first_page_pressed"]
+[connection signal="value_changed" from="margin/vbox/page_buttons/hbox/current_page" to="margin/vbox/page_buttons" method="_on_current_page_value_changed"]
 [connection signal="pressed" from="margin/vbox/page_buttons/last_page" to="margin/vbox/page_buttons" method="_on_last_page_pressed"]
 [connection signal="pressed" from="margin/vbox/page_buttons/next_page" to="margin/vbox/page_buttons" method="_on_next_page_pressed"]

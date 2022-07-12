@@ -8,11 +8,9 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography;
 using Alphaleonis.Win32.Filesystem;
-using LiteDB;
-
-using System.Drawing;
 using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
+using LiteDB;
 
 // query by similarity should open a new tab specifically for that purpose (similarity tab, can then further limit it to first X or simi > n%) (can also filter by tags and change order (but not sort))
 // this way I also do not need to include diffHash and colorHash inside groups/imports
@@ -99,7 +97,6 @@ public class Database : Node
 /*=========================================================================================
 									   Variables
 =========================================================================================*/
-	public Node globals;
 	public bool useJournal = true;
 	public string metadataPath;
 	public void SetMetadataPath(string path) { metadataPath = path; }
@@ -120,7 +117,7 @@ public class Database : Node
 =========================================================================================*/
 	public override void _Ready() 
 	{
-		globals = (Node) GetNode("/root/Globals");
+		
 	}
 	
 	public int Create() 
@@ -166,7 +163,6 @@ public class Database : Node
 =========================================================================================*/
 	private int lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return lastQueriedCount; }
-	
 	public int GetImportSuccessCount(string importId)
 	{
 		try {
@@ -174,6 +170,21 @@ public class Database : Node
 			if (tmp == null) return 0;
 			return tmp.successCount;
 		} catch (Exception ex) { return 0; }
+	}
+	
+	public void InsertHashInfo()
+	{
+		
+	}
+	
+	public bool HashDatabaseContains(string imageHash)
+	{
+		try {
+			// consider checking dictionary instead 
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return false;
+			return true;
+		} catch (Exception ex) { return false; }
 	}
 	
 	public string[] QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
@@ -258,44 +269,21 @@ public class Database : Node
 	{
 		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].size.ToString() : "";
 	}
-
+	
+	public string[] GetPaths(string imageHash)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return dictHashes[imageHash].paths.ToArray();
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return new string[0];
+			return result.paths.ToArray();
+		} catch (Exception ex) { return new string[0]; }
+	}
+	
 /*=========================================================================================
-									   Hashing
+									   Similarity
 =========================================================================================*/
-	public string SHA256Hash(string path) 
-	{
-		return (string)globals.Call("get_sha256", path);
-	}
-	public string SHA512Hash(string path)
-	{
-		return (string)globals.Call("get_sha512", path);
-	}
-	public string KomiHash(string path) 
-	{
-		return (string)globals.Call("get_komi_hash", path);
-	}
-	public int[] ColorHash(string path, int accuracy=1)
-	{
-	// made this up as I went, took a large number of iterations but it works pretty well
-	// hash: ~4x faster than DifferenceHash, simi: ~55x slower than DifferenceHash (still ~0.6s/1M comparisons though)
-		int[] colors = new int[256/accuracy];
-		//int[] colors = new int[766]; // orig
-		var bm = new Bitmap(@path, true);
-		for (int w = 0; w < bm.Width; w++) {
-			for (int h = 0; h < bm.Height; h++) {
-				var pixel = bm.GetPixel(w, h);
-				//int color = pixel.R + pixel.G + pixel.B; // orig
-				int min_color = Math.Min(pixel.B, Math.Min(pixel.R, pixel.G));
-				int max_color = Math.Max(pixel.B, Math.Max(pixel.R, pixel.G));
-				int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*accuracy); 
-				int color2 = (w/bm.Width) * (h/bm.Height) * ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*accuracy); 
-				int color3 = (pixel.R+pixel.G+pixel.B)/(3*accuracy);
-				int color = (color1+color2+color3)/(3*accuracy);
-				colors[color]++;
-			}
-		}
-		return colors;
-	}
 	public float ColorSimilarity(int[] h1, int[] h2)
 	{
 		float sum = 0f;
@@ -322,14 +310,6 @@ public class Database : Node
 		float p3 = sum/(float)count;
 		
 		return 100*(p1*p2+p3)/2f;
-	}
-	public ulong DifferenceHash(string path)
-	{
-		try {
-			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(path);
-			var algo = new DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
-			return algo.Hash(stream);
-		} catch (Exception ex) { GD.Print("Database::GetDifferenceHash() : ", ex); return 0; }
 	}
 	public double DifferenceSimilarity(ulong h1, ulong h2)
 	{
