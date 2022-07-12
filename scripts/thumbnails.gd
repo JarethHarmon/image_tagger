@@ -49,7 +49,7 @@ func _curr_page_changed(new_page:int) -> void: curr_page_number = new_page
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
-	Signals.connect("search_pressed", self, "prepare_query")	
+	Signals.connect("search_pressed", self, "prepare_query")
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
@@ -86,7 +86,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	database_offset = (curr_page_number-1) * images_per_page
 
   # query database
-	var count_results:bool = temp_query_settings == last_query_settings
+	var count_results:bool = not(temp_query_settings == last_query_settings)
 	last_query_settings = temp_query_settings
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
@@ -94,6 +94,11 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
+	Signals.emit_signal("max_pages_changed", queried_page_count)
+	
+	print(count_results)
+	print(queried_image_count)
+	print(queried_page_count)
 	
 	# display time taken for query
 	#var text:String = String(queried_image_count) + " : %1.3f ms" % [float(OS.get_ticks_usec()-time)/1000.0] 
@@ -111,7 +116,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
   # add to page history
 	if not page_history.has(current_page): 
 		page_queue.push_back(current_page)
-		page_history[current_page] = hash_arr
+	page_history[current_page] = hash_arr
 
   # set page image count
 	curr_page_image_count = hash_arr.size()

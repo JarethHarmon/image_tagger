@@ -71,6 +71,7 @@ func _ready() -> void:
 	load_settings()
 	if settings.thumbnail_path == "": settings.thumbnail_path = settings.default_thumbnail_path
 	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
+	Signals.call_deferred("emit_signal", "settings_loaded")
 
 func load_settings() -> void:
 	var f:File = File.new()
@@ -83,9 +84,7 @@ func load_settings() -> void:
 		for setting in temp_settings.keys():
 			if settings.has(setting):
 				settings[setting] = temp_settings[setting]
-
 	f.close()
-	Signals.call_deferred("emit_signal", "settings_loaded")
 
 func create_settings_comparison_array(settings_dict:Dictionary) -> Array:
 	var result:Array = []

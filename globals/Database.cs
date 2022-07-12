@@ -65,6 +65,8 @@ public class ImportInfo
 	public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
 	public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
 	public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
+	public bool finished { get; set; }
+	public string importName { get; set; }
 }
 
 public class GroupInfo
@@ -167,13 +169,109 @@ public class Database : Node
 =========================================================================================*/
 	private int lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return lastQueriedCount; }
+	
 	public int GetImportSuccessCount(string importId)
 	{
+		return dictImports[importId].successCount;
+	}
+	public int GetTotalCount(string importId)
+	{
+		var importInfo = dictImports[importId];
+		int count = importInfo.successCount;
+		count += importInfo.failedCount;
+		count += importInfo.ignoredCount;
+		count += importInfo.duplicateCount;
+		return count;
+	}
+	public bool GetFinished(string importId)
+	{
+		return dictImports[importId].finished;
+	}
+	public string GetImportName(string importId)
+	{
+		return dictImports[importId].importName;
+	}
+	
+	public void CreateAllInfo()
+	{
 		try {
-			var tmp = colImports.FindById(importId);
-			if (tmp == null) return 0;
-			return tmp.successCount;
-		} catch (Exception ex) { return 0; }
+			var importInfo = colImports.FindById("All");
+			if (importInfo == null) {
+				importInfo = new ImportInfo {
+					importId = "All",
+					successCount = 0,
+					ignoredCount = 0,
+					failedCount = 0,
+					duplicateCount = 0,
+					finished = true,
+					importName = "All",
+				};
+				colImports.Insert(importInfo);
+			}
+			dictImports["All"] = importInfo;
+		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
+	}
+	public void LoadAllImportInfo()
+	{
+		try {
+			var results = colImports.FindAll();
+			foreach (ImportInfo importInfo in results)
+				dictImports[importInfo.importId] = importInfo;
+		} catch(Exception ex) { GD.Print("Database::LoadAllImportInfo()() : ", ex); return; }
+	}
+	public void CreateImportInfo(string _importId)
+	{
+		try {
+			var importInfo = new ImportInfo {
+				importId = _importId,
+				successCount = 0,
+				ignoredCount = 0,
+				failedCount = 0,
+				duplicateCount = 0,
+				finished = false,
+				importName = "Import",
+			};
+			colImports.Insert(importInfo);
+		} catch(Exception ex) { GD.Print("Database::CreateImportInfo() : ", ex); return; }
+	}
+	public void UpdateImportCount(string importId, int countResult)
+	{
+		try {
+			// move ImportCodes to Database
+			var importInfo = colImports.FindById(importId);
+			var allInfo = colImports.FindById("All");
+			
+			if (countResult == 0) { 
+				importInfo.successCount++;
+				allInfo.successCount++;
+			} else if (countResult == 1) {
+				importInfo.duplicateCount++;
+				allInfo.duplicateCount++;
+			} else if (countResult == 2) {
+				importInfo.ignoredCount++;
+				allInfo.ignoredCount++;
+			} else {
+				importInfo.failedCount++;
+				allInfo.failedCount++;
+			}
+			dictImports["All"] = allInfo;
+			dictImports[importId] = importInfo;
+			colImports.Update(importInfo);
+			colImports.Update(allInfo);			
+		} catch(Exception ex) { GD.Print("Database::UpdateImportCount() : ", ex); return; }
+	}
+	public void FinishImport(string importId)
+	{
+		try {
+			var importInfo = colImports.FindById(importId);
+			importInfo.finished = true;
+			dictImports[importId] = importInfo;
+			colImports.Update(importInfo);
+		} catch(Exception ex) { GD.Print("Database::FinishImport() : ", ex); return; }
+	}
+	public string[] GetAllImportIds()
+	{
+		return dictImports.Keys.ToArray();
 	}
 	
 	// 0 = new, 1 = no change, 2 = update, -1 = fail

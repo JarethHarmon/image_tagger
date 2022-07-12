@@ -45,6 +45,7 @@ public class ImageImporter : Node
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
 	}
+	
 
 /*=========================================================================================
 										 IO
@@ -205,15 +206,24 @@ public class ImageImporter : Node
 		int successCount = 0, duplicateCount = 0, ignoredCount = 0, failedCount = 0;
 		var images = iscan.GetImages(); 
 		// imagePath,imageType,imageCreationUtc,imageSize
+		db.CreateImportInfo(importId);
 		foreach ((string,long,long) imageInfo in images) {
 			int result = _ImportImage(imageInfo, importId, imageCount);
 			if (result == ImportCodes.SUCCESS) successCount++;
 			else if (result == ImportCodes.DUPLICATE) duplicateCount++;
 			else if (result == ImportCodes.IGNORED) ignoredCount++;
 			else failedCount++;
+			db.UpdateImportCount(importId, result);
+			signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
+			signals.Call("emit_signal", "update_import_button", importId, false, successCount, imageCount, db.GetImportName(importId));
 			// update Import database (function call will also update dictionary (if user is viewing the page for this import))
 			// update import_button
 		}
+		db.FinishImport(importId);
+		signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
+		signals.Call("emit_signal", "update_import_button", importId, true, successCount, imageCount, db.GetImportName(importId));
+		db.CheckpointHashDB();
+		db.CheckpointImportDB();
 		// checkpoint hash database
 		// checkpoint import database
 	}
@@ -221,6 +231,7 @@ public class ImageImporter : Node
 	// will need to reorder or remove IsImageCorrupt() call depending on results
 	private int _ImportImage((string,long,long) imageInfo, string importId, int imageCount) 
 	{
+		// I think duplicates should just add path/importid and load like successful images (incrementing duplicate count instead of success count though)
 		try {
 			(string imagePath, long imageCreationUtc, long imageSize) = imageInfo;
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
@@ -231,10 +242,7 @@ public class ImageImporter : Node
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
 			if (db.HashDatabaseContains(imageHash)) return ImportCodes.DUPLICATE;
 			
-			//string savePath = thumbnailPath + imageHash + ".thumb";
-			string _thumbnailPath = thumbnailPath + imageHash.Substring(0,2) + "/";
-			System.IO.Directory.CreateDirectory(_thumbnailPath);
-			string savePath = _thumbnailPath + imageHash + ".thumb";
+			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
 			int imageType = GetActualFormat(imagePath);
 			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
 			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
@@ -252,7 +260,7 @@ public class ImageImporter : Node
 			// ratings will also be irrelevant for initial insert
 			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
 			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath);
-
+			
 			return ImportCodes.SUCCESS;	
 		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return ImportCodes.FAILED; }
 	}

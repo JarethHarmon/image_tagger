@@ -11,6 +11,8 @@ signal image_import_finished(import_id)
 signal sort_changed
 signal order_changed
 
+signal update_import_button(import_id, finished, success_count, total_count, import_name)
+
 signal start_scan(folder, recursive)
 signal files_selected(files)
 signal folder_selected(folder)
