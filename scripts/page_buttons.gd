@@ -38,7 +38,7 @@ func change_page(page:int) -> void:
 	Signals.emit_signal("page_changed", page)
 	page_label.text = String(current_page) + " / " + String(max_pages)
 	current_page_spinbox.value = page
-	print(current_page)
+	#print(current_page)
 	
 func _max_pages_changed(page_count:int) -> void: 
 	max_pages = page_count

@@ -99,9 +99,9 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	Signals.emit_signal("max_pages_changed", queried_page_count)
 	
-	print(count_results)
-	print(queried_image_count)
-	print(queried_page_count)
+	#print(count_results)
+	#print(queried_image_count)
+	#print(queried_page_count)
 	
 	# display time taken for query
 	#var text:String = String(queried_image_count) + " : %1.3f ms" % [float(OS.get_ticks_usec()-time)/1000.0] 
@@ -137,7 +137,7 @@ func stop_thread(thread_id:int) -> void:
 		load_threads[thread_id].wait_to_finish()
 
 func _threadsafe_clear(import_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
-	starting_load_process = false
+	#starting_load_process = false
 	sc.lock()
 	if self.get_item_count() > 0:
 		yield(get_tree(), "idle_frame")
@@ -166,7 +166,9 @@ func prepare_thumbnail_loading(import_id:String, page_number:int, num_threads:in
 	for t in load_threads.size():
 		if not load_threads[t].is_active():
 			load_threads[t].start(self, "_thread", t)
-
+	starting_load_process = false # putting this here instead of line 140 is more stable, but results in slower page changing
+	# need to try and improve page changing speed in general
+	
 func _thread(thread_id:int) -> void:
 	while not stopping_load_process:
 		tq.lock()

@@ -10,9 +10,6 @@ public class ImageScanner : Node
 	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG"};
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
-	// importing will need to access these and then call clear()
-	//private HashSet<IEnumerable<System.IO.DirectoryInfo>> folders = new HashSet<IEnumerable<System.IO.DirectoryInfo>>();
-	//private Dictionary<string, HashSet<(string, string, long, long)>> files = new Dictionary<string, HashSet<(string, string, long, long)>>();
 	private Dictionary<string, Dictionary<string, HashSet<(string, string, long, long)>>> files = new Dictionary<string, Dictionary<string, HashSet<(string, string, long, long)>>>();
 	
 	// stores most recently scanned files
@@ -89,7 +86,6 @@ public class ImageScanner : Node
 			if (recursive == false) return imageCount;
 			
 			var enumeratedDirectories = dirInfo.EnumerateDirectories();
-			//folders.Add(enumeratedDirectories);
 			foreach (System.IO.DirectoryInfo dir in enumeratedDirectories) {
 				if (!dir.FullName.Contains(" ")) { // U+00A0 (this symbol really breaks things for some reason)
 					foreach (string folder in blacklistedFolders)
@@ -130,8 +126,6 @@ public class ImageScanner : Node
 	private void _Clear(string importId)
 	{
 		files.Remove(importId);
-		//files.Clear();
-		//folders.Clear();
 		tempFiles.Clear();
 		returnedTempFiles.Clear();
 	}

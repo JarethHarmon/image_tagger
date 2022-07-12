@@ -11,6 +11,10 @@ var import_queue:Array = []
 var buttons:Dictionary = {}
 
 var importer_active:bool = false
+var thread_queue:Array = []
+var thread_active:Array = []
+var active_threads:int = 0
+var num_threads:int = 3
 
 func _ready() -> void:
 	# need to have import get an import_id from ImageImporter 
@@ -20,13 +24,17 @@ func _ready() -> void:
 	Signals.connect("import_info_load_finished", self, "create_import_buttons")
 	Signals.connect("update_import_button", self, "update_button_text")
 	buttons["All"] = all_button
+	
+	for i in num_threads: 
+		thread_queue.push_back(Thread.new())
+		thread_active.push_back(false)
 
 func _on_all_button_button_up() -> void: Signals.emit_signal("group_button_pressed", "All")
 func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("group_button_pressed", import_id)
 
 func create_import_buttons() -> void: 
 	var import_ids:Array = Database.GetAllImportIds()
-	print(import_ids)
+	#print(import_ids)
 	update_button_text("All", true, Database.GetImportSuccessCount("All"), Database.GetTotalCount("All"), "All")
 	for import_id in import_ids:
 		create_import_button(import_id, Database.GetFinished(import_id), Database.GetTotalCount(import_id), Database.GetImportSuccessCount(import_id), Database.GetImportName(import_id))
@@ -58,7 +66,39 @@ func queue_append(import_id:String, count:int) -> void:
 	if import_id == "": return
 	if import_queue.has(import_id): return
 	import_queue.push_back([import_id, count])
-	if !importer_active: start_importer()
+	#if !importer_active: start_importer()
+	#if !importer_active: 
+	start_importer_m()
+
+func start_importer_m() -> void:
+	if active_threads == num_threads: return
+	for t in thread_queue.size():
+		if not thread_active[t]:
+			thread_queue[t].start(self, "_thread_m", t)
+
+func _thread_m(thread_id:int) -> void:
+	thread_active[thread_id] = true
+	active_threads += 1
+	while true:
+		import_mutex.lock()
+		if import_queue.empty():
+			import_mutex.unlock()
+			break
+		var args:Array = import_queue.pop_front()
+		import_mutex.unlock()
+		var import_id:String = args[0]
+		var count:int = args[1]
+		Globals.current_importing_ids[import_id] = null
+		ImageImporter.ImportImages(import_id, count) # may not be thread safe
+		Globals.current_importing_ids.erase(import_id)
+		OS.delay_msec(50)
+	call_deferred("_done_m", thread_id)
+
+func _done_m(thread_id:int) -> void:
+	if thread_queue[thread_id].is_active() or thread_queue[thread_id].is_alive():
+		thread_queue[thread_id].wait_to_finish()
+	active_threads -= 1
+	thread_active[thread_id] = false
 
 func start_importer() -> void:
 	if importer_active: return

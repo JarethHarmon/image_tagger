@@ -84,7 +84,7 @@ func _thread() -> void:
 		# need to allow user to remove paths/folders, filter by image size/date, etc
 		# user should be able to find and scan additional folders while the first set is still scanning
 		# once import process starts, user should be able to scan and begin importing new folders while it is running
-		print(image_count)
+		#print(image_count)
 		OS.delay_msec(50)
 	call_deferred("_done")
 
