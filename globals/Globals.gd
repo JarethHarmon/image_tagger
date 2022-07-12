@@ -41,6 +41,7 @@ var settings:Dictionary = {
 
   # Import
 	"use_recursion" : false,
+	"max_bytes_to_check_apng" : 256,
 
   # Thumbnails
 	"images_per_page" : 400,
@@ -116,3 +117,11 @@ func get_sha512(path:String) -> String:
 
 func get_sha256(path:String) -> String: return File.new().get_sha256(path)
 
+func is_apng(path:String) -> bool:
+	var f:File = File.new()
+	var e:int = f.open(path, File.READ)
+	if e != OK: return false
+	var p:PoolByteArray = f.get_buffer(settings.max_bytes_to_check_apng)
+	f.close()
+	if "6163544c" in p.hex_encode(): return true
+	return false

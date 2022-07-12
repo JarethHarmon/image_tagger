@@ -100,12 +100,12 @@ public class ImageScanner : Node
 		catch (Exception ex) { GD.Print("ImageScanner::_ScanDirectories() : ", ex); return imageCount; }
 	}
 	
-	public List<(string, string, long, long)> GetImages() 
+	public List<(string, long, long)> GetImages() 
 	{
-		var images = new List<(string, string, long, long)>();
+		var images = new List<(string, long, long)>();
 		foreach (string folder in files.Keys) 
 			foreach ((string, string, long, long) file in files[folder])
-				images.Add((folder + "/" + file.Item1, file.Item2, file.Item3, file.Item4));
+				images.Add((folder + "/" + file.Item1, file.Item3, file.Item4));
 		_Clear();
 		return images;
 	}

@@ -19,13 +19,6 @@ public class ImportCodes
 	public const int FAILED = -1;
 }
 
-public class ImageCodes
-{
-	public const int JPG = 0;
-	public const int PNG = 1;
-	public const int FAIL = -1;
-}
-
 public class ImageImporter : Node
 {
 	
@@ -73,19 +66,16 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::IsImageCorrupt() : ", ex); return true; }
 	}
 	
-	public int SaveThumbnail(string savePath, string imageHash, long imageSize)
+	public int SaveThumbnail(string imagePath, string savePath, string imageHash, long imageSize)
 	{
 		// in general need to remove invalid paths whenver they are iterated
-		string[] imagePaths = db.GetPaths(imageHash); // import failing here, need to add paths to database first
-		foreach (string path in imagePaths)
-			if (FileExists(path))
-				return _SaveThumbnail(path, savePath, imageSize);
-		return ImageCodes.FAIL; // no paths exist
+		
+		return _SaveThumbnail(imagePath, savePath, imageSize);
 	}
 	private int _SaveThumbnail(string imagePath, string thumbPath, long imageSize)
 	{
 		try {
-			int result = ImageCodes.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
+			int result = Database.ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			im.Strip();
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
@@ -97,14 +87,22 @@ public class ImageImporter : Node
 			}
 			else {
 				im.Format = MagickFormat.Png;
-				result = ImageCodes.PNG;
+				result = Database.ImageType.PNG;
 				im.Write(thumbPath);
 				new ImageOptimizer().LosslessCompress(thumbPath);
 			}
 			return result;
-		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return ImageCodes.FAIL; }
+		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return Database.ImageType.FAIL; }
 	}
-	public static string GetActualFormat(string imagePath)
+	public int GetActualFormat(string imagePath)
+	{
+		if ((bool) globals.Call("is_apng", imagePath)) return Database.ImageType.APNG;
+		string format = _GetActualFormat(imagePath);
+		if (format == "JPG") return Database.ImageType.JPG;
+		if (format == "PNG") return Database.ImageType.PNG;
+		return Database.ImageType.OTHER;
+	}
+	private static string _GetActualFormat(string imagePath)
 	{
 		try {
 			if (imagePath.Length() < MAX_PATH_LENGTH) 
@@ -207,7 +205,7 @@ public class ImageImporter : Node
 		int successCount = 0, duplicateCount = 0, ignoredCount = 0, failedCount = 0;
 		var images = iscan.GetImages(); 
 		// imagePath,imageType,imageCreationUtc,imageSize
-		foreach ((string,string,long,long) imageInfo in images) {
+		foreach ((string,long,long) imageInfo in images) {
 			int result = _ImportImage(imageInfo, importId, imageCount);
 			if (result == ImportCodes.SUCCESS) successCount++;
 			else if (result == ImportCodes.DUPLICATE) duplicateCount++;
@@ -221,22 +219,22 @@ public class ImageImporter : Node
 	}
 	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster
 	// will need to reorder or remove IsImageCorrupt() call depending on results
-	private int _ImportImage((string,string,long,long) imageInfo, string importId, int imageCount) 
+	private int _ImportImage((string,long,long) imageInfo, string importId, int imageCount) 
 	{
 		try {
-			(string imagePath, string imageType, long imageCreationUtc, long imageSize) = imageInfo;
+			(string imagePath, long imageCreationUtc, long imageSize) = imageInfo;
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
 		
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
 			
-			// I also need to add this importId to the hashes' HashSet of imports
+			// I also need to add this importId to the 'imports' HashSet of HashInfo
+			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
 			if (db.HashDatabaseContains(imageHash)) return ImportCodes.DUPLICATE;
 			
 			string savePath = thumbnailPath + imageHash + ".thumb";
-			int result = SaveThumbnail(savePath, imageHash, imageSize);
-			if (result == ImageCodes.FAIL) return ImportCodes.FAILED;
-			string thumbnailType = "JPG";
-			if (result == ImageCodes.PNG) thumbnailType = "PNG"; // should replace types with integers (no conversion + smaller storage)
+			int imageType = GetActualFormat(imagePath);
+			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
+			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
 			
 			ulong diffHash = DifferenceHash(savePath);
 			int[] colorHash = ColorHash(savePath, 4); // 4 = int[64] (1 = int[256])
@@ -250,7 +248,7 @@ public class ImageImporter : Node
 				// not going to worry about those for now, but eventually they will be a passed argument(s)
 			// ratings will also be irrelevant for initial insert
 			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
-			//db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath);
+			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath);
 
 			return ImportCodes.SUCCESS;	
 		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return ImportCodes.FAILED; }

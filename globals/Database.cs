@@ -18,15 +18,6 @@ using LiteDB;
 
 // I think I will remove lists of hashes from every class, now should query directly over hashInfo to find things with specific groupIds/importIds/tagIds/etc
 
-public class ImageType
-{
-	// primarily for types with better built-in support, any random types and those the user adds will be assigend 'other'
-	public const int jpg = 0;
-	public const int png = 1;
-	// ...
-	public const int other = 7;
-}
-
 public class SortBy
 {
 	public const int FileHash = 0;
@@ -49,11 +40,11 @@ public class HashInfo
 	public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
 	public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
 	
-	public string diffHash { get; set; }			// the CoenM.ImageHash::DifferenceHash() of the thumbnail
+	public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
 	public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
 	
 	public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
-	public string thumbnailType { get; set; }		// jpg/png
+	public int thumbnailType { get; set; }			// jpg/png
 	public int type { get; set; }					// see ImageType
 	public long size { get; set; }					// the length of the file in bytes
 	public long creationUtc { get; set; }			// the time the file was created in ticks
@@ -93,7 +84,20 @@ public class TagInfo
 
 public class Database : Node
 {
-	
+
+/*=========================================================================================
+									   Subclasses
+=========================================================================================*/
+	public class ImageType
+	{
+		// primarily for types with better built-in support, any random types and those the user adds will be assigend 'other'
+		public const int JPG = 0;
+		public const int PNG = 1;
+		public const int APNG = 2;
+		// ...
+		public const int OTHER = 7;
+		public const int FAIL = -1;
+	}
 /*=========================================================================================
 									   Variables
 =========================================================================================*/
@@ -107,7 +111,7 @@ public class Database : Node
 	public ILiteCollection<GroupInfo> colGroups;
 	public ILiteCollection<TagInfo> colTags;
 	
-	public Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();
+	public Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();		// maybe keep an array of imageHashes for those that have changed (so can iterate them and call col.Update())
 	public Dictionary<string, ImportInfo> dictImports = new Dictionary<string, ImportInfo>();
 	public Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
 	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
@@ -172,9 +176,44 @@ public class Database : Node
 		} catch (Exception ex) { return 0; }
 	}
 	
-	public void InsertHashInfo()
+	// 0 = new, 1 = no change, 2 = update, -1 = fail
+	public int InsertHashInfo(string _imageHash, ulong _diffHash, int[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath)
 	{
-		
+		try {
+			var hashInfo = colHashes.FindById(_imageHash);
+			if (hashInfo == null) {
+				hashInfo = new HashInfo {
+					imageHash = _imageHash,
+					diffHash = _diffHash,
+					colorHash = _colorHash,
+					flags = _flags,
+					thumbnailType = _thumbnailType,
+					type = imageType,
+					size = imageSize,
+					creationUtc = imageCreationUtc,
+					uploadUtc = DateTime.Now.Ticks,
+					imports = new HashSet<string>{importId},
+					paths = new HashSet<string>{imagePath},
+				}; 
+				colHashes.Insert(hashInfo);
+				return 0;
+			} else {
+				bool update = false;
+				if (!hashInfo.paths.Contains(imagePath)) {
+					hashInfo.paths.Add(imagePath);
+					update = true;
+				}
+				if (!hashInfo.imports.Contains(importId)) {
+					hashInfo.imports.Add(importId);
+					update = true;
+				}
+				if (update) { 
+					colHashes.Update(hashInfo);
+					return 2;
+				} 
+				return 1;
+			}
+		} catch (Exception ex) { GD.Print("Database::InsertHashInfo() : ", ex); return -1; }
 	}
 	
 	public bool HashDatabaseContains(string imageHash)
@@ -259,9 +298,9 @@ public class Database : Node
 /*=========================================================================================
 								 Data Structure Access
 =========================================================================================*/
-	public string GetFileType(string imageHash) 
+	public int GetFileType(string imageHash) 
 	{
-		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].thumbnailType : "";
+		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].thumbnailType : -1;
 	}
 	// returning long would be better, but godot does not marshal long into its 64bit integer type for some reason
 	// instead return as string, convert with .to_int() and convert to size with String.humanize_size(int)
