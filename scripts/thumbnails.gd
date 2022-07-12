@@ -90,10 +90,9 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	last_query_settings = temp_query_settings
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
-	
 
-	hash_arr = ["test1", "test2"]# Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
-	queried_image_count = 2#Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
+	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
+	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	
 	# display time taken for query
@@ -195,17 +194,18 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 			return
 		
 		if stopping_load_process: return
-		var file_type:String = Database.GetFileType(image_hash)
-		if file_type == "":
+		var file_type:int = Database.GetFileType(image_hash)
+		
+		if file_type == Globals.ImageType.FAIL:
 			_threadsafe_set_icon(image_hash, index, true)
 			return
 		
 		if stopping_load_process: return
 		var i:Image = Image.new()
 		var b:PoolByteArray = f.get_buffer(f.get_len())
-		if file_type == "png": 
+		if file_type == Globals.ImageType.PNG: 
 			e = i.load_png_from_buffer(b)
-		elif file_type == "jpg": 
+		elif file_type == Globals.ImageType.JPG: 
 			e = i.load_jpg_from_buffer(b)
 		else:
 			_threadsafe_set_icon(image_hash, index, true)
@@ -233,6 +233,6 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	sc.lock()
 	self.set_item_icon(index, im_tex)
 	var size:String = Database.GetFileSize(image_hash)
-	set_item_tooltip(index, "hash: " + image_hash + "\nsize: " + "-1" if size == "" else String.humanize_size(size.to_int()))
+	set_item_tooltip(index, "hash: " + image_hash + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())))
 	sc.unlock()
 

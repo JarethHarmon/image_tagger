@@ -14,6 +14,7 @@ extends Node
 
 enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagCount, Random }
 enum OrderBy { Ascending, Descending }
+enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
 
 var current_import_id:String = "All"
 var current_group_id:String = ""

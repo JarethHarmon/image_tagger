@@ -231,7 +231,10 @@ public class ImageImporter : Node
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
 			if (db.HashDatabaseContains(imageHash)) return ImportCodes.DUPLICATE;
 			
-			string savePath = thumbnailPath + imageHash + ".thumb";
+			//string savePath = thumbnailPath + imageHash + ".thumb";
+			string _thumbnailPath = thumbnailPath + imageHash.Substring(0,2) + "/";
+			System.IO.Directory.CreateDirectory(_thumbnailPath);
+			string savePath = _thumbnailPath + imageHash + ".thumb";
 			int imageType = GetActualFormat(imagePath);
 			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
 			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
