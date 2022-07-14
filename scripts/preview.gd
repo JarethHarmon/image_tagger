@@ -21,6 +21,12 @@ onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
 var current_image:Texture
 var current_path:String
 
+onready var image_mutex:Mutex = Mutex.new()
+var max_threads:int = 3
+var stop_threads:bool = false
+var thread_queue:Array = []
+var thread_active:Array = []
+
 func _ready() -> void:
 	display.texture = viewport.get_texture()
 	display.color_grading = color_grading
@@ -29,6 +35,9 @@ func _ready() -> void:
 	display.initialize(camera)
 	
 	Signals.connect("resize_preview_image", self, "resize_current_image")
+	Signals.connect("load_full_image", self, "_load_full_image")
+	
+	create_threads(max_threads)
 	
 	# connect to settings_loaded signal here
 	_on_settings_loaded()
@@ -51,6 +60,20 @@ func clear_image_preview() -> void:
 	for child in image_grid.get_children():
 		child.texture = null
 	current_image = null
+
+func create_threads(num_threads:int) -> void:
+	stop_threads = true
+	for t in thread_queue.size(): 
+		if thread_queue[t].is_active() or thread_queue[t].is_alive():
+			thread_queue[t].wait_to_finish()
+	thread_queue.clear()
+	thread_active.clear()
+	for t in num_threads:
+		thread_queue.append(Thread.new())
+		thread_active.append(false)
+
+func _load_full_image(path:String) -> void:
+	pass
 
 func create_current_image(thread_id:int=-1, im:Image=null, path:String="") -> void:
 	if im == null:

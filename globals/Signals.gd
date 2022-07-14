@@ -12,6 +12,10 @@ signal image_import_finished(import_id)
 signal sort_changed
 signal order_changed
 
+signal load_full_image(path)
+signal load_image_tags(image_hash, selected_items)
+signal create_path_buttons(image_hash, paths)
+
 signal update_import_button(import_id, finished, success_count, total_count, import_name)
 
 signal start_scan(folder, recursive)

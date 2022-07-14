@@ -246,3 +246,30 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	set_item_tooltip(index, "hash: " + image_hash + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())))
 	sc.unlock()
 
+var selected_items:Dictionary = {}
+var last_index:int = 0
+var called_already:bool = false
+func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
+	last_index = index
+	if called_already: return
+	called_already = true
+	call_deferred("select_items")
+	
+func select_items() -> void:
+	selected_items.clear()
+	var arr_index:Array = self.get_selected_items()
+	if arr_index.size() == 0: return
+	for i in arr_index.size():
+		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_import_id]][arr_index[i]]
+	
+	var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][last_index]
+	var paths:Array = Database.GetPaths(image_hash)
+	if not paths.empty():
+		var f:File = File.new()
+		for path in paths:
+			if f.file_exists(path):
+				Signals.emit_signal("load_full_image", path)
+				Signals.emit_signal("load_image_tags", image_hash, selected_items)
+				Signals.emit_signal("create_path_buttons", image_hash, paths)
+				break
+	called_already = false

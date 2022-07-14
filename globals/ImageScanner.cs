@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using Alphaleonis.Win32.Filesystem;
@@ -10,10 +11,12 @@ public class ImageScanner : Node
 	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG"};
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
-	private Dictionary<string, Dictionary<string, HashSet<(string, string, long, long)>>> files = new Dictionary<string, Dictionary<string, HashSet<(string, string, long, long)>>>();
+	private ConcurrentDictionary<string, ConcurrentQueue<(string,long,long)>> files = new ConcurrentDictionary<string, ConcurrentQueue<(string,long,long)>>();
 	
 	// stores most recently scanned files
-	private HashSet<(string,string,long,long)> tempFiles = new HashSet<(string,string,long,long)>();
+	private string lastImportId = "";
+	private Dictionary<string, HashSet<(string, string, long, long)>> tempFiles = new Dictionary<string, HashSet<(string, string, long, long)>>();
+	private HashSet<(string,string,long,long)> pathListTempFiles = new HashSet<(string,string,long,long)>();
 	private HashSet<(string,string,long,long)> returnedTempFiles = new HashSet<(string,string,long,long)>();
 	
 	/*public void OpenFileBrowser()
@@ -32,20 +35,20 @@ public class ImageScanner : Node
 	
 	public int ScanFiles(string[] filePaths, string importId)
 	{
-		tempFiles.Clear();
+		pathListTempFiles.Clear();
 		int imageCount = 0;
 		try {
-			if (!files.ContainsKey(importId)) files[importId] = new Dictionary<string, HashSet<(string,string,long,long)>>();
+			lastImportId = importId;
 			foreach (string path in filePaths) {
 				var fileInfo = new System.IO.FileInfo(@path);
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) { 
 					string dir = fileInfo.Directory.FullName.Replace("\\", "/");
-					if (files[importId].ContainsKey(dir)) {
-						files[importId][dir].Add(((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)));
-						tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					if (tempFiles.ContainsKey(dir)) {
+						tempFiles[dir].Add(((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)));
+						pathListTempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
 					} else {
-						files[importId][dir] = new HashSet<(string,string,long,long)>{(fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)};
-						tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+						tempFiles[dir] = new HashSet<(string,string,long,long)>{(fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length)};
+						pathListTempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
 					}
 					imageCount++;
 				} 
@@ -59,9 +62,8 @@ public class ImageScanner : Node
 	// that said, ItemList on the gdscript side uses ~2x more RAM at scale than this script does
 	public int ScanDirectories(string path, bool recursive, string importId)
 	{
-		tempFiles.Clear();
 		try {
-			if (!files.ContainsKey(importId)) files[importId] = new Dictionary<string, HashSet<(string,string,long,long)>>();
+			lastImportId = importId;
 			var dirInfo = new System.IO.DirectoryInfo(@path);
 			int imageCount = _ScanDirectories(dirInfo, recursive, importId);
 			return imageCount;
@@ -77,12 +79,12 @@ public class ImageScanner : Node
 			foreach (System.IO.FileInfo fileInfo in dirInfo.GetFiles()) {
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) {
 					_files.Add((fileInfo.Name, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
-					tempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
+					pathListTempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
 					imageCount++;
 				}
 			}
 			
-			files[importId][dirInfo.FullName.Replace("\\", "/")] = _files;
+			tempFiles[dirInfo.FullName.Replace("\\", "/")] = _files;
 			if (recursive == false) return imageCount;
 			
 			var enumeratedDirectories = dirInfo.EnumerateDirectories();
@@ -99,21 +101,10 @@ public class ImageScanner : Node
 		catch (Exception ex) { GD.Print("ImageScanner::_ScanDirectories() : ", ex); return imageCount; }
 	}
 	
-	public List<(string, long, long)> GetImages(string importId) 
-	{
-		var images = new List<(string, long, long)>();
-		if (!files.ContainsKey(importId)) return images; 
-		foreach (string folder in files[importId].Keys) 
-			foreach ((string, string, long, long) file in files[importId][folder])
-				images.Add((folder + "/" + file.Item1, file.Item3, file.Item4));
-		_Clear(importId);
-		return images;
-	}
-	
 	public string[] GetPathsSizes()
 	{
 		var results = new List<string>();
-		foreach ((string, string, long, long) file in tempFiles) {
+		foreach ((string, string, long, long) file in pathListTempFiles) {
 			if (!returnedTempFiles.Contains(file)) {
 				returnedTempFiles.Add(file);
 				results.Add((file.Item1 + "?" + file.Item4.ToString()).Replace("\\", "/"));
@@ -122,11 +113,34 @@ public class ImageScanner : Node
 		return results.ToArray();
 	}
 	
-	// called by ImageImporter after retrieving the images to import
-	private void _Clear(string importId)
+	public void CommitImport()
+	{ 
+		string importId = lastImportId;
+		
+		foreach (string folder in tempFiles.Keys) {
+			var queue = this.files.GetOrAdd(importId, _ => new ConcurrentQueue<(string,long,long)>());
+			foreach ((string,string,long,long) file in tempFiles[folder]) 
+				queue.Enqueue((folder + "/" + file.Item1, file.Item3, file.Item4));
+		}
+		
+		_Clear();
+	}
+	
+	public (string,long,long) GetImage(string importId)
 	{
-		files.Remove(importId);
+		ConcurrentQueue<(string,long,long)> images;
+		(string,long,long) image = ("", 0, 0);
+		if (this.files.TryGetValue(importId, out images))
+			images.TryDequeue(out image);
+		
+		return image;
+	}
+	
+	// called by import_list.gd::create_new_import_button()
+	private void _Clear()
+	{
 		tempFiles.Clear();
+		pathListTempFiles.Clear();
 		returnedTempFiles.Clear();
 	}
 	

@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -178,6 +179,7 @@ public class ImageImporter : Node
 	// made this up as I went, took a large number of iterations but it works pretty well
 	// hash: ~4x faster than DifferenceHash, simi: ~55x slower than DifferenceHash (still ~0.6s/1M comparisons though)
 	// higher accuracy numbers means lower accuracy and smaller hashes
+	// need to do more testing, it is only storing ~16 ints / 64 right now
 		int[] colors = new int[256/accuracy];
 		//int[] colors = new int[766]; // orig
 		var bm = new Bitmap(@path, true);
@@ -201,7 +203,7 @@ public class ImageImporter : Node
 									   Importing
 =========================================================================================*/
 	
-	public void ImportImages(string importId, int imageCount)
+	/*public void ImportImages(string importId, int imageCount)
 	{
 		int successCount = 0, duplicateCount = 0, ignoredCount = 0, failedCount = 0;
 		var images = iscan.GetImages(importId); 
@@ -224,7 +226,39 @@ public class ImageImporter : Node
 		signals.Call("emit_signal", "update_import_button", importId, true, successCount, imageCount, db.GetImportName(importId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
+	}*/
+	
+	public int ImportImage(string importId, int imageCount)
+	{
+		var image = iscan.GetImage(importId);
+		if (image.Item1 == null) return 1;
+		if (image.Item1 == "") return 1;
+	
+		int result = _ImportImage(image, importId, imageCount);
+		db.UpdateImportCount(importId, result);
+		
+		if (!db.ImportFinished(importId)) {
+			signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
+			signals.Call("emit_signal", "update_import_button", importId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetImportName(importId));
+		}
+		return 0;	
 	}
+	
+	public HashSet<string> finishedImports = new HashSet<string>();
+	
+	public void FinishImport(string importId, int imageCount)
+	{
+		if (finishedImports.Contains(importId)) return;
+		finishedImports.Add(importId);
+			
+		db.FinishImport(importId);
+		//GD.Print(db.GetSuccessOrDuplicateCount(importId));
+		signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
+		signals.Call("emit_signal", "update_import_button", importId, true, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetImportName(importId));
+		db.CheckpointHashDB();
+		db.CheckpointImportDB();
+	}
+	
 	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster  (hashing is much faster, even the slowest (GDnative sha512) is ~ 10x faster)
 	private int _ImportImage((string,long,long) imageInfo, string importId, int imageCount) 
 	{
@@ -232,12 +266,18 @@ public class ImageImporter : Node
 		try {
 			(string imagePath, long imageCreationUtc, long imageSize) = imageInfo;
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
-		
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
+			
+			if (db.DuplicateImportId(imageHash, importId)) return ImportCodes.IGNORED;
 			
 			// I also need to add this importId to the 'imports' HashSet of HashInfo
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
-			if (db.HashDatabaseContains(imageHash)) return ImportCodes.DUPLICATE;
+			if (db.HashDatabaseContains(imageHash)) {
+				db.AddImportId(imageHash, importId);
+				return ImportCodes.DUPLICATE;
+			}
+			
+			//GD.Print(imagePath);
 			
 			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
 			int imageType = GetActualFormat(imagePath);
