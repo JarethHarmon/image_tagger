@@ -193,6 +193,7 @@ func get_thread_args(thread_id:int):
 	argument_mutex.unlock()
 	return result
 
+# not consistent at assigning threads, need to rethink logic at some point
 func _manager_thread() -> void:
 	var current_count:int = 0
 	var current_import_id = get_args()
@@ -201,6 +202,7 @@ func _manager_thread() -> void:
 		if not pause_manager:
 			if current_import_id == null: break
 			for thread_id in thread_args.size():
+				#print(thread_args)
 				if current_import_id == null: break
 				if current_count == max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
@@ -222,7 +224,9 @@ func _manager_done() -> void:
 	#manager_done = true
 	print("manager exited")
 
+# not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
+	print(thread_id, " entered")
 	while thread_status[thread_id] != status.CANCELED:
 		if thread_status[thread_id] != status.PAUSED:
 			var args:Array = get_thread_args(thread_id)
@@ -246,4 +250,5 @@ func _thread(thread_id:int) -> void:
 func _done(thread_id:int) -> void:
 	#thread_args[thread_id] = null
 	_stop(thread_id)
+	print(thread_id, " exited")
 
