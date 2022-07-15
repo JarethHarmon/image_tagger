@@ -47,16 +47,8 @@ public class ImageImporter : Node
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
-		
-		int[] test1 = {6, 7, 8, 9};
-		int[] test2 = test1;
-		test1 = null;
-		globals.Call("_print", "test1", test1); // prints null
-		globals.Call("_print", "test2", test2);	// prints [6, 7, 8, 9]
-		// this means that I can just pass the reference along and set the old one to null
 	}
 	
-
 /*=========================================================================================
 										 IO
 =========================================================================================*/

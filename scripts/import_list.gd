@@ -40,11 +40,15 @@ func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("gr
 
 func create_import_buttons() -> void: 
 	var import_ids:Array = Database.GetAllImportIds()
-	#print(import_ids)
 	update_button_text("All", true, Database.GetImportSuccessCount("All"), Database.GetTotalCount("All"), "All")
 	for import_id in import_ids:
-		create_import_button(import_id, Database.GetFinished(import_id), Database.GetTotalCount(import_id), Database.GetSuccessOrDuplicateCount(import_id), Database.GetImportName(import_id))
-
+		var total_count:int = Database.GetTotalCount(import_id)
+		var finished:bool = Database.GetFinished(import_id)
+		create_import_button(import_id, finished, total_count, Database.GetSuccessOrDuplicateCount(import_id), Database.GetImportName(import_id))
+		if not finished:
+			append_arg([import_id, total_count])
+	start_manager()
+		
 func create_import_button(import_id:String, finished:bool, total_count:int, success_count:int, import_name:String) -> void:
 	if import_id == "All": return
 	if total_count <= 0: return # remove it from import database (check on c# side when loading though)
@@ -64,8 +68,7 @@ func create_new_import_button(import_id:String, count:int) -> void:
 	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
 	button_list.add_child(b)
 	buttons[import_id] = b
-	#queue_append(import_id, count)
-	Database.CreateImportInfo(import_id);
+	Database.CreateImportInfo(import_id, count);
 	ImageScanner.CommitImport()
 	append_arg([import_id, count])
 	start_manager()
@@ -196,7 +199,9 @@ func _manager_thread() -> void:
 	
 	while not stop_manager:
 		if not pause_manager:
+			if current_import_id == null: break
 			for thread_id in thread_args.size():
+				if current_import_id == null: break
 				if current_count == max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
 					set_thread_args(thread_id, current_import_id)
@@ -212,10 +217,10 @@ func _manager_thread() -> void:
 	call_deferred("_manager_done")
 
 func _manager_done() -> void:
-	print("manager exited")
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 	#manager_done = true
+	print("manager exited")
 
 func _thread(thread_id:int) -> void:
 	while thread_status[thread_id] != status.CANCELED:

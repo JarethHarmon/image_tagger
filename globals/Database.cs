@@ -76,6 +76,8 @@ using LiteDB;
 		public string importName { get; set; }
 		public long importTime { get; set; }
 		public string[] inProgressPaths { get; set; }
+		public long[] inProgressTimes { get; set; }
+		public long[] inProgressSizes { get; set; }
 	}
 
 	public class GroupInfo
@@ -129,12 +131,14 @@ public class Database : Node
 	public Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
 	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
 	
+	public ImageScanner iscan;
+	
 /*=========================================================================================
 									 Initialization
 =========================================================================================*/
 	public override void _Ready() 
 	{
-		
+		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 	}
 	
 	public int Create() 
@@ -162,6 +166,46 @@ public class Database : Node
 		} 
 		catch (Exception ex) { GD.Print("Database::Create() : ", ex); return 1; }
 	}
+	
+	public void LoadInProgressPaths()
+	{
+		foreach (string iid in dictImports.Keys) {
+			ImportInfo iinfo = dictImports[iid];
+			if (!iinfo.finished) {
+				var list = new List<(string,long,long)>();
+				for (int i = 0; i < iinfo.inProgressPaths.Length; i++)
+					list.Add((iinfo.inProgressPaths[i], iinfo.inProgressTimes[i], iinfo.inProgressSizes[i]));
+				iscan.InsertPaths(iinfo.importId, list);
+				iinfo.inProgressPaths = null;
+				iinfo.inProgressTimes = null;
+				iinfo.inProgressSizes = null;
+				colImports.Update(iinfo);
+			}
+		}
+	}
+	
+	public void SaveInProgressPaths()
+	{
+		foreach (string iid in dictImports.Keys) {
+			ImportInfo iinfo = dictImports[iid];
+			if (!iinfo.finished) {
+				var fileArray = iscan.GetInProgressPaths(iinfo.importId);
+				var paths = new List<string>();
+				var times = new List<long>();
+				var sizes = new List<long>();
+				foreach ((string,long,long) file in fileArray) {
+					paths.Add(file.Item1);
+					times.Add(file.Item2);
+					sizes.Add(file.Item3);
+				}
+				iinfo.inProgressPaths = paths.ToArray();
+				iinfo.inProgressTimes = times.ToArray();
+				iinfo.inProgressSizes = sizes.ToArray();
+				colImports.Update(iinfo);
+			}
+		}				
+	}
+	
 	public void Destroy() 
 	{
 		dbHashes.Dispose();
@@ -204,12 +248,7 @@ public class Database : Node
 	{
 		ImportInfo importInfo;
 		if (!dictImports.TryGetValue(importId, out importInfo)) return 0;
-		
-		int count = importInfo.successCount;
-		count += importInfo.failedCount;
-		count += importInfo.ignoredCount;
-		count += importInfo.duplicateCount;
-		return count;
+		return importInfo.totalCount;
 	}
 	public bool GetFinished(string importId)
 	{
@@ -287,7 +326,7 @@ public class Database : Node
 		return importInfo;
 	}
 	
-	public void CreateImportInfo(string _importId)
+	public void CreateImportInfo(string _importId, int _totalCount)
 	{
 		try {
 			var importInfo = new ImportInfo {
@@ -296,6 +335,7 @@ public class Database : Node
 				ignoredCount = 0,
 				failedCount = 0,
 				duplicateCount = 0,
+				totalCount = _totalCount,
 				finished = false,
 				importName = "Import",
 				importTime = DateTime.Now.Ticks,

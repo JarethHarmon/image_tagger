@@ -13,6 +13,20 @@ public class ImageScanner : Node
 	
 	private ConcurrentDictionary<string, ConcurrentQueue<(string,long,long)>> files = new ConcurrentDictionary<string, ConcurrentQueue<(string,long,long)>>();
 	
+	public void InsertPaths(string importId, List<(string,long,long)> files)
+	{
+		var queue = this.files.GetOrAdd(importId, _ => new ConcurrentQueue<(string,long,long)>());
+		foreach ((string,long,long) file in files)
+			queue.Enqueue(file);
+	}
+	
+	public (string,long,long)[] GetInProgressPaths(string importId)
+	{
+		var queue = this.files.GetOrAdd(importId, _ => new ConcurrentQueue<(string,long,long)>());
+		if (queue.IsEmpty) return new (string,long,long)[0];
+		return queue.ToArray();
+	}
+	
 	// stores most recently scanned files
 	private string lastImportId = "";
 	private Dictionary<string, HashSet<(string, string, long, long)>> tempFiles = new Dictionary<string, HashSet<(string, string, long, long)>>();
@@ -116,13 +130,11 @@ public class ImageScanner : Node
 	public void CommitImport()
 	{ 
 		string importId = lastImportId;
-		
 		foreach (string folder in tempFiles.Keys) {
 			var queue = this.files.GetOrAdd(importId, _ => new ConcurrentQueue<(string,long,long)>());
 			foreach ((string,string,long,long) file in tempFiles[folder]) 
 				queue.Enqueue((folder + "/" + file.Item1, file.Item3, file.Item4));
 		}
-		
 		_Clear();
 	}
 	
