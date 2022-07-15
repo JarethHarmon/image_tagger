@@ -13,7 +13,7 @@ extends Node
 
 
 enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagCount, Random }
-enum OrderBy { Ascending, Descending }
+enum OrderBy { Ascending=0, Descending=1 }
 enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
 
 var current_importing_ids:Dictionary = {}

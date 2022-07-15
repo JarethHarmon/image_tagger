@@ -322,7 +322,7 @@ public class ImageImporter : Node
 			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
 			
 			ulong diffHash = DifferenceHash(savePath);
-			float[] colorHash = ColorHash(savePath, 4); // 4 = int[64] (1 = int[256])
+			float[] colorHash = ColorHash(savePath); // 4 = int[64] (1 = int[256])
 			
 			// include flags; will use default settings (for now will just pass 0 to signify no filter)
 			int flags = 0;

@@ -93,7 +93,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	last_query_settings = temp_query_settings
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
-
 	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int

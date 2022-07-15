@@ -133,7 +133,7 @@ func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 	#manager_done = true
-	print("manager exited")
+	#print("manager exited")
 
 enum formats { FAIL=-1, JPG=0, PNG, APNG, OTHER=7}
 

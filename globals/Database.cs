@@ -493,7 +493,7 @@ public class Database : Node
 			else if (sortBy == SortBy.FileUploadUtc) columnName = "uploadUtc";
 			else if (sortBy == SortBy.TagCount) sortByTagCount = true;
 			else if (sortBy == SortBy.Random) sortByRandom = true;
-
+			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
 				lastQueriedCount = GetSuccessOrDuplicateCount(importId);
 				counted = true;
@@ -515,9 +515,7 @@ public class Database : Node
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
-			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
-			
-			
+			//if (countResults && !counted) lastQueriedCount = query.Count(); // slow
 			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
@@ -535,11 +533,66 @@ public class Database : Node
 					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
 				is PredicateBuilder (which is slower I believe) */
 			
-			var list = query.Skip(offset).Limit(count).ToList();			
+			var list = query.Skip(offset).Limit(count).ToList();
+			lastQueriedCount = list.Count;		
 			//GD.Print(list.Count);
 			return list;
 		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }
 	}
+	private const int colorSimilarity = 0;
+	private const int differenceSimilarity = 1;
+	private const int averageSimilarity = 2;
+	// this method is much slower than query method above, use only for similarity (would like to find another way)
+	// this method will not filter out tags at the current time, import tabs/all do work though
+	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int orderBy = OrderBy.Descending, int similarityMode=averageSimilarity)
+	{
+		/*if (similarityMode == averageSimilarity)
+			return colHashes.Find(Query.All())
+				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.OrderByDescending(x => (ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0)
+				.Skip(offset)
+				.Take(count)
+				.ToList();
+		if (similarityMode == colorSimilarity)
+			return colHashes.Find(Query.All())
+				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.OrderByDescending(x => ColorSimilarity(x.colorHash, colorHash))
+				.Skip(offset)
+				.Take(count)
+				.ToList();
+		if (similarityMode == differenceSimilarity)
+			return colHashes.Find(Query.All())
+				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.OrderByDescending(x => DifferenceSimilarity(x.diffHash, diffHash))
+				.Skip(offset)
+				.Take(count)
+				.ToList();*/
+		if (orderBy == OrderBy.Descending)
+			return colHashes.Find(Query.All())
+				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.OrderByDescending(x => 
+					(similarityMode == averageSimilarity) ? 
+						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
+						(similarityMode == differenceSimilarity) ?
+							DifferenceSimilarity(x.diffHash, diffHash) :
+							ColorSimilarity(x.colorHash, colorHash))
+				.Skip(offset)
+				.Take(count)
+				.ToList();
+		else
+			return colHashes.Find(Query.All())
+				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.OrderBy(x => 
+					(similarityMode == averageSimilarity) ? 
+						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
+						(similarityMode == differenceSimilarity) ?
+							DifferenceSimilarity(x.diffHash, diffHash) :
+							ColorSimilarity(x.colorHash, colorHash))
+				.Skip(offset)
+				.Take(count)
+				.ToList();
+	}
+	
 
 /*=========================================================================================
 								 Data Structure Access

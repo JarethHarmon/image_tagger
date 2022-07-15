@@ -222,11 +222,11 @@ func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 	#manager_done = true
-	print("manager exited")
+	#print("manager exited")
 
 # not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
-	print(thread_id, " entered")
+	#print(thread_id, " entered")
 	while thread_status[thread_id] != status.CANCELED:
 		if thread_status[thread_id] != status.PAUSED:
 			var args:Array = get_thread_args(thread_id)
@@ -250,5 +250,5 @@ func _thread(thread_id:int) -> void:
 func _done(thread_id:int) -> void:
 	#thread_args[thread_id] = null
 	_stop(thread_id)
-	print(thread_id, " exited")
+	#print(thread_id, " exited")
 
