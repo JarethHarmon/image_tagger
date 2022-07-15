@@ -52,7 +52,7 @@ func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
 	Signals.connect("search_pressed", self, "prepare_query")
-
+	Signals.connect("select_all_pressed", self, "select_all_items")
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
