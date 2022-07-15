@@ -230,6 +230,9 @@ public class ImageImporter : Node
 		db.CheckpointImportDB();
 	}*/
 	
+	//private HashSet<string> importsThatHaveCalledFinish = new HashSet<string>();
+	//private bool CheckImportFinishedBefore(string importId)
+	
 	public int ImportImage(string importId, int imageCount)
 	{
 		var image = iscan.GetImage(importId);
@@ -255,6 +258,20 @@ public class ImageImporter : Node
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
 		Remove(importId);
+	}
+	
+	public void AddToImportedHashes(string importId, string[] hashes)
+	{
+		lock (importedHashes) {
+			importedHashes[importId] = new HashSet<string>(hashes);
+		}
+	}
+	
+	public string[] GetImportedHashes(string importId)
+	{
+		lock (importedHashes) {
+			return (importedHashes.ContainsKey(importId)) ? importedHashes[importId].ToArray() : new string[0];
+		}
 	}
 	
 	// returns true if present already, returns false if added

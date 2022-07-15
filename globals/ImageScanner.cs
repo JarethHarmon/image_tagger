@@ -134,6 +134,7 @@ public class ImageScanner : Node
 			var queue = this.files.GetOrAdd(importId, _ => new ConcurrentQueue<(string,long,long)>());
 			foreach ((string,string,long,long) file in tempFiles[folder]) 
 				queue.Enqueue((folder + "/" + file.Item1, file.Item3, file.Item4));
+			//GD.Print(files.Count, ":::", importId, ":::", queue.Count);
 		}
 		_Clear();
 	}

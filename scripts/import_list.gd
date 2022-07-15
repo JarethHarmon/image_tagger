@@ -20,7 +20,7 @@ var last_arg = null					# import_id for this script
 
 var delay_time:int = 50				# how long to wait in the thread loop before checking argument_queue again
 var max_total_threads:int = 4		# the max number of threads that can run simultaneously
-var max_threads_per_import:int = 4	#
+var max_threads_per_import:int = 3	#
 var active_threads:int = 0			# the current number of active (hose currently processing) threads
 
 var stop_manager:bool = false

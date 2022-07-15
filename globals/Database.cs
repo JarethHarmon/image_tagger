@@ -75,6 +75,7 @@ using LiteDB;
 		public bool finished { get; set; }
 		public string importName { get; set; }
 		public long importTime { get; set; }
+		public string[] importedHashes { get; set; }
 		public string[] inProgressPaths { get; set; }
 		public long[] inProgressTimes { get; set; }
 		public long[] inProgressSizes { get; set; }
@@ -132,6 +133,7 @@ public class Database : Node
 	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
 	
 	public ImageScanner iscan;
+	public ImageImporter importer;
 	
 /*=========================================================================================
 									 Initialization
@@ -139,6 +141,7 @@ public class Database : Node
 	public override void _Ready() 
 	{
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
+		importer = (ImageImporter) GetNode("/root/ImageImporter");
 	}
 	
 	public int Create() 
@@ -171,14 +174,20 @@ public class Database : Node
 	{
 		foreach (string iid in dictImports.Keys) {
 			ImportInfo iinfo = dictImports[iid];
-			if (!iinfo.finished) {
+			if (!iinfo.finished && iinfo.inProgressPaths != null) {
 				var list = new List<(string,long,long)>();
 				for (int i = 0; i < iinfo.inProgressPaths.Length; i++)
 					list.Add((iinfo.inProgressPaths[i], iinfo.inProgressTimes[i], iinfo.inProgressSizes[i]));
-				iscan.InsertPaths(iinfo.importId, list);
+				if (list.Count > 0) {
+					iscan.InsertPaths(iinfo.importId, list);
+					if (iinfo.importedHashes != null)
+						if (iinfo.importedHashes.Length != 0)
+							importer.AddToImportedHashes(iinfo.importId, iinfo.importedHashes);
+				}
 				iinfo.inProgressPaths = null;
 				iinfo.inProgressTimes = null;
 				iinfo.inProgressSizes = null;
+				iinfo.importedHashes = null;
 				colImports.Update(iinfo);
 			}
 		}
@@ -201,9 +210,11 @@ public class Database : Node
 				iinfo.inProgressPaths = paths.ToArray();
 				iinfo.inProgressTimes = times.ToArray();
 				iinfo.inProgressSizes = sizes.ToArray();
+				iinfo.importedHashes = importer.GetImportedHashes(iinfo.importId);
 				colImports.Update(iinfo);
 			}
-		}				
+		}
+		colImports.Update(ImportsTryGetValue("All"));			
 	}
 	
 	public void Destroy() 
