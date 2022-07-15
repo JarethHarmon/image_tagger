@@ -1,6 +1,7 @@
 extends Control
 
 export (NodePath) onready var thumbnails = get_node(thumbnails)
+export (NodePath) onready var importer = get_node(importer)
 
 func _input(event:InputEvent) -> void:
 	if event is InputEventKey:
@@ -9,12 +10,14 @@ func _input(event:InputEvent) -> void:
 
 func _notification(what) -> void:
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
+		thumbnails.stop_threads()
+		importer.cancel_all()
+		Database.SaveInProgressPaths()
 		Database.CheckpointGroupDB()
 		Database.CheckpointHashDB()
 		Database.CheckpointImportDB()
 		Database.CheckpointTagDB()
 		Database.Destroy()
-		thumbnails.stop_threads()
 		Globals.save_settings()
 		print_debug("exiting program")
 		get_tree().quit()
@@ -40,6 +43,7 @@ func _begin() -> void:
 	# load import groups from database (and other list metadata)
 	Database.CreateAllInfo()
 	Database.LoadAllImportInfo()
+	Database.LoadInProgressPaths()
 	
 	Signals.emit_signal("import_info_load_finished")	
 

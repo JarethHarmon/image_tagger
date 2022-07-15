@@ -273,3 +273,10 @@ func select_items() -> void:
 				Signals.emit_signal("create_path_buttons", image_hash, paths)
 				break
 	called_already = false
+
+func select_all_items() -> void: 
+	selected_items.clear()
+	for i in curr_page_image_count: 
+		selected_items[i] = page_history[[curr_page_number, Globals.current_import_id]][i]#current_page_komi64s[i]
+		self.select(i, false)
+

@@ -1,6 +1,7 @@
 extends Control
 
 const smooth_pixel:Material = preload("res://shaders/SmoothPixel.tres")
+const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
 
 export (NodePath) onready var camera = get_node(camera)
 export (NodePath) onready var viewport = get_node(viewport)
@@ -18,14 +19,20 @@ onready var fxaa_button:CheckButton = $margin/vbox/flow/fxaa
 onready var edge_mix_button:CheckButton = $margin/vbox/flow/edge_mix
 onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
 
+enum status { INACTIVE = 0, ACTIVE, PAUSED, CANCELED }
+
 var current_image:Texture
 var current_path:String
 
+onready var manager_thread:Thread = Thread.new()
 onready var image_mutex:Mutex = Mutex.new()
 var max_threads:int = 3
+var active_threads:int = 0
 var stop_threads:bool = false
-var thread_queue:Array = []
-var thread_active:Array = []
+var path_queue:Array = []
+var thread_pool:Array = []
+var thread_status:Array = []
+var use_buffering_icon:bool = true
 
 func _ready() -> void:
 	display.texture = viewport.get_texture()
@@ -63,17 +70,127 @@ func clear_image_preview() -> void:
 
 func create_threads(num_threads:int) -> void:
 	stop_threads = true
-	for t in thread_queue.size(): 
-		if thread_queue[t].is_active() or thread_queue[t].is_alive():
-			thread_queue[t].wait_to_finish()
-	thread_queue.clear()
-	thread_active.clear()
+	for t in thread_pool.size(): 
+		if thread_pool[t].is_active() or thread_pool[t].is_alive():
+			thread_pool[t].wait_to_finish()
+	
+	thread_pool.clear()
+	thread_status.clear()
 	for t in num_threads:
-		thread_queue.append(Thread.new())
-		thread_active.append(false)
+		thread_pool.append(Thread.new())
+		thread_status.append(status.INACTIVE)
 
 func _load_full_image(path:String) -> void:
-	pass
+	image_mutex.lock()
+	for i in thread_status.size():
+		if thread_status[i] == status.ACTIVE:
+			thread_status[i] = status.CANCELED
+	image_mutex.unlock()
+	
+	if use_buffering_icon: 
+		preview.set_texture(buffer_icon)
+	append_path(path)
+	start_manager()
+
+func append_path(path:String) -> void:
+	image_mutex.lock()
+	path_queue.push_back(path)
+	image_mutex.unlock()
+
+func _get_path() -> String:
+	var path:String = ""
+	image_mutex.lock()
+	if not path_queue.empty():
+		path = path_queue.pop_front()
+	image_mutex.unlock()
+	return path
+
+func start_manager() -> void:
+	if not manager_thread.is_active(): 
+		manager_thread.start(self, "_manager_thread")
+
+func start_one(current_path, thread_id:int) -> void:
+	thread_status[thread_id] = status.ACTIVE
+	thread_pool[thread_id].start(self, "_thread", [current_path, thread_id])
+	active_threads += 1
+
+func _manager_thread() -> void:
+	var current_path:String = _get_path()
+	var path_used:bool = false
+	while true:
+		if current_path == "": break
+		for thread_id in thread_pool.size():
+			if current_path == "": break
+			if thread_status[thread_id] == status.INACTIVE:
+				start_one(current_path, thread_id)
+				path_used = true
+				break
+		if path_used: break
+		OS.delay_msec(50)		
+	call_deferred("_manager_done")
+
+func _manager_done() -> void:
+	if manager_thread.is_active() or manager_thread.is_alive():
+		manager_thread.wait_to_finish()
+	#manager_done = true
+	print("manager exited")
+
+enum formats { FAIL=-1, JPG=0, PNG, APNG, OTHER=7}
+
+# not consistent at calling FinishImport (I think)
+func _thread(args:Array) -> void:
+	var path:String = args[0]
+	var thread_id:int = args[1]
+	#print(thread_id, " entered")
+	if thread_status[thread_id] == status.CANCELED:
+		call_deferred("_done", thread_id, path)
+		return
+	var actual_format:int = ImageImporter.GetActualFormat(path)
+	if thread_status[thread_id] == status.CANCELED: 
+		call_deferred("_done", thread_id, path)
+		return
+	if actual_format == formats.JPG:
+		var f:File = File.new()
+		var e:int = f.open(path, File.READ)
+		var b:PoolByteArray = f.get_buffer(f.get_len())
+		f.close()
+		if thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return
+		var i:Image = Image.new()
+		e = i.load_jpg_from_buffer(b)
+		if thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return
+		create_current_image(thread_id, i, path)
+	elif actual_format == formats.PNG:
+		var f:File = File.new()
+		var e:int = f.open(path, File.READ)
+		var b:PoolByteArray = f.get_buffer(f.get_len())
+		f.close()
+		if thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return	
+		var i:Image = Image.new()
+		e = i.load_png_from_buffer(b)
+		if thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return
+		create_current_image(thread_id, i, path)
+	else: pass
+	call_deferred("_done", thread_id, path)
+
+# should not be called directly by user
+func _done(thread_id:int, path:String) -> void:
+	_stop(thread_id)
+	#print(thread_id, " exited")
+	resize_current_image(path)
+
+func _stop(thread_id:int) -> void:
+	if thread_pool[thread_id].is_active() or thread_pool[thread_id].is_alive():
+		thread_pool[thread_id].wait_to_finish()
+		thread_status[thread_id] = status.INACTIVE
+		active_threads -= 1	
 
 func create_current_image(thread_id:int=-1, im:Image=null, path:String="") -> void:
 	if im == null:

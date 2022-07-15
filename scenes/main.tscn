@@ -34,6 +34,7 @@ mouse_filter = 2
 theme = ExtResource( 1 )
 script = ExtResource( 2 )
 thumbnails = NodePath("margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails")
+importer = NodePath("margin/vbox/import_list")
 
 [node name="preview_container" parent="." instance=ExtResource( 5 )]
 margin_left = 3840.0

@@ -20,7 +20,7 @@ var last_arg = null					# import_id for this script
 
 var delay_time:int = 50				# how long to wait in the thread loop before checking argument_queue again
 var max_total_threads:int = 4		# the max number of threads that can run simultaneously
-var max_threads_per_import:int = 4	#
+var max_threads_per_import:int = 3	#
 var active_threads:int = 0			# the current number of active (hose currently processing) threads
 
 var stop_manager:bool = false
@@ -40,11 +40,15 @@ func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("gr
 
 func create_import_buttons() -> void: 
 	var import_ids:Array = Database.GetAllImportIds()
-	#print(import_ids)
 	update_button_text("All", true, Database.GetImportSuccessCount("All"), Database.GetTotalCount("All"), "All")
 	for import_id in import_ids:
-		create_import_button(import_id, Database.GetFinished(import_id), Database.GetTotalCount(import_id), Database.GetSuccessOrDuplicateCount(import_id), Database.GetImportName(import_id))
-
+		var total_count:int = Database.GetTotalCount(import_id)
+		var finished:bool = Database.GetFinished(import_id)
+		create_import_button(import_id, finished, total_count, Database.GetSuccessOrDuplicateCount(import_id), Database.GetImportName(import_id))
+		if not finished:
+			append_arg([import_id, total_count])
+	start_manager()
+		
 func create_import_button(import_id:String, finished:bool, total_count:int, success_count:int, import_name:String) -> void:
 	if import_id == "All": return
 	if total_count <= 0: return # remove it from import database (check on c# side when loading though)
@@ -64,8 +68,7 @@ func create_new_import_button(import_id:String, count:int) -> void:
 	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
 	button_list.add_child(b)
 	buttons[import_id] = b
-	#queue_append(import_id, count)
-	Database.CreateImportInfo(import_id);
+	Database.CreateImportInfo(import_id, count);
 	ImageScanner.CommitImport()
 	append_arg([import_id, count])
 	start_manager()
@@ -190,13 +193,17 @@ func get_thread_args(thread_id:int):
 	argument_mutex.unlock()
 	return result
 
+# not consistent at assigning threads, need to rethink logic at some point
 func _manager_thread() -> void:
 	var current_count:int = 0
 	var current_import_id = get_args()
 	
 	while not stop_manager:
 		if not pause_manager:
+			if current_import_id == null: break
 			for thread_id in thread_args.size():
+				#print(thread_args)
+				if current_import_id == null: break
 				if current_count == max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
 					set_thread_args(thread_id, current_import_id)
@@ -212,12 +219,14 @@ func _manager_thread() -> void:
 	call_deferred("_manager_done")
 
 func _manager_done() -> void:
-	print("manager exited")
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 	#manager_done = true
+	print("manager exited")
 
+# not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
+	print(thread_id, " entered")
 	while thread_status[thread_id] != status.CANCELED:
 		if thread_status[thread_id] != status.PAUSED:
 			var args:Array = get_thread_args(thread_id)
@@ -241,4 +250,5 @@ func _thread(thread_id:int) -> void:
 func _done(thread_id:int) -> void:
 	#thread_args[thread_id] = null
 	_stop(thread_id)
+	print(thread_id, " exited")
 
