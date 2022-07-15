@@ -44,7 +44,7 @@ using LiteDB;
 		public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
 		
 		public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
-		public int[] colorHash { get; set; }			// the ColorHash() of the thumbnail
+		public float[] colorHash { get; set; }			// the ColorHash() of the thumbnail
 		
 		public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
 		public int thumbnailType { get; set; }			// jpg/png
@@ -68,9 +68,14 @@ using LiteDB;
 		public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
 		public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
 		public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
+		public int canceledCount { get; set; }			// number of paths that were removed from files when this import was canceled
+		public int removedCount { get; set; }			// the number of paths that have been manually removed from this import by the user (may not keep)
+		public int hiddenCount { get; set; }			// the number of paths that have been hidden from normal view for this import (for easier viewing of non-tagged images)
+		public int totalCount { get; set; }				// the total original number of images included in this import (regardless of whether they successfully imported)
 		public bool finished { get; set; }
 		public string importName { get; set; }
 		public long importTime { get; set; }
+		public string[] inProgressPaths { get; set; }
 	}
 
 	public class GroupInfo
@@ -362,7 +367,7 @@ public class Database : Node
 	}
 	
 	// 0 = new, 1 = no change, 2 = update, -1 = fail
-	public int InsertHashInfo(string _imageHash, ulong _diffHash, int[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath)
+	public int InsertHashInfo(string _imageHash, ulong _diffHash, float[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath)
 	{
 		try {
 			var hashInfo = colHashes.FindById(_imageHash);
@@ -461,6 +466,8 @@ public class Database : Node
 			
 			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
 			
+			
+			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
 				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.tags.Count);
@@ -519,34 +526,24 @@ public class Database : Node
 	
 /*=========================================================================================
 									   Similarity
-=========================================================================================*/
-	public float ColorSimilarity(int[] h1, int[] h2)
+=========================================================================================*/	
+	public float ColorSimilarity(float[] h1, float[] h2)
 	{
-		float sum = 0f;
-		int count = 0, same = 0, num1 = 0, num2 = 0;
+		int numColors = h1.Length, same = 0;
+		float difference = 0f;
 		
-		for (int color = 0; color < h1.Length; color++) {
-			int sum1 = h1[color], sum2 = h2[color];
-			if (sum1 > 0) {
-				if (sum2 > 0) {
-					same++;
-					num2++;
-					sum += (sum1 > sum2) ? (float)sum2/sum1 : (float)sum1/sum2;
-				}
-				num1++;
-				count++;
-			}
-			else if (h2[color] > 0) num2++;
+		for (int color = 0; color < numColors; color++) {
+			float percent1 = h1[color], percent2 = h2[color];
+			difference += Math.Abs(percent1-percent2);
+			if (percent1 > 0 && percent2 > 0) same++;
 		}
 		
-		if (num1 == 0 && num2 == 0) return 0f;
+		float p1 = (float)same/numColors;
+		float p2 = 1f-difference;
 		
-		float p1 = (num1 > num2) ? (float)num2/num1 : (float)num1/num2;
-		float p2 = same/((num1+num2)/2f);
-		float p3 = sum/(float)count;
-		
-		return 100*(p1*p2+p3)/2f;
+		return 50 * (p1+p2);
 	}
+	
 	public double DifferenceSimilarity(ulong h1, ulong h2)
 	{
 		return CompareHash.Similarity(h1, h2);

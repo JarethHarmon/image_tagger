@@ -35,7 +35,9 @@ public class ImageImporter : Node
 	public bool filterThumbnails = false;
 	public string thumbnailPath;
 	public void SetThumbnailPath(string path) { thumbnailPath = path; }
-
+	
+	private Dictionary<string, HashSet<string>> importedHashes = new Dictionary<string, HashSet<string>>();
+	
 /*=========================================================================================
 									 Initialization
 =========================================================================================*/
@@ -45,6 +47,13 @@ public class ImageImporter : Node
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
+		
+		int[] test1 = {6, 7, 8, 9};
+		int[] test2 = test1;
+		test1 = null;
+		globals.Call("_print", "test1", test1); // prints null
+		globals.Call("_print", "test2", test2);	// prints [6, 7, 8, 9]
+		// this means that I can just pass the reference along and set the old one to null
 	}
 	
 
@@ -174,29 +183,30 @@ public class ImageImporter : Node
 	{
 		return "I" + GetRandomID(8); // get 64bit ID
 	}
-	public int[] ColorHash(string path, int accuracy=1)
+
+	public float[] ColorHash(string path, int bucketSize=16) 
 	{
-	// made this up as I went, took a large number of iterations but it works pretty well
-	// hash: ~4x faster than DifferenceHash, simi: ~55x slower than DifferenceHash (still ~0.6s/1M comparisons though)
-	// higher accuracy numbers means lower accuracy and smaller hashes
-	// need to do more testing, it is only storing ~16 ints / 64 right now
-		int[] colors = new int[256/accuracy];
-		//int[] colors = new int[766]; // orig
-		var bm = new Bitmap(@path, true);
-		for (int w = 0; w < bm.Width; w++) {
-			for (int h = 0; h < bm.Height; h++) {
-				var pixel = bm.GetPixel(w, h);
-				//int color = pixel.R + pixel.G + pixel.B; // orig
+		int[] colors = new int[256/bucketSize];
+		var bitmap = new Bitmap(@path, true);
+		int size = bitmap.Width * bitmap.Height;
+		for (int w = 0; w < bitmap.Width; w++) {
+			for (int h = 0; h < bitmap.Height; h++) {
+				var pixel = bitmap.GetPixel(w, h);
 				int min_color = Math.Min(pixel.B, Math.Min(pixel.R, pixel.G));
 				int max_color = Math.Max(pixel.B, Math.Max(pixel.R, pixel.G));
-				int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*accuracy); 
-				int color2 = (w/bm.Width) * (h/bm.Height) * ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*accuracy); 
-				int color3 = (pixel.R+pixel.G+pixel.B)/(3*accuracy);
-				int color = (color1+color2+color3)/(3*accuracy);
+				int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*bucketSize); 
+				int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
+				int color = (color1+color3)/2;
 				colors[color]++;
 			}
 		}
-		return colors;
+		
+		float[] hash = new float[256/bucketSize];
+		for (int color = 0; color < colors.Length; color++) {
+			hash[color] = (float)colors[color]/size;
+		}
+		return hash;
+		
 	}
 	
 /*=========================================================================================
@@ -244,19 +254,36 @@ public class ImageImporter : Node
 		return 0;	
 	}
 	
-	public HashSet<string> finishedImports = new HashSet<string>();
-	
 	public void FinishImport(string importId, int imageCount)
-	{
-		if (finishedImports.Contains(importId)) return;
-		finishedImports.Add(importId);
-			
+	{	
 		db.FinishImport(importId);
 		//GD.Print(db.GetSuccessOrDuplicateCount(importId));
 		signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
 		signals.Call("emit_signal", "update_import_button", importId, true, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetImportName(importId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
+		Remove(importId);
+	}
+	
+	// returns true if present already, returns false if added
+	private bool CheckOrAdd(string importId, string imageHash)
+	{
+		lock(importedHashes) {
+			if (importedHashes.ContainsKey(importId)) {
+				if (importedHashes[importId].Contains(imageHash)) return true;
+				importedHashes[importId].Add(imageHash);
+				return false;
+			}
+			importedHashes[importId] = new HashSet<string>{imageHash};
+			return false;
+		}
+	}
+	
+	private void Remove(string importId) 
+	{
+		lock(importedHashes) {
+			importedHashes.Remove(importId);
+		}
 	}
 	
 	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster  (hashing is much faster, even the slowest (GDnative sha512) is ~ 10x faster)
@@ -268,7 +295,8 @@ public class ImageImporter : Node
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
 			
-			if (db.DuplicateImportId(imageHash, importId)) return ImportCodes.IGNORED;
+			if (CheckOrAdd(importId, imageHash)) return ImportCodes.IGNORED;
+			//if (db.DuplicateImportId(imageHash, importId)) return ImportCodes.IGNORED;
 			
 			// I also need to add this importId to the 'imports' HashSet of HashInfo
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
@@ -285,7 +313,7 @@ public class ImageImporter : Node
 			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
 			
 			ulong diffHash = DifferenceHash(savePath);
-			int[] colorHash = ColorHash(savePath, 4); // 4 = int[64] (1 = int[256])
+			float[] colorHash = ColorHash(savePath, 4); // 4 = int[64] (1 = int[256])
 			
 			// include flags; will use default settings (for now will just pass 0 to signify no filter)
 			int flags = 0;

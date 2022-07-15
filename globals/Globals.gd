@@ -67,6 +67,8 @@ var settings:Dictionary = {
 	"right_offset" : 240,
 }
 
+func _print(string, args) -> void: print("  ", string + ": ", args)
+
 func _ready() -> void:
 	settings.default_metadata_path = ProjectSettings.globalize_path("user://metadata/")
 	settings.default_thumbnail_path = ProjectSettings.globalize_path("user://metadata/thumbnails/")
