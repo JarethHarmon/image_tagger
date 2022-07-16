@@ -74,6 +74,8 @@ func _on_viewport_display_gui_input(event:InputEvent) -> void:
 			camera.zoom = default_camera_zoom
 			camera.offset = default_camera_offset
 			camera.rotation_degrees = 0 
+			rotation.value = 0
+			rotation_entry.value = 0
 			Signals.emit_signal("resize_preview_image")
 		else: # dragging
 			if event.is_pressed(): dragging = true
@@ -85,4 +87,14 @@ func _on_viewport_display_gui_input(event:InputEvent) -> void:
 		var rot_mult:Vector2 = Vector2((cos_rot * event.relative.x) - (sin_rot * event.relative.y), (sin_rot * event.relative.x) + (cos_rot * event.relative.y))
 		camera.position -= rot_mult * camera.zoom * drag_speed
 		camera.position = lerp(camera.position, camera.position - (rot_mult * camera.zoom * drag_speed), drag_step)
+
+onready var rotation:HSlider = get_parent().get_node("flow/rotation")
+onready var rotation_entry:SpinBox = get_parent().get_node("flow/rotation_entry")
+
+func _on_rotation_value_changed(value:int) -> void:
+	camera.rotation_degrees = value
+	rotation_entry.value = value	
+func _on_rotation_entry_value_changed(value:int) -> void:
+	camera.rotation_degrees = value
+	rotation.value = value
 

@@ -15,7 +15,9 @@ var delimiter:String = ","
 var curr_hash:String = ""
 
 var use_colored_backgrounds:bool = true
-var use_colored_text:bool = false
+var use_colored_text:bool = true
+var use_different_colors:bool = false
+var use_rounded_buttons:bool = true
 
 func _ready() -> void:
 	tag_entry.connect("text_entered", self, "tag_entered")
@@ -49,10 +51,32 @@ func add_tag(tag:String) -> void:
 	current_tags[tag] = null
 	var b:Button = Button.new()
 	b.text = "  " + tag.strip_edges() + "  "
-	var color:Color = Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), 1.0)		
-	if use_colored_text: b.set("custom_colors/font_color", color * 1.5)
-	if use_colored_backgrounds: b.self_modulate = color * 2.0
+	var color:Color = make_color()
+	if use_colored_text:
+		if use_different_colors:
+			var color2:Color = make_color()
+			b.set("custom_colors/font_color", color2 * 1.5)	
+		else: b.set("custom_colors/font_color", color * 1.5)
+	var sbf:StyleBoxFlat = make_stylebox(color)
+	b.add_stylebox_override("normal", sbf)
 	tag_flow.add_child(b)
+
+func make_color() -> Color:
+	return Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0))
+
+func make_stylebox(color:Color) -> StyleBoxFlat:
+	var sbf:StyleBoxFlat = StyleBoxFlat.new()
+	sbf.set_border_width_all(1)
+	if use_colored_backgrounds: 
+		sbf.bg_color = color * 0.3
+		sbf.border_color = color * 0.05
+	else:
+		sbf.bg_color = Color(0.1328, 0.1328, 0.1328)
+		sbf.border_color = Color.black
+	if use_rounded_buttons:
+		sbf.corner_detail = 8
+		sbf.set_corner_radius_all(5)
+	return sbf
 
 func upload_tags(tags:Array, selection:Dictionary) -> void:
 	var selected_hashes:Array = []

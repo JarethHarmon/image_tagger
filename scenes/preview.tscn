@@ -73,12 +73,35 @@ hint_tooltip = "[F3]
 toggles visibility of these settings"
 text = "Hide"
 
-[node name="space" type="Control" parent="margin/vbox/flow"]
+[node name="space1" type="Control" parent="margin/vbox/flow"]
 margin_left = 52.0
+margin_right = 84.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 32, 0 )
+mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="rotation" type="HSlider" parent="margin/vbox/flow"]
+margin_left = 94.0
+margin_right = 1041.0
+margin_bottom = 16.0
+size_flags_horizontal = 3
+max_value = 360.0
+tick_count = 5
+ticks_on_borders = true
+
+[node name="rotation_entry" type="SpinBox" parent="margin/vbox/flow"]
+margin_left = 1051.0
+margin_right = 1125.0
+margin_bottom = 40.0
+max_value = 360.0
+
+[node name="space2" type="Control" parent="margin/vbox/flow"]
+margin_left = 1135.0
 margin_right = 1167.0
 margin_bottom = 40.0
+rect_min_size = Vector2( 32, 0 )
 mouse_filter = 2
-size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="smooth_pixel" type="CheckButton" parent="margin/vbox/flow"]
@@ -114,6 +137,8 @@ text = "Color Grading"
 
 [connection signal="gui_input" from="margin/vbox/viewport_display" to="margin/vbox/viewport_display" method="_on_viewport_display_gui_input"]
 [connection signal="pressed" from="margin/vbox/flow/visibility" to="margin" method="_on_visibility_pressed"]
+[connection signal="value_changed" from="margin/vbox/flow/rotation" to="margin/vbox/viewport_display" method="_on_rotation_value_changed"]
+[connection signal="value_changed" from="margin/vbox/flow/rotation_entry" to="margin/vbox/viewport_display" method="_on_rotation_entry_value_changed"]
 [connection signal="toggled" from="margin/vbox/flow/smooth_pixel" to="." method="_on_smooth_pixel_toggled"]
 [connection signal="toggled" from="margin/vbox/flow/filter" to="." method="_on_filter_toggled"]
 [connection signal="toggled" from="margin/vbox/flow/fxaa" to="." method="_on_fxaa_toggled"]

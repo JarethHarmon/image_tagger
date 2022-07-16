@@ -318,3 +318,4 @@ func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size.value = value
+	
