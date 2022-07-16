@@ -46,6 +46,7 @@ text = "  File  "
 margin_left = 56.0
 margin_right = 108.0
 margin_bottom = 20.0
+disabled = true
 text = "  Edit  "
 
 [node name="view_button" type="Button" parent="margin/flow"]
@@ -58,6 +59,8 @@ text = "  View  "
 margin_left = 176.0
 margin_right = 234.0
 margin_bottom = 20.0
+disabled = true
 text = "  Help  "
 
 [connection signal="pressed" from="margin/flow/file_button" to="." method="_on_file_button_pressed"]
+[connection signal="button_up" from="margin/flow/view_button" to="." method="_on_view_button_button_up"]

@@ -65,6 +65,7 @@ var settings:Dictionary = {
 	"hsplit_offset" : -175,
 	"left_offset" : -160,
 	"right_offset" : 240,
+	"use_fullscreen" : false,
 }
 
 func _print(string, args) -> void: print("  ", string + ": ", args)
