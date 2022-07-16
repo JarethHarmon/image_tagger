@@ -17,12 +17,6 @@ func _ready() -> void:
 	Signals.connect("clear_pressed", self, "clear_pressed")
 	Signals.connect("sort_changed", self, "search_pressed")
 	Signals.connect("order_changed", self, "search_pressed")
-	Signals.connect("update_import_button", self, "test")
-	
-# update_import_button(import_id, finished, success_count, total_count, import_name)
-func test(import_id, finished, success_count, total_count, import_name) -> void:
-	if import_id == "": return
-	#if (Globals.current_import_id == import_id): page_changed()
 
 func _on_include_all_text_entered(new_text:String) -> void: search_pressed()
 func _on_include_any_text_entered(new_text:String) -> void: search_pressed()
@@ -35,7 +29,8 @@ func _on_exclude_all_text_changed(new_text:String) -> void: tags_none = new_text
 func group_button_pressed(import_id:String) -> void:
 	Globals.current_import_id = import_id
 	search_pressed()
-func search_pressed() -> void: Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, true)
+func search_pressed() -> void: 
+	Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, true)
 func page_changed(new_page:int=1) -> void: Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, false)
 func refresh_page(import_id:String) -> void: 
 	if import_id == "": return

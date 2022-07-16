@@ -495,7 +495,7 @@ public class Database : Node
 			else if (sortBy == SortBy.Random) sortByRandom = true;
 			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
-				lastQueriedCount = GetSuccessOrDuplicateCount(importId);
+				lastQueriedCount = (importId.Equals("All")) ? GetImportSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
 				
 				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
@@ -516,8 +516,6 @@ public class Database : Node
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
 			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
-			
-			GD.Print(sortByTagCount);
 			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);

@@ -15,13 +15,15 @@ onready var current_page_spinbox:SpinBox = $hbox/current_page
 onready var total_pages_label:Label = $hbox/total_pages
 
 var current_page:int = 1
-var max_pages:int = 7
+var max_pages:int = 1
 var use_arrows:bool = false
+
+var last_import_id:String = ""
+
 
 func _ready() -> void: 
 	Signals.connect("max_pages_changed", self, "_max_pages_changed")
 	change_page(1) # keep for now
-	_max_pages_changed(77) # only for testing
 	
 	if use_arrows:
 		prev_button.text = "  <  "
@@ -34,11 +36,13 @@ func change_page(page:int) -> void:
 	if (page < 1): return
 	if (page > max_pages): return
 	if (current_page == page): return
-	current_page = page
-	Signals.emit_signal("page_changed", page)
+	if last_import_id != Globals.current_import_id: 
+		current_page = 1
+		last_import_id	 = Globals.current_import_id
+	else: current_page = page
+	Signals.emit_signal("page_changed", current_page)
 	page_label.text = String(current_page) + " / " + String(max_pages)
-	current_page_spinbox.value = page
-	#print(current_page)
+	current_page_spinbox.value = current_page
 	
 func _max_pages_changed(page_count:int) -> void: 
 	max_pages = page_count

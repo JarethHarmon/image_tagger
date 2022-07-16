@@ -182,22 +182,22 @@ margin_bottom = 20.0
 text = "  4  "
 
 [node name="current_page" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 783.0
-margin_right = 857.0
+margin_left = 787.0
+margin_right = 861.0
 margin_bottom = 24.0
 grow_horizontal = 0
 min_value = 1.0
-max_value = 82.0
+max_value = 1.0
 value = 1.0
 rounded = true
 align = 1
 
 [node name="total_pages" type="Label" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 857.0
+margin_left = 861.0
 margin_top = 5.0
-margin_right = 886.0
+margin_right = 882.0
 margin_bottom = 19.0
-text = " / 82"
+text = " / 1"
 
 [node name="vbox" type="VBoxContainer" parent="margin/vbox/page_buttons"]
 visible = false

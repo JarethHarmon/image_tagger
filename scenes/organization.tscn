@@ -63,12 +63,14 @@ size_flags_vertical = 3
 margin_right = 81.0
 margin_bottom = 62.0
 size_flags_vertical = 3
+disabled = true
 text = "  Clear All  "
 
 [node name="default" type="Button" parent="margin/vbox/search_buttons/vbox1"]
 margin_top = 66.0
 margin_right = 81.0
 margin_bottom = 86.0
+disabled = true
 text = "  Default  "
 
 [node name="vbox2" type="VBoxContainer" parent="margin/vbox/search_buttons"]
@@ -123,6 +125,7 @@ margin_top = 72.0
 margin_right = 108.0
 margin_bottom = 86.0
 focus_mode = 2
+disabled = true
 text = "Advanced Search"
 
 [connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/include_all" to="margin/vbox/search_buttons" method="_on_include_all_text_changed"]

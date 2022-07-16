@@ -44,6 +44,7 @@ var stopping_load_process:bool = false	# whether a page is attempting to stop lo
 
 # signal connections
 func _curr_page_changed(new_page:int) -> void: 
+	# should set it based on a (new?) history data structure that saves the last viewed page for each importId (or 1 if it does not exist)
 	curr_page_number = new_page
 	Signals.emit_signal("change_page")
 
@@ -74,7 +75,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	if import_id == "": return
 	starting_load_process = true
 	stop_threads()
-	
   # temp variables
 	var hash_arr:Array = []
 	var images_per_page:int = Globals.settings.images_per_page
@@ -97,7 +97,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	Signals.emit_signal("max_pages_changed", queried_page_count)
-	
 	#print(count_results)
 	#print(queried_image_count)
 	#print(queried_page_count)
