@@ -159,6 +159,7 @@ func _thread(args:Array) -> void:
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
+		if e != OK: print_debug(e, " :: ", path)
 		if thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
@@ -173,6 +174,7 @@ func _thread(args:Array) -> void:
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
+		if e != OK: print_debug(e, " :: ", path)
 		if thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
@@ -268,6 +270,4 @@ func _on_edge_mix_toggled(button_pressed:bool) -> void:
 func _on_color_grading_toggled(button_pressed:bool) -> void: 
 	Globals.settings.use_color_grading = button_pressed
 	color_grading.visible = button_pressed
-	
-
 

@@ -515,7 +515,7 @@ public class Database : Node
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
-			//if (countResults && !counted) lastQueriedCount = query.Count(); // slow
+			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
 			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
@@ -534,7 +534,7 @@ public class Database : Node
 				is PredicateBuilder (which is slower I believe) */
 			
 			var list = query.Skip(offset).Limit(count).ToList();
-			lastQueriedCount = list.Count;		
+			//lastQueriedCount = list.Count;		
 			//GD.Print(list.Count);
 			return list;
 		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }
@@ -593,7 +593,28 @@ public class Database : Node
 				.ToList();
 	}
 	
-
+	public void BulkAddTags(string[] imageHashes, string[] tags)
+	{
+		try {
+			// this would be an OR query, which is difficult without predicate builder
+			//var query = colHashes.Query()
+			//query = query.Where() // imageHashes.Any(x => x.imageHash) idek
+			var list = new List<HashInfo>();
+			foreach (string imageHash in imageHashes) {
+				var tmp = colHashes.FindById(imageHash);
+				if (tmp == null) continue;
+				if (tmp.tags == null) tmp.tags = new HashSet<string>(tags);
+				else foreach (string tag in tags) tmp.tags.Add(tag);
+				if (dictHashes.ContainsKey(imageHash)) dictHashes[imageHash] = tmp;
+				list.Add(tmp);
+			}
+			dbHashes.BeginTrans();
+			foreach (HashInfo hashInfo in list) 
+				colHashes.Update(hashInfo);
+			dbHashes.Commit();
+		} catch (Exception ex) { GD.Print("Database::BulkAddTags() : ", ex); return; }
+	}
+	
 /*=========================================================================================
 								 Data Structure Access
 =========================================================================================*/
@@ -616,6 +637,17 @@ public class Database : Node
 			var result = colHashes.FindById(imageHash);
 			if (result == null) return new string[0];
 			return result.paths.ToArray();
+		} catch (Exception ex) { return new string[0]; }
+	}
+	
+	public string[] GetTags(string imageHash)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return dictHashes[imageHash].tags.ToArray();
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return new string[0];
+			return result.tags.ToArray();
 		} catch (Exception ex) { return new string[0]; }
 	}
 	

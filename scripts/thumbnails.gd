@@ -219,6 +219,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		else:
 			_threadsafe_set_icon(image_hash, index, true)
 			return
+		if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
 		
 		if stopping_load_process: return
 		var it:ImageTexture = ImageTexture.new()
@@ -249,6 +250,7 @@ var selected_items:Dictionary = {}
 var last_index:int = 0
 var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
+	print(self.get_num_columns())
 	last_index = index
 	if called_already: return
 	called_already = true
@@ -279,3 +281,23 @@ func select_all_items() -> void:
 		selected_items[i] = page_history[[curr_page_number, Globals.current_import_id]][i]#current_page_komi64s[i]
 		self.select(i, false)
 
+# trying to math around the problem directly does not work (there are other variables at play that there is no way of measuring, 
+# 	resulting in very erratic calculations); instead I am just brute-forcing by checking every possibility
+#	(at the end of the day is is simple math, at a maximum of a couple hundred iterations, and usually in the 1-10 range)
+func get_num_columns() -> int:
+	var fixed_x:int = self.fixed_icon_size.x
+	var hsep:int = 3 # copy-paste from the last theme override affecting the itemlist (if changeable in your program then set it with that)
+	var sep_sides:int = hsep/2 # sides are half as large as in-between items, rounded down
+		# items = 3
+		# hsep = 1: total_sep = 1/2 + 1 + 1 + 1/2	 = 2
+		# hsep = 2: total_sep = 1 + 2 + 2 + 1		 = 6
+		# hsep = 3: total_sep = 3/2 + 3 + 3 + 3/2	 = 8
+	var size_x:int = self.rect_size.x
+	var scroll_x:int = self.get_v_scroll().rect_size.x
+	
+	var result:int = 1
+	for i in range(1, self.max_columns):
+		var tmp:int = (size_x-scroll_x-sep_sides) / (i * fixed_x + (i-1)*hsep)
+		if tmp == 0: return result
+		result = i
+	return 1

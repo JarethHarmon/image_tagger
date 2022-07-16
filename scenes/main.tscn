@@ -100,11 +100,11 @@ margin_bottom = 1070.0
 rect_clip_content = true
 size_flags_horizontal = 3
 size_flags_vertical = 3
-split_offset = -175
+split_offset = -200
 script = ExtResource( 8 )
 
 [node name="left" type="VSplitContainer" parent="margin/vbox/hsplit"]
-margin_right = 776.0
+margin_right = 751.0
 margin_bottom = 982.0
 rect_clip_content = true
 size_flags_horizontal = 3
@@ -115,12 +115,12 @@ dragger_visibility = 1
 [node name="organization" parent="margin/vbox/hsplit/left" instance=ExtResource( 9 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 776.0
+margin_right = 751.0
 margin_bottom = 106.0
 
 [node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/left"]
 margin_top = 114.0
-margin_right = 776.0
+margin_right = 751.0
 margin_bottom = 982.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -136,11 +136,11 @@ margin_bottom = 70.0
 [node name="thumbnail_list" parent="margin/vbox/hsplit/left/vsplit" instance=ExtResource( 7 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 776.0
+margin_right = 751.0
 margin_bottom = 868.0
 
 [node name="right" type="HSplitContainer" parent="margin/vbox/hsplit"]
-margin_left = 784.0
+margin_left = 759.0
 margin_right = 1910.0
 margin_bottom = 982.0
 rect_clip_content = true
@@ -149,7 +149,7 @@ size_flags_vertical = 3
 split_offset = 240
 
 [node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/right"]
-margin_right = 1126.0
+margin_right = 1151.0
 margin_bottom = 982.0
 rect_clip_content = true
 size_flags_horizontal = 3
@@ -159,7 +159,7 @@ split_offset = 320
 [node name="preview" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 4 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 1126.0
+margin_right = 1151.0
 margin_bottom = 807.0
 camera = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Camera2D")
 viewport = NodePath("../../../../../../preview_container/ViewportContainer/Viewport")
@@ -173,7 +173,7 @@ preview = NodePath("../../../../../../preview_container/ViewportContainer/Viewpo
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_top = 815.0
-margin_right = 1126.0
+margin_right = 1151.0
 margin_bottom = 982.0
 
 [node name="recent_tags" type="Control" parent="margin/vbox/hsplit/right"]
