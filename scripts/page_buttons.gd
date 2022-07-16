@@ -36,10 +36,10 @@ func change_page(page:int) -> void:
 	if (page < 1): return
 	if (page > max_pages): return
 	if (current_page == page): return
-	if last_import_id != Globals.current_import_id: 
+	if last_import_id != Globals.current_import_id and current_page > 1:
 		current_page = 1
-		last_import_id	 = Globals.current_import_id
 	else: current_page = page
+	last_import_id = Globals.current_import_id
 	Signals.emit_signal("page_changed", current_page)
 	page_label.text = String(current_page) + " / " + String(max_pages)
 	current_page_spinbox.value = current_page
