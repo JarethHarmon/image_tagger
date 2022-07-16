@@ -68,6 +68,11 @@ func clear_image_preview() -> void:
 		child.texture = null
 	current_image = null
 
+func stop_threads() -> void:
+	stop_threads = true
+	if manager_thread.is_active() or manager_thread.is_alive():
+		manager_thread.wait_to_finish()
+
 func create_threads(num_threads:int) -> void:
 	stop_threads = true
 	for t in thread_pool.size(): 
@@ -79,6 +84,7 @@ func create_threads(num_threads:int) -> void:
 	for t in num_threads:
 		thread_pool.append(Thread.new())
 		thread_status.append(status.INACTIVE)
+	stop_threads = false
 
 func _load_full_image(path:String) -> void:
 	image_mutex.lock()
@@ -117,7 +123,7 @@ func start_one(current_path, thread_id:int) -> void:
 func _manager_thread() -> void:
 	var current_path:String = _get_path()
 	var path_used:bool = false
-	while true:
+	while not stop_threads:
 		if current_path == "": break
 		for thread_id in thread_pool.size():
 			if current_path == "": break
@@ -142,11 +148,11 @@ func _thread(args:Array) -> void:
 	var path:String = args[0]
 	var thread_id:int = args[1]
 	#print(thread_id, " entered")
-	if thread_status[thread_id] == status.CANCELED:
+	if stop_threads or thread_status[thread_id] == status.CANCELED:
 		call_deferred("_done", thread_id, path)
 		return
 	var actual_format:int = ImageImporter.GetActualFormat(path)
-	if thread_status[thread_id] == status.CANCELED: 
+	if stop_threads or thread_status[thread_id] == status.CANCELED: 
 		call_deferred("_done", thread_id, path)
 		return
 	if actual_format == formats.JPG:
@@ -154,13 +160,13 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if thread_status[thread_id] == status.CANCELED: 
+		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 		if e != OK: print_debug(e, " :: ", path)
-		if thread_status[thread_id] == status.CANCELED: 
+		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		create_current_image(thread_id, i, path)
@@ -169,13 +175,13 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if thread_status[thread_id] == status.CANCELED: 
+		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: print_debug(e, " :: ", path)
-		if thread_status[thread_id] == status.CANCELED: 
+		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		create_current_image(thread_id, i, path)

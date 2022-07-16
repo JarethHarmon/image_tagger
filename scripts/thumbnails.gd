@@ -243,14 +243,18 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	sc.lock()
 	self.set_item_icon(index, im_tex)
 	var size:String = Database.GetFileSize(image_hash)
-	set_item_tooltip(index, "hash: " + image_hash + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())))
+	var diff_hash:String = Database.GetDiffHash(image_hash)
+	var color_hash:Array = Database.GetColorHash(image_hash)
+	var creation_time:String = Database.GetCreationTime(image_hash)
+	#var paths:String = Database.Get (create paths section again)
+	set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + "\ncreation time: " + creation_time + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())))
 	sc.unlock()
 
 var selected_items:Dictionary = {}
 var last_index:int = 0
 var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
-	print(self.get_num_columns())
+	print_debug(self.get_num_columns())
 	last_index = index
 	if called_already: return
 	called_already = true

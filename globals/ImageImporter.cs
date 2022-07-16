@@ -195,7 +195,7 @@ public class ImageImporter : Node
 		
 		float[] hash = new float[256/bucketSize];
 		for (int color = 0; color < colors.Length; color++) {
-			hash[color] = (float)colors[color]/size;
+			hash[color] = 100 * (float)colors[color]/size;
 		}
 		return hash;
 		

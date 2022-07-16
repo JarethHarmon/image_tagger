@@ -2,6 +2,7 @@ extends Control
 
 export (NodePath) onready var thumbnails = get_node(thumbnails)
 export (NodePath) onready var importer = get_node(importer)
+export (NodePath) onready var previewer = get_node(previewer)
 
 func _input(event:InputEvent) -> void:
 	if event is InputEventKey:
@@ -12,6 +13,7 @@ func _notification(what) -> void:
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
 		thumbnails.stop_threads()
 		importer.cancel_all()
+		previewer.stop_threads()
 		Database.SaveInProgressPaths()
 		Database.CheckpointGroupDB()
 		Database.CheckpointHashDB()

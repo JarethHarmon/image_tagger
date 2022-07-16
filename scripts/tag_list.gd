@@ -34,6 +34,9 @@ func delimiter_changed(text:String) -> void: delimiter = text if text != "" else
 
 func tag_entered(text:String) -> void:
 	if text == "": return
+	if curr_hash == "": 
+		tag_entry.text = ""	
+		return
 	var tags:Array = text.split(delimiter, false) as Array if use_delimiter else [text]
 	for tag in tags:
 		add_tag(tag)

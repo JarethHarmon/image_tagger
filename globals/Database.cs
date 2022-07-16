@@ -517,6 +517,8 @@ public class Database : Node
 			
 			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
 			
+			GD.Print(sortByTagCount);
+			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
 				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.tags.Count);
@@ -651,6 +653,31 @@ public class Database : Node
 		} catch (Exception ex) { return new string[0]; }
 	}
 	
+	public string GetDiffHash(string imageHash)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return dictHashes[imageHash].diffHash.ToString();
+			return "";
+		} catch { return ""; }
+	}
+	public float[] GetColorHash(string imageHash) 
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return dictHashes[imageHash].colorHash;
+			return new float[0];
+		} catch { return new float[0]; }
+	}
+	public string GetCreationTime(string imageHash)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return  new DateTime(dictHashes[imageHash].creationUtc).ToString();
+			return "";
+		} catch { return ""; }
+	}
+	
 	public bool ImportFinished(string importId)
 	{
 		ImportInfo importInfo;
@@ -677,7 +704,7 @@ public class Database : Node
 		float p1 = (float)same/numColors;
 		float p2 = 1f-difference;
 		
-		return 50 * (p1+p2);
+		return 0.5f * (p1+p2);
 	}
 	
 	public double DifferenceSimilarity(ulong h1, ulong h2)
