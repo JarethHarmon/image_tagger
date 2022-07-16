@@ -118,7 +118,8 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	if not page_history.has(current_page): 
 		page_queue.push_back(current_page)
 	page_history[current_page] = hash_arr
-
+	#print(page_history.keys())
+	
   # set page image count
 	curr_page_image_count = hash_arr.size()
 	
@@ -304,3 +305,16 @@ func get_num_columns() -> int:
 		if tmp == 0: return result
 		result = i
 	return 1
+
+onready var thumb_size:HSlider = self.get_parent().get_node("sort_buttons/thumbnail_size")
+onready var thumb_size_entry:SpinBox = self.get_parent().get_node("sort_buttons/thumbnail_size_entry")
+
+func _on_thumbnail_size_value_changed(value:int) -> void:
+	self.fixed_icon_size = Vector2(value, value)
+	self.fixed_column_width = value
+	thumb_size_entry.value = value
+	
+func _on_thumbnail_size_entry_value_changed(value:int) -> void:
+	self.fixed_icon_size = Vector2(value, value)
+	self.fixed_column_width = value
+	thumb_size.value = value

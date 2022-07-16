@@ -43,21 +43,21 @@ size_flags_vertical = 3
 
 [node name="sort_buttons" type="HFlowContainer" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 script = ExtResource( 4 )
 
 [node name="sort_label" type="Label" parent="margin/vbox/sort_buttons"]
-margin_top = 3.0
+margin_top = 5.0
 margin_right = 53.0
-margin_bottom = 17.0
+margin_bottom = 19.0
 text = "Sort By: "
 
 [node name="sort_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
 margin_left = 57.0
 margin_right = 145.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "File Hash"
 items = [ "File Hash", null, false, 0, null, "File Path", null, true, 1, null, "File Size", null, false, 2, null, "File Upload Time", null, true, 3, null, "File Creation Time", null, false, 4, null, "Tag Count", null, false, 5, null, "Random", null, true, 6, null ]
 selected = 0
@@ -65,34 +65,62 @@ selected = 0
 [node name="order_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
 margin_left = 149.0
 margin_right = 244.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "Ascending"
 items = [ "Ascending", null, false, 0, null, "Descending", null, false, 1, null ]
 selected = 0
 
-[node name="space" type="Control" parent="margin/vbox/sort_buttons"]
+[node name="space1" type="Control" parent="margin/vbox/sort_buttons"]
 margin_left = 248.0
-margin_right = 1818.0
-margin_bottom = 20.0
+margin_right = 280.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 32, 0 )
 mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="thumbnail_size" type="HSlider" parent="margin/vbox/sort_buttons"]
+margin_left = 284.0
+margin_right = 1704.0
+margin_bottom = 16.0
 size_flags_horizontal = 3
+min_value = 10.0
+max_value = 480.0
+step = 10.0
+value = 240.0
+tick_count = 16
+
+[node name="thumbnail_size_entry" type="SpinBox" parent="margin/vbox/sort_buttons"]
+margin_left = 1708.0
+margin_right = 1782.0
+margin_bottom = 24.0
+min_value = 10.0
+max_value = 480.0
+step = 10.0
+value = 240.0
+
+[node name="space2" type="Control" parent="margin/vbox/sort_buttons"]
+margin_left = 1786.0
+margin_right = 1818.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 32, 0 )
+mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="select_all" type="Button" parent="margin/vbox/sort_buttons"]
 margin_left = 1822.0
 margin_right = 1910.0
-margin_bottom = 20.0
+margin_bottom = 24.0
 text = "  Select All  "
 
 [node name="hsep3" type="HSeparator" parent="margin/vbox"]
-margin_top = 24.0
+margin_top = 28.0
 margin_right = 1910.0
-margin_bottom = 28.0
+margin_bottom = 32.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="thumbnails" type="ItemList" parent="margin/vbox"]
-margin_top = 32.0
+margin_top = 36.0
 margin_right = 1910.0
 margin_bottom = 1034.0
 size_flags_horizontal = 3
@@ -234,6 +262,8 @@ text = "  Next  "
 
 [connection signal="item_selected" from="margin/vbox/sort_buttons/sort_by" to="margin/vbox/sort_buttons" method="_on_sort_by_item_selected"]
 [connection signal="item_selected" from="margin/vbox/sort_buttons/order_by" to="margin/vbox/sort_buttons" method="_on_order_by_item_selected"]
+[connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size" to="margin/vbox/thumbnails" method="_on_thumbnail_size_value_changed"]
+[connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size_entry" to="margin/vbox/thumbnails" method="_on_thumbnail_size_entry_value_changed"]
 [connection signal="button_up" from="margin/vbox/sort_buttons/select_all" to="margin/vbox/sort_buttons" method="_on_select_all_button_up"]
 [connection signal="multi_selected" from="margin/vbox/thumbnails" to="margin/vbox/thumbnails" method="_on_thumbnails_multi_selected"]
 [connection signal="pressed" from="margin/vbox/page_buttons/prev_page" to="margin/vbox/page_buttons" method="_on_prev_page_pressed"]
