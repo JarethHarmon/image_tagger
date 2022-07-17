@@ -11,6 +11,7 @@ func _input(event:InputEvent) -> void:
 
 func _notification(what) -> void:
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
+		OS.set_window_minimized(true)
 		thumbnails.stop_threads()
 		importer.cancel_all()
 		previewer.stop_threads()
@@ -24,7 +25,7 @@ func _notification(what) -> void:
 		print_debug("exiting program")
 		get_tree().quit()
 
-func _ready() -> void:
+func _ready() -> void:	
 	randomize()
 	get_viewport().transparent_bg = true
 	Signals.connect("settings_loaded", self, "_begin")

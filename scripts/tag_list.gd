@@ -59,17 +59,23 @@ func add_tag(tag:String) -> void:
 		else: b.set("custom_colors/font_color", color * 1.5)
 	var sbf:StyleBoxFlat = make_stylebox(color)
 	b.add_stylebox_override("normal", sbf)
+	b.add_stylebox_override("hover", make_stylebox(color, 0.05, 5.0))
+	sbf = make_stylebox(color, 2.0, 0.05, 2)
+	b.add_stylebox_override("pressed", sbf)
+	b.add_stylebox_override("focus", sbf)
+	b.add_color_override("font_color_pressed", Color.black)
+	b.add_color_override("font_color_focus", Color.black)
 	tag_flow.add_child(b)
 
 func make_color() -> Color:
 	return Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0))
 
-func make_stylebox(color:Color) -> StyleBoxFlat:
+func make_stylebox(color:Color, bg_mult=0.3, border_mult=0.05, border:int=1) -> StyleBoxFlat:
 	var sbf:StyleBoxFlat = StyleBoxFlat.new()
-	sbf.set_border_width_all(1)
+	sbf.set_border_width_all(border)
 	if use_colored_backgrounds: 
-		sbf.bg_color = color * 0.3
-		sbf.border_color = color * 0.05
+		sbf.bg_color = color * bg_mult
+		sbf.border_color = color * border_mult
 	else:
 		sbf.bg_color = Color(0.1328, 0.1328, 0.1328)
 		sbf.border_color = Color.black

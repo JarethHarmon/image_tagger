@@ -254,7 +254,7 @@ var selected_items:Dictionary = {}
 var last_index:int = 0
 var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
-	print_debug(self.get_num_columns())
+	#print_debug(self.get_num_columns())
 	last_index = index
 	if called_already: return
 	called_already = true
@@ -285,9 +285,73 @@ func select_all_items() -> void:
 		selected_items[i] = page_history[[curr_page_number, Globals.current_import_id]][i]#current_page_komi64s[i]
 		self.select(i, false)
 
-# trying to math around the problem directly does not work (there are other variables at play that there is no way of measuring, 
-# 	resulting in very erratic calculations); instead I am just brute-forcing by checking every possibility
-#	(at the end of the day is is simple math, at a maximum of a couple hundred iterations, and usually in the 1-10 range)
+var ctrl_pressed:bool = false
+var shift_pressed:bool = false
+
+# need to add proper support for shift+up/down arrow key
+# (ie need to select/deselect everything between the last_selected_item and the selected_item 
+# (based on whether selected_item is in selected_items already)
+var selected_item:int = 0
+var last_selected_item:int = 0
+#func _input(event:InputEvent) -> void:
+func _unhandled_input(event:InputEvent) -> void:
+	if Input.is_action_pressed("ctrl"): ctrl_pressed = true
+	if Input.is_action_pressed("shift"): shift_pressed = true
+	
+	if event is InputEventKey:
+		if Input.is_action_just_pressed("arrow_left"): 
+			selected_item = max(0, selected_item-1) 
+			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
+			else: self.select(selected_item)
+			_on_thumbnails_multi_selected(selected_item, false)
+			scroll(false)
+		elif Input.is_action_just_pressed("arrow_right"):
+			selected_item = min(get_item_count()-1, selected_item+1)
+			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
+			else: self.select(selected_item)
+			_on_thumbnails_multi_selected(selected_item, false)
+			scroll(true)
+		elif Input.is_action_just_pressed("arrow_up"):
+			selected_item = max(0, selected_item-get_num_columns())
+			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
+			else: self.select(selected_item)
+			_on_thumbnails_multi_selected(selected_item, false)
+			scroll(false)
+		elif Input.is_action_just_pressed("arrow_down"):
+			selected_item = min(get_item_count()-1, selected_item+get_num_columns())
+			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
+			else: self.select(selected_item)
+			_on_thumbnails_multi_selected(selected_item, false)
+			scroll(true)
+			
+	ctrl_pressed = false
+	shift_pressed = false
+	
+func scroll(down:bool=true) -> void:
+	var fixed_y:int = self.fixed_icon_size.y
+	var vsep:int = 3 
+	var linesep:int = 3
+	var sidesep:int = vsep/2
+	var vscroll:VScrollBar = self.get_v_scroll()
+	var current_columns:int = self.get_num_columns()
+	var num_rows:int = ceil(self.get_item_count()/current_columns)
+	var current_row:int = selected_item/current_columns
+	
+	if down:
+		if current_row > 1: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		else: vscroll.set_value(0)
+	else:
+		if current_row < num_rows-2: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		else: vscroll.set_value(vscroll.max_value)
+
+func color_selection(index:int, selected:bool) -> void:
+	if self.get_item_count()-1 < index: return
+	if selected:
+		self.set_item_custom_bg_color(index, Color.lime)
+		# fg color too
+	else:
+		self.set_item_custom_bg_color(index, Color.transparent) # not sure what default is 
+
 func get_num_columns() -> int:
 	var fixed_x:int = self.fixed_icon_size.x
 	var hsep:int = 3 # copy-paste from the last theme override affecting the itemlist (if changeable in your program then set it with that)
@@ -301,8 +365,9 @@ func get_num_columns() -> int:
 	
 	var result:int = 1
 	for i in range(1, self.max_columns):
-		var tmp:int = (size_x-scroll_x-sep_sides) / (i * fixed_x + (i-1)*hsep)
-		if tmp == 0: return result
+		var a:int = size_x-scroll_x-sep_sides-hsep # extra hsep for the vscroll (I think)
+		var b:int = (i * fixed_x + (i-1)*hsep)-1 # -1 for the numbers where it fits perfectly (ie a/b perfectly returns 1)
+		if a / b == 0: return result
 		result = i
 	return 1
 
@@ -319,3 +384,4 @@ func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_column_width = value
 	thumb_size.value = value
 	
+
