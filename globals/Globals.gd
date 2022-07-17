@@ -66,6 +66,8 @@ var settings:Dictionary = {
 	"left_offset" : -160,
 	"right_offset" : 240,
 	"use_fullscreen" : false,
+	"use_colored_backgrounds" : true,
+	"use_rounded_buttons" : true,
 }
 
 func _print(string, args) -> void: print("  ", string + ": ", args)
@@ -130,3 +132,21 @@ func is_apng(path:String) -> bool:
 	f.close()
 	if "6163544c" in p.hex_encode(): return true
 	return false
+
+func make_color() -> Color:
+	return Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0))
+
+func make_stylebox(color:Color, bg_mult=0.3, border_mult=0.05, border:int=1) -> StyleBoxFlat:
+	var sbf:StyleBoxFlat = StyleBoxFlat.new()
+	sbf.set_border_width_all(border)
+	if settings.use_colored_backgrounds: 
+		sbf.bg_color = color * bg_mult
+		sbf.border_color = color * border_mult
+	else:
+		sbf.bg_color = Color(0.1328, 0.1328, 0.1328)
+		sbf.border_color = Color.black
+	if settings.use_rounded_buttons:
+		sbf.corner_detail = 8
+		sbf.set_corner_radius_all(5)
+	return sbf
+

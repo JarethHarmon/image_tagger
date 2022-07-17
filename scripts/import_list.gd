@@ -27,6 +27,8 @@ var stop_manager:bool = false
 var pause_manager:bool = false
 var manager_done:bool = false
 
+var last_selected_import:String = ""
+
 func _ready() -> void:
 	Signals.connect("new_import_started", self, "create_new_import_button")
 	Signals.connect("import_info_load_finished", self, "create_import_buttons")
@@ -35,9 +37,28 @@ func _ready() -> void:
 	
 	create_threads(max_total_threads)
 
-func _on_all_button_button_up() -> void: Signals.emit_signal("group_button_pressed", "All")
-func _on_group_button_pressed(import_id:String) -> void: Signals.emit_signal("group_button_pressed", import_id)
+func _on_all_button_button_up() -> void: 
+	Signals.emit_signal("group_button_pressed", "All")
+	indicate_selected_button("All")
+func _on_group_button_pressed(import_id:String) -> void: 
+	Signals.emit_signal("group_button_pressed", import_id)
+	indicate_selected_button(import_id)
 
+func indicate_selected_button(import_id:String) -> void:
+	if last_selected_import != "": 
+		buttons[last_selected_import].remove_stylebox_override("normal")
+		buttons[last_selected_import].remove_stylebox_override("focus")
+		buttons[last_selected_import].remove_color_override("font_color")
+		buttons[last_selected_import].remove_color_override("font_color_focus")
+	
+	var color:Color = Color.white
+	var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
+	buttons[import_id].add_stylebox_override("normal", sbf)
+	buttons[import_id].add_stylebox_override("focus", sbf)
+	buttons[import_id].add_color_override("font_color", Color.black)
+	buttons[import_id].add_color_override("font_color_focus", Color.black)
+	last_selected_import = import_id
+	
 func create_import_buttons() -> void: 
 	var import_ids:Array = Database.GetAllImportIds()
 	update_button_text("All", true, Database.GetImportSuccessCount("All"), Database.GetTotalCount("All"), "All")
