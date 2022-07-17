@@ -246,8 +246,8 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	var diff_hash:String = Database.GetDiffHash(image_hash)
 	var color_hash:Array = Database.GetColorHash(image_hash)
 	var creation_time:String = Database.GetCreationTime(image_hash)
-	#var paths:String = Database.Get (create paths section again)
-	set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + "\ncreation time: " + creation_time + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())))
+	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
+	set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + "\ncreation time: " + creation_time + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())) + "\npaths: " + String(paths))
 	sc.unlock()
 
 var selected_items:Dictionary = {}

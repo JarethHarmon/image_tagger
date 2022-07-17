@@ -78,7 +78,7 @@ func create_import_button(import_id:String, finished:bool, total_count:int, succ
 	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
 	button_list.add_child(b)
 	buttons[import_id] = b
-	
+
 func create_new_import_button(import_id:String, count:int) -> void:
 	if count <= 0: return
 	if import_id == "": return
