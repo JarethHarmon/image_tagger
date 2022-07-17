@@ -175,11 +175,12 @@ func _thread(thread_id:int) -> void:
 			tq.unlock()
 			break
 		else:
+			ii.lock()
 			var image_hash:String = thumb_queue.pop_front()
-			tq.unlock() ; ii.lock()
 			var index:int = item_index
 			item_index += 1
 			ii.unlock()
+			tq.unlock()
 			load_thumbnail(image_hash, index)
 		OS.delay_msec(50)
 	call_deferred("stop_thread", thread_id)

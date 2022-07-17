@@ -40,20 +40,21 @@ size_flags_vertical = 3
 
 [node name="hbox" type="HBoxContainer" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 24.0
+margin_bottom = 26.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
 margin_right = 1848.0
-margin_bottom = 24.0
+margin_bottom = 26.0
 size_flags_horizontal = 3
+clear_button_enabled = true
 placeholder_text = "Type delimiter-separated tags..."
 
 [node name="vbox" type="VBoxContainer" parent="margin/vbox/hbox"]
 margin_left = 1852.0
 margin_right = 1910.0
-margin_bottom = 24.0
+margin_bottom = 26.0
 mouse_filter = 2
 size_flags_vertical = 3
 
@@ -71,13 +72,13 @@ text = ","
 align = 1
 
 [node name="hsep" type="HSeparator" parent="margin/vbox"]
-margin_top = 28.0
+margin_top = 30.0
 margin_right = 1910.0
-margin_bottom = 32.0
+margin_bottom = 34.0
 mouse_filter = 2
 
 [node name="margin" type="MarginContainer" parent="margin/vbox"]
-margin_top = 36.0
+margin_top = 38.0
 margin_right = 1910.0
 margin_bottom = 1070.0
 mouse_filter = 2
@@ -92,7 +93,7 @@ custom_constants/margin_bottom = 5
 margin_left = 5.0
 margin_top = 5.0
 margin_right = 1905.0
-margin_bottom = 1029.0
+margin_bottom = 1027.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
@@ -100,7 +101,7 @@ scroll_horizontal_enabled = false
 
 [node name="flow" type="HFlowContainer" parent="margin/vbox/margin/scroll"]
 margin_right = 1900.0
-margin_bottom = 1024.0
+margin_bottom = 1022.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
