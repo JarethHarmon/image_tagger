@@ -255,6 +255,7 @@ var last_index:int = 0
 var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
 	#print_debug(self.get_num_columns())
+	selected_item = index
 	last_index = index
 	if called_already: return
 	called_already = true
@@ -336,7 +337,7 @@ func scroll(down:bool=true) -> void:
 	var current_columns:int = self.get_num_columns()
 	var num_rows:int = ceil(self.get_item_count()/current_columns)
 	var current_row:int = selected_item/current_columns
-	
+
 	if down:
 		if current_row > 1: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
 		else: vscroll.set_value(0)
