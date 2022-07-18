@@ -17,7 +17,6 @@ onready var tq:Mutex = Mutex.new()		# mutex for interacting with thumb_queue
 onready var th:Mutex = Mutex.new()		# mutex for interacting with thumb_history
 
 # data structures
-var image_history:Dictionary = {}		# image_hash:ImageTexture :: stores last N loaded full images
 var page_history:Dictionary = {}		# [page_number, load_id, type_id]:[image_hashes] :: stores last M pages of image_hashes
 var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails
 var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
@@ -66,6 +65,7 @@ func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], new_query:bool=true) -> void: 
 	if new_query:
 		curr_page_number = 1
+		Signals.emit_signal("page_changed", curr_page_number)
 		queried_page_count = 0
 		total_image_count = 0
 	start_query(Globals.current_import_id, Globals.current_group_id, tags_all, tags_any, tags_none)
@@ -280,7 +280,7 @@ func select_items() -> void:
 		var f:File = File.new()
 		for path in paths:
 			if f.file_exists(path):
-				Signals.emit_signal("load_full_image", path)
+				Signals.emit_signal("load_full_image", image_hash, path)
 				Signals.emit_signal("load_image_tags", image_hash, selected_items)
 				Signals.emit_signal("create_path_buttons", image_hash, paths)
 				break

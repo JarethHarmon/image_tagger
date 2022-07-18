@@ -304,13 +304,17 @@ public class ImageImporter : Node
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
 			
-			if (CheckOrAdd(importId, imageHash)) return ImportCodes.IGNORED;
+			if (CheckOrAdd(importId, imageHash)) {
+				db.AddPath(imageHash, imagePath);
+				return ImportCodes.IGNORED;
+			}
 			//if (db.DuplicateImportId(imageHash, importId)) return ImportCodes.IGNORED;
 			
 			// I also need to add this importId to the 'imports' HashSet of HashInfo
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
 			if (db.HashDatabaseContains(imageHash)) {
 				db.AddImportId(imageHash, importId);
+				db.AddPath(imageHash, imagePath);
 				return ImportCodes.DUPLICATE;
 			}
 			

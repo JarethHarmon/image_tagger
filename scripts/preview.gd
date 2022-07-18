@@ -29,10 +29,13 @@ onready var image_mutex:Mutex = Mutex.new()
 var max_threads:int = 3
 var active_threads:int = 0
 var stop_threads:bool = false
-var path_queue:Array = []
+var args_queue:Array = []
 var thread_pool:Array = []
 var thread_status:Array = []
 var use_buffering_icon:bool = true
+
+var image_history:Dictionary = {}		# image_hash:ImageTexture :: stores last N loaded full images
+var image_queue:Array = []				# fifo queue of image_hash, determines contents
 
 func _ready() -> void:
 	display.texture = viewport.get_texture()
@@ -86,8 +89,18 @@ func create_threads(num_threads:int) -> void:
 		thread_status.append(status.INACTIVE)
 	stop_threads = false
 
-func _load_full_image(path:String) -> void:
+func _load_full_image(image_hash:String, path:String) -> void:	
 	image_mutex.lock()
+
+	if image_history.has(image_hash): 
+		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
+		#	instead of the first clicked) 
+		image_queue.erase(image_hash)
+		image_queue.push_back(image_hash)
+		preview.set_texture(image_history[image_hash])
+		image_mutex.unlock()
+		return
+	
 	for i in thread_status.size():
 		if thread_status[i] == status.ACTIVE:
 			thread_status[i] = status.CANCELED
@@ -95,40 +108,42 @@ func _load_full_image(path:String) -> void:
 	
 	if use_buffering_icon: 
 		preview.set_texture(buffer_icon)
-	append_path(path)
+	append_args(image_hash, path)
 	start_manager()
 
-func append_path(path:String) -> void:
+func append_args(image_hash:String, path:String) -> void:
 	image_mutex.lock()
-	path_queue.push_back(path)
+	args_queue.push_back([image_hash, path])
 	image_mutex.unlock()
 
-func _get_path() -> String:
-	var path:String = ""
+func _get_args() -> Array:
+	var args:Array = []
 	image_mutex.lock()
-	if not path_queue.empty():
-		path = path_queue.pop_front()
+	if not args_queue.empty():
+		args = args_queue.pop_front()
 	image_mutex.unlock()
-	return path
+	return args
 
 func start_manager() -> void:
 	if not manager_thread.is_active(): 
 		manager_thread.start(self, "_manager_thread")
 
-func start_one(current_path, thread_id:int) -> void:
+func start_one(current_hash:String, current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	thread_pool[thread_id].start(self, "_thread", [current_path, thread_id])
+	thread_pool[thread_id].start(self, "_thread", [current_hash, current_path, thread_id])
 	active_threads += 1
 
 func _manager_thread() -> void:
-	var current_path:String = _get_path()
+	var args:Array = _get_args()
+	var current_hash:String = args[0]
+	var current_path:String = args[1]
 	var path_used:bool = false
 	while not stop_threads:
 		if current_path == "": break
 		for thread_id in thread_pool.size():
 			if current_path == "": break
 			if thread_status[thread_id] == status.INACTIVE:
-				start_one(current_path, thread_id)
+				start_one(current_hash, current_path, thread_id)
 				path_used = true
 				break
 		if path_used: break
@@ -145,8 +160,9 @@ enum formats { FAIL=-1, JPG=0, PNG, APNG, OTHER=7}
 
 # not consistent at calling FinishImport (I think)
 func _thread(args:Array) -> void:
-	var path:String = args[0]
-	var thread_id:int = args[1]
+	var image_hash:String = args[0]
+	var path:String = args[1]
+	var thread_id:int = args[2]
 	#print(thread_id, " entered")
 	if stop_threads or thread_status[thread_id] == status.CANCELED:
 		call_deferred("_done", thread_id, path)
@@ -169,7 +185,7 @@ func _thread(args:Array) -> void:
 		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
-		create_current_image(thread_id, i, path)
+		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == formats.PNG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
@@ -184,7 +200,7 @@ func _thread(args:Array) -> void:
 		if stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
-		create_current_image(thread_id, i, path)
+		create_current_image(thread_id, i, path, image_hash)
 	else: pass
 	call_deferred("_done", thread_id, path)
 
@@ -200,7 +216,7 @@ func _stop(thread_id:int) -> void:
 		thread_status[thread_id] = status.INACTIVE
 		active_threads -= 1	
 
-func create_current_image(thread_id:int=-1, im:Image=null, path:String="") -> void:
+func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image_hash:String="") -> void:
 	if im == null:
 		var tex:Texture = preview.get_texture()
 		if tex == null: return
@@ -208,6 +224,18 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="") -> vo
 	
 	var it:ImageTexture = ImageTexture.new()
 	it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
+	
+	if image_hash != "":
+		image_mutex.lock()		
+		if image_queue.size() < Globals.settings.images_to_store:
+			image_history[image_hash] = it
+			image_queue.push_back(image_hash)
+		else:
+			var remove:String = image_queue.pop_front()
+			image_history.erase(remove)
+			image_history[image_hash] = it
+			image_queue.push_back(image_hash)
+		image_mutex.unlock()
 	
 	if thread_id > 0 and path != "":
 		# if check_stop_thread(thread_id):

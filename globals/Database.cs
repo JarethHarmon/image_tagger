@@ -424,6 +424,19 @@ public class Database : Node
 			return 0;
 		} catch (Exception ex) { return 1; }
 	}
+	// create a merged version of these two (or a function that can update any value in HashInfo, has default arguments, and checks that values are not default before updating them)
+	public int AddPath(string imageHash, string imagePath)
+	{
+		try {
+			var hashInfo = colHashes.FindById(imageHash);
+			if (hashInfo == null) return 1;
+			hashInfo.paths.Add(imagePath);
+			if (dictHashes.ContainsKey(imageHash))
+				dictHashes[imageHash] = hashInfo;
+			colHashes.Update(hashInfo);
+			return 0;
+		} catch (Exception ex) { return 1; }
+	}
 	
 	// 0 = new, 1 = no change, 2 = update, -1 = fail
 	public int InsertHashInfo(string _imageHash, ulong _diffHash, float[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath)
