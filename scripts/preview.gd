@@ -97,7 +97,9 @@ func _load_full_image(image_hash:String, path:String) -> void:
 		#	instead of the first clicked) 
 		image_queue.erase(image_hash)
 		image_queue.push_back(image_hash)
-		preview.set_texture(image_history[image_hash])
+		var it:ImageTexture = image_history[image_hash]
+		preview.set_texture(it)
+		current_image = it
 		image_mutex.unlock()
 		return
 	
