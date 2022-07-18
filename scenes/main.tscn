@@ -169,6 +169,8 @@ edge_mix = NodePath("../../../../../../preview_container/ViewportContainer/Viewp
 fxaa = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/FXAA")
 image_grid = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/image_grid")
 preview = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/image_grid/image_0")
+normal_parent = NodePath("..")
+fullscreen_parent = NodePath("../../../../../../fullscreen")
 
 [node name="tag_list" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 3 )]
 anchor_right = 0.0
@@ -272,6 +274,13 @@ margin_bottom = 1030.0
 window_title = "Open a Directory"
 mode = 2
 access = 2
+
+[node name="fullscreen" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="."]
 margin_left = 97.0

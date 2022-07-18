@@ -305,3 +305,28 @@ func _on_color_grading_toggled(button_pressed:bool) -> void:
 	Globals.settings.use_color_grading = button_pressed
 	color_grading.visible = button_pressed
 
+export (NodePath) onready var normal_parent = get_node(normal_parent)
+export (NodePath) onready var fullscreen_parent = get_node(fullscreen_parent)
+onready var fullscreen_button:Button = $margin/vbox/flow/fullscreen
+onready var darker_background:ColorRect = $darker_background
+var fullscreen:bool = false
+
+func _input(event:InputEvent) -> void:
+	if Input.is_action_just_pressed("fullscreen"): _on_fullscreen_pressed()
+	if Input.is_action_just_pressed("ui_cancel"): _on_fullscreen_pressed(true)
+
+func _on_fullscreen_pressed(escape:bool=false) -> void:
+	if escape and not fullscreen: return
+	if fullscreen: 
+		fullscreen_button.text = "  [[  ]]  "
+		fullscreen_parent.remove_child(self)
+		normal_parent.add_child(self)
+		normal_parent.move_child(self, 0)
+		darker_background.hide()
+		fullscreen = false
+	else:
+		fullscreen_button.text = "    []    "
+		normal_parent.remove_child(self)
+		fullscreen_parent.add_child(self)
+		darker_background.show()
+		fullscreen = true

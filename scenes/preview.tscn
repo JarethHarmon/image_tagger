@@ -14,6 +14,15 @@ size_flags_vertical = 3
 script = ExtResource( 1 )
 viewport_display = NodePath("margin/vbox/viewport_display")
 
+[node name="darker_background" type="ColorRect" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 0, 0, 0, 0.768627 )
+
 [node name="Timer" type="Timer" parent="."]
 
 [node name="panel" type="PanelContainer" parent="."]
@@ -73,16 +82,24 @@ hint_tooltip = "[F3]
 toggles visibility of these settings"
 text = "Hide"
 
-[node name="space1" type="Control" parent="margin/vbox/flow"]
+[node name="fullscreen" type="Button" parent="margin/vbox/flow"]
 margin_left = 52.0
-margin_right = 84.0
+margin_right = 104.0
+margin_bottom = 40.0
+hint_tooltip = "[F11]
+controls whether this section takes up the entire screen or not"
+text = "  [[  ]]  "
+
+[node name="space1" type="Control" parent="margin/vbox/flow"]
+margin_left = 114.0
+margin_right = 146.0
 margin_bottom = 40.0
 rect_min_size = Vector2( 32, 0 )
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="rotation" type="HSlider" parent="margin/vbox/flow"]
-margin_left = 94.0
+margin_left = 156.0
 margin_right = 1041.0
 margin_bottom = 16.0
 size_flags_horizontal = 3
@@ -137,6 +154,7 @@ text = "Color Grading"
 
 [connection signal="gui_input" from="margin/vbox/viewport_display" to="margin/vbox/viewport_display" method="_on_viewport_display_gui_input"]
 [connection signal="pressed" from="margin/vbox/flow/visibility" to="margin" method="_on_visibility_pressed"]
+[connection signal="pressed" from="margin/vbox/flow/fullscreen" to="." method="_on_fullscreen_pressed"]
 [connection signal="value_changed" from="margin/vbox/flow/rotation" to="margin/vbox/viewport_display" method="_on_rotation_value_changed"]
 [connection signal="value_changed" from="margin/vbox/flow/rotation_entry" to="margin/vbox/viewport_display" method="_on_rotation_entry_value_changed"]
 [connection signal="toggled" from="margin/vbox/flow/smooth_pixel" to="." method="_on_smooth_pixel_toggled"]
