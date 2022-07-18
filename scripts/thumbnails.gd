@@ -54,6 +54,7 @@ func _ready() -> void:
 	Signals.connect("page_changed", self, "_curr_page_changed")
 	Signals.connect("search_pressed", self, "prepare_query")
 	Signals.connect("select_all_pressed", self, "select_all_items")
+	Signals.connect("deselect_all_pressed", self, "deselect_all")
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
@@ -261,7 +262,11 @@ func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
 	if called_already: return
 	called_already = true
 	call_deferred("select_items")
-	
+
+func deselect_all() -> void:
+	selected_items.clear()
+	self.unselect_all()
+
 func select_items() -> void:
 	selected_items.clear()
 	var arr_index:Array = self.get_selected_items()

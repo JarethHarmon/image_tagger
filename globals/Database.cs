@@ -52,11 +52,14 @@ using LiteDB;
 		public long size { get; set; }					// the length of the file in bytes
 		public long creationUtc { get; set; }			// the time the file was created in ticks
 		public long uploadUtc { get; set; }				// the time the file was uploaded to the database in ticks
+		public long editUtc { get; set; }				// datetime.ticks of the last time this hashInfo was changed in any way
 		
+		public bool isGroupLeader { get; set; }			// whether this image is the leader (cover image/first image) of a group
 		public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
 		public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
-		public HashSet<string> paths { get; set; }		// every path the image has been found at on the user's computer
+		public HashSet<string> paths { get; set; }		// every file path the image has been found at
 		public HashSet<string> tags { get; set; }		// every tag that has been applied to the image
+		
 		public Dictionary<string, int> ratings { get; set; }	// rating_name : rating/10
 	}
 
@@ -84,9 +87,14 @@ using LiteDB;
 	public class GroupInfo
 	{
 		public string groupId { get; set; }				// the ID of this group
+		public string groupName { get; set; }			// set to the ID by default, can be manually changed by user
 		public int count { get; set; }					// the number of images in this group
+		public long dateCreated { get; set; }			// datetime.ticks of the time this group was created
+		public long dateLastChanged { get; set; } 		// datetime.ticks of the last time this group had hashes added or removed 
+		public long dateLastEdited { get; set; }		// datetime.ticks of the last time this group was changed in any way
 		public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
-		public Dictionary<string, int> subGroups { get; set; }	// the groupIds and their listing order for subgroups of this group (for example: chapters of a manga)
+		public string[] members { get; set; }			// an ordered list of imageHashes for this group (pages of a chapter for example)
+		public string[] subGroups { get; set; }			// an ordered list of subgroup groupId's (chapters of a manga for example)
 	}
 
 	public class TagInfo

@@ -249,8 +249,8 @@ margin_bottom = -1.0
 [node name="pmenu_file_context" type="PopupMenu" parent="popups"]
 margin_left = 50.0
 margin_top = 50.0
-margin_right = 180.313
-margin_bottom = 90.0
+margin_right = 178.0
+margin_bottom = 92.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 items = [ "Import Images", null, 0, false, false, 0, 0, null, "", false ]

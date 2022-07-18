@@ -19,6 +19,7 @@ signal create_path_buttons(image_hash, paths)
 signal update_import_button(import_id, finished, success_count, total_count, import_name)
 
 signal select_all_pressed
+signal deselect_all_pressed
 
 signal start_scan(folder, recursive)
 signal files_selected(files)

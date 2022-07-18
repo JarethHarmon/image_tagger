@@ -4,6 +4,16 @@ onready var sortby_options:OptionButton = $sort_by
 onready var orderby_options:OptionButton = $order_by
 onready var select_all:Button = $select_all
 
+var deselect:bool = false
+
+func _input(event:InputEvent) -> void:
+	if Input.is_action_pressed("ctrl"): 
+		deselect = true
+		select_all.text = "  Deselect All  "
+	if Input.is_action_just_released("ctrl"): 
+		deselect = false
+		select_all.text = "  Select All  "
+	
 func _ready() -> void: Signals.connect("settings_loaded", self, "_apply_settings")
 func _apply_settings() -> void: 
 	sortby_options.selected = Globals.settings.current_sort
@@ -18,4 +28,5 @@ func _on_order_by_item_selected(index:int) -> void:
 	Signals.emit_signal("order_changed")
 
 func _on_select_all_button_up() -> void:
-	Signals.emit_signal("select_all_pressed")
+	if deselect: Signals.emit_signal("deselect_all_pressed")
+	else: Signals.emit_signal("select_all_pressed")
