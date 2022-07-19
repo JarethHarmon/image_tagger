@@ -58,12 +58,13 @@ func add_tag(tag:String) -> void:
 		else: b.set("custom_colors/font_color", color * 1.5)
 	var sbf:StyleBoxFlat = Globals.make_stylebox(color)
 	b.add_stylebox_override("normal", sbf)
-	b.add_stylebox_override("hover", Globals.make_stylebox(color, 0.05, 5.0))
 	var sbf2:StyleBoxFlat = Globals.make_stylebox(color, 2.0, 0.05, 2)
 	b.add_stylebox_override("pressed", sbf2)
 	b.add_stylebox_override("focus", sbf2)
+	b.add_stylebox_override("hover", sbf2)
 	b.add_color_override("font_color_pressed", Color.black)
 	b.add_color_override("font_color_focus", Color.black)
+	b.add_color_override("font_color_hover", Color.black)
 	b.connect("button_up", self, "tag_clicked", [tag])
 	current_tags[tag] = {
 		"color" : color,

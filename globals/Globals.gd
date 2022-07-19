@@ -71,6 +71,7 @@ var settings:Dictionary = {
 	"use_fullscreen" : false,
 	"use_colored_backgrounds" : true,
 	"use_rounded_buttons" : true,
+	"show_thumbnail_tooltips" : true,
 }
 
 func _print(string, args) -> void: print("  ", string + ": ", args)

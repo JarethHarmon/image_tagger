@@ -46,6 +46,8 @@ using LiteDB;
 		public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
 		public float[] colorHash { get; set; }			// the ColorHash() of the thumbnail
 		
+		public int width { get; set; }
+		public int height { get; set; }
 		public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
 		public int thumbnailType { get; set; }			// jpg/png
 		public int type { get; set; }					// see ImageType

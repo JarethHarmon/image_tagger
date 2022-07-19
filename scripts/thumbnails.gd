@@ -18,7 +18,7 @@ onready var th:Mutex = Mutex.new()		# mutex for interacting with thumb_history
 
 # data structures
 var page_history:Dictionary = {}		# [page_number, load_id, type_id]:[image_hashes] :: stores last M pages of image_hashes
-var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails
+var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails  ->> image_hash:{texture&metadata}
 var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
 var page_queue:Array = []				# [[page_number, load_id, type_id]] :: fifo queue of last M pages
 var thumb_queue:Array = []				# [image_hashes] :: fifo queue of the thumbnails waiting to be loaded for the current page
@@ -54,6 +54,7 @@ func _ready() -> void:
 	Signals.connect("search_pressed", self, "prepare_query")
 	Signals.connect("select_all_pressed", self, "select_all_items")
 	Signals.connect("deselect_all_pressed", self, "deselect_all")
+	Signals.connect("toggle_thumbnail_tooltips", self, "_toggle_thumbnail_tooltips")
 
 func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
 	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
@@ -195,6 +196,8 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		_threadsafe_set_icon(image_hash, index)
 	else:
 		th.unlock()
+		_set_metadata(image_hash)
+		
 		var f:File = File.new()
 		var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
 		var e:int = f.open(p, File.READ)
@@ -228,34 +231,62 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		it.create_from_image(i, 0) # FLAGS # 4
 		it.set_meta("image_hash", image_hash)
 		
-		th.lock() ; thumb_history[image_hash] = it ; th.unlock()
+		th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
 		
 		if stopping_load_process: return
 		_threadsafe_set_icon(image_hash, index)
 
 func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
 	var im_tex:Texture
+	var dict:Dictionary = {}
 	if failed: im_tex = icon_broken
 	else:
 		th.lock()
-		im_tex = thumb_history[image_hash]
+		dict = thumb_history[image_hash]
+		im_tex = dict.texture
 		th.unlock()
-	
 	if stopping_load_process: return
 	sc.lock()
 	self.set_item_icon(index, im_tex)
-	var size:String = Database.GetFileSize(image_hash)
-	var diff_hash:String = Database.GetDiffHash(image_hash)
-	var color_hash:Array = Database.GetColorHash(image_hash)
-	var creation_time:String = Database.GetCreationTime(image_hash)
-	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
-	set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + "\ncreation time: " + creation_time + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())) + "\npaths: " + String(paths))
+	if Globals.settings.show_thumbnail_tooltips:
+		var tooltip:String = _create_tooltip(image_hash, dict, index)
+		set_item_tooltip(index, tooltip)
+	#set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + +  + "\npaths: " + String(paths))
 	#set_item_text(index, String(index+1))
 	# If I include text options, will need to edit scroll() to account for the increased vertical height
 	# would also need to limit it to one line of text, and I don't believe I was ever successful in calculating 
 	# the correct offset in the past
 	sc.unlock()
 
+func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
+	var tooltip:String = "index: " + String(index+1)
+	tooltip += "\nsize: " + ("-1" if dict.size == "" else String.humanize_size(dict.size.to_int()))
+	tooltip += "\ncreation time: " + dict.creation_time 
+	tooltip += "\nsha256 hash: " + image_hash
+	tooltip += "\ndifference hash: " + dict.diff_hash
+	tooltip += "\ncolor hash: " + String(dict.color_hash)
+	return tooltip
+
+# might need to be made threadsafe (or else change dictHashes to a ConcurrentDictionary)
+func _set_metadata(image_hash:String) -> void:
+	var size:String = Database.GetFileSize(image_hash)
+	var diff_hash:String = Database.GetDiffHash(image_hash)
+	var color_hash:Array = Database.GetColorHash(image_hash)
+	var creation_time:String = Database.GetCreationTime(image_hash)
+	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
+	th.lock()
+	# dimensions
+	var dict:Dictionary = {
+		"texture" : null,
+		"size" : size,
+		"diff_hash" : diff_hash,
+		"color_hash" : color_hash,
+		"creation_time" : creation_time,
+		"paths" : paths
+	}
+	thumb_history[image_hash] = dict
+	th.unlock()
+	
 var selected_items:Dictionary = {}
 var last_index:int = 0
 var called_already:bool = false
@@ -406,5 +437,16 @@ func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size.value = value
-	
 
+#func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
+func _toggle_thumbnail_tooltips() -> void:
+	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips
+	if show_tooltips:
+		for idx in self.get_item_count():
+			var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][idx]
+			th.lock() ; var dict:Dictionary = thumb_history[image_hash] ; th.unlock()
+			self.set_item_tooltip(idx, _create_tooltip(image_hash, dict, idx))
+	else:
+		for idx in self.get_item_count():
+			self.set_item_tooltip(idx, "")
+			

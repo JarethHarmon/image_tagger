@@ -264,7 +264,7 @@ margin_left = 50.0
 margin_top = 50.0
 margin_right = 1870.0
 margin_bottom = 1030.0
-items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false ]
+items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false ]
 
 [node name="FileDialog" type="FileDialog" parent="popups"]
 margin_left = 50.0

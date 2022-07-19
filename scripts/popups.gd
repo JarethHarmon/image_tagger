@@ -1,7 +1,7 @@
 extends MarginContainer
 
 enum file_context_menu { ImportImages, }
-enum view_context_menu { FullScreen, }
+enum view_context_menu { FullScreen, ShowThumbnailTooltips }
 
 onready var import_panel:PopupPanel = $ppanel_import
 onready var darkened_background:ColorRect = $background/bg_darken
@@ -59,13 +59,17 @@ func show_file_dialog(select_folders:bool=false) -> void:
 func _on_FileDialog_files_selected(paths:Array) -> void: Signals.emit_signal("files_selected", paths)
 func _on_FileDialog_dir_selected(dir:String) -> void: Signals.emit_signal("folder_selected", dir)
 
-
 func _on_pmenu_view_context_index_pressed(index:int) -> void:
 	if index == view_context_menu.FullScreen:
 		var checked:bool = view_context.is_item_checked(index)
 		view_context.set_item_checked(index, not checked)
 		Globals.settings.use_fullscreen = not checked
 		set_fullscreen(not checked)
+	elif index == view_context_menu.ShowThumbnailTooltips:
+		var checked:bool = view_context.is_item_checked(index)
+		view_context.set_item_checked(index, not checked)
+		Globals.settings.show_thumbnail_tooltips = not checked
+		Signals.emit_signal("toggle_thumbnail_tooltips")
 			
 func set_fullscreen(on:bool) -> void:
 	if on:
@@ -79,4 +83,5 @@ func set_fullscreen(on:bool) -> void:
 
 func _settings_loaded() -> void:
 	view_context.set_item_checked(view_context_menu.FullScreen, Globals.settings.use_fullscreen)
+	view_context.set_item_checked(view_context_menu.ShowThumbnailTooltips, Globals.settings.show_thumbnail_tooltips)
 	set_fullscreen(Globals.settings.use_fullscreen)
