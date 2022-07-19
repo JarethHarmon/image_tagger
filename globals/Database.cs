@@ -636,6 +636,26 @@ public class Database : Node
 		} catch (Exception ex) { GD.Print("Database::BulkAddTags() : ", ex); return; }
 	}
 	
+	public void BulkRemoveTags(string[] imageHashes, string[] tags)
+	{
+		try {
+			var list = new List<HashInfo>();
+			foreach (string imageHash in imageHashes) {
+				var tmp = colHashes.FindById(imageHash);
+				if (tmp == null) continue;
+				if (tmp.tags == null) continue;
+				foreach (string tag in tags) tmp.tags.Remove(tag);
+				if (tmp.tags.Count == 0) tmp.tags = null;
+				if (dictHashes.ContainsKey(imageHash)) dictHashes[imageHash] = tmp;
+				list.Add(tmp);
+			}
+			dbHashes.BeginTrans();
+			foreach (HashInfo hashInfo in list)
+				colHashes.Update(hashInfo);
+			dbHashes.Commit();
+		} catch (Exception ex) { GD.Print("Database::BulkRemoveTags() : ", ex); return; }
+	}
+	
 /*=========================================================================================
 								 Data Structure Access
 =========================================================================================*/

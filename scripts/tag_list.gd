@@ -2,12 +2,13 @@ extends Control
 
 # maybe have an option button with a list of default delimiter options (comma, dot, ::, etc)
 
-onready var tag_flow:HFlowContainer = $margin/vbox/margin/scroll/flow
+onready var tag_flow:HFlowContainer = $margin/vbox/margin/scroll/bg/flow
 onready var tag_entry:LineEdit = $margin/vbox/hbox/tag_entry
 onready var delimiter_entry:LineEdit = $margin/vbox/hbox/vbox/delimiter_entry
 onready var scroll:ScrollContainer = $margin/vbox/margin/scroll
 
-var current_tags:Dictionary = {}
+var current_tags:Dictionary = {}		# tag : [index, button, color]
+var tags_array:Array = []
 var selected_thumbnails:Dictionary = {}
 
 var use_delimiter:bool = true
@@ -58,12 +59,20 @@ func add_tag(tag:String) -> void:
 	var sbf:StyleBoxFlat = Globals.make_stylebox(color)
 	b.add_stylebox_override("normal", sbf)
 	b.add_stylebox_override("hover", Globals.make_stylebox(color, 0.05, 5.0))
-	sbf = Globals.make_stylebox(color, 2.0, 0.05, 2)
-	b.add_stylebox_override("pressed", sbf)
-	b.add_stylebox_override("focus", sbf)
+	var sbf2:StyleBoxFlat = Globals.make_stylebox(color, 2.0, 0.05, 2)
+	b.add_stylebox_override("pressed", sbf2)
+	b.add_stylebox_override("focus", sbf2)
 	b.add_color_override("font_color_pressed", Color.black)
 	b.add_color_override("font_color_focus", Color.black)
+	b.connect("button_up", self, "tag_clicked", [tag])
+	current_tags[tag] = {
+		"color" : color,
+		"normal" : sbf,
+		"focus" : sbf2,
+		"button" : b,
+	}
 	tag_flow.add_child(b)
+	tags_array.push_back(tag)
 
 func upload_tags(tags:Array, selection:Dictionary) -> void:
 	var selected_hashes:Array = []
@@ -92,3 +101,74 @@ func clear_tag_list() -> void:
 	for child in tag_flow.get_children():
 		child.queue_free()
 
+var selected_tags:Dictionary = {}
+var last_clicked_index:int = -1
+
+# update current_tags to include index,button.color ; use it instead of selected tags for that information (do not pass it to these functions
+func tag_clicked(tag:String) -> void:
+	var button:Button = current_tags[tag].button
+	var index:int = button.get_index()
+	if Globals.ctrl_pressed and Globals.shift_pressed: pass
+	elif Globals.ctrl_pressed: 
+		invert_tag_selection(tag)		
+	elif Globals.shift_pressed:
+		if last_clicked_index < 0: select(tag)
+		elif last_clicked_index == index: invert_tag_selection(tag)
+		else:
+			var range_low:int = min(last_clicked_index, index)
+			var range_high:int = max(last_clicked_index, index)
+			for i in range(range_low, range_high+1): 
+				# deselect range
+				if selected_tags.has(tag): 
+					deselect(tags_array[i])
+				# select range
+				else: 
+					select(tags_array[i])
+	else:
+		deselect_all()
+		selected_tags[tag] = button
+		current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].focus)
+		current_tags[tag].button.add_color_override("font_color", Color.black)
+	last_clicked_index = index
+	button.release_focus()
+	#print(selected_tags.keys())
+
+func invert_tag_selection(tag:String) -> void:
+	if selected_tags.has(tag): deselect(tag)
+	else: select(tag)
+
+func select(tag:String) -> void:
+	current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].focus)
+	current_tags[tag].button.add_color_override("font_color", Color.black)
+	selected_tags[tag] = null
+	
+func deselect(tag:String) -> void:
+	current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].normal)
+	current_tags[tag].button.remove_color_override("font_color")
+	selected_tags.erase(tag)
+
+func deselect_all() -> void:
+	for tag in selected_tags: 
+		current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].normal)
+		current_tags[tag].button.remove_color_override("font_color")
+	selected_tags.clear()
+
+# need to keep a selected data structure and allow multi select
+# need to override their stylebox to indicate selection (see tabs in import_list for reference)
+func _on_remove_tags_button_up() -> void:
+	var tags:Array = selected_tags.keys()
+	for tag in tags:
+		selected_tags.erase(tag)
+		tags_array.erase(tag)
+		current_tags[tag].button.queue_free()
+		current_tags.erase(tag)
+	var hashes:Array = []
+	for idx in selected_thumbnails: 
+		hashes.push_back(selected_thumbnails[idx])
+	Database.BulkRemoveTags(hashes, tags)
+	# remove from database & dictionary
+
+func _on_bg_gui_input(event:InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == BUTTON_LEFT:
+			deselect_all()

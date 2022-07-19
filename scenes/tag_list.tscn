@@ -44,16 +44,8 @@ margin_bottom = 26.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
-margin_right = 1848.0
-margin_bottom = 26.0
-size_flags_horizontal = 3
-clear_button_enabled = true
-placeholder_text = "Type delimiter-separated tags..."
-
 [node name="vbox" type="VBoxContainer" parent="margin/vbox/hbox"]
-margin_left = 1852.0
-margin_right = 1910.0
+margin_right = 58.0
 margin_bottom = 26.0
 mouse_filter = 2
 size_flags_vertical = 3
@@ -70,6 +62,20 @@ margin_bottom = 24.0
 grow_horizontal = 0
 text = ","
 align = 1
+
+[node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
+margin_left = 62.0
+margin_right = 1727.0
+margin_bottom = 26.0
+size_flags_horizontal = 3
+clear_button_enabled = true
+placeholder_text = "Type delimiter-separated tags..."
+
+[node name="remove_tags" type="Button" parent="margin/vbox/hbox"]
+margin_left = 1731.0
+margin_right = 1910.0
+margin_bottom = 26.0
+text = "  Remove Selected Tag(s)  "
 
 [node name="hsep" type="HSeparator" parent="margin/vbox"]
 margin_top = 30.0
@@ -99,9 +105,19 @@ size_flags_vertical = 3
 follow_focus = true
 scroll_horizontal_enabled = false
 
-[node name="flow" type="HFlowContainer" parent="margin/vbox/margin/scroll"]
+[node name="bg" type="ColorRect" parent="margin/vbox/margin/scroll"]
 margin_right = 1900.0
 margin_bottom = 1022.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 0, 0, 0, 0 )
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/margin/scroll/bg"]
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[connection signal="button_up" from="margin/vbox/hbox/remove_tags" to="." method="_on_remove_tags_button_up"]
+[connection signal="gui_input" from="margin/vbox/margin/scroll/bg" to="." method="_on_bg_gui_input"]

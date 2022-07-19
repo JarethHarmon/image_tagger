@@ -24,6 +24,9 @@ var current_group_id:String = ""
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports
 
+var ctrl_pressed:bool = false
+var shift_pressed:bool = false
+
 var settings_path:String = "user://settings.tres"
 
 var last_settings:Array = []
@@ -71,6 +74,12 @@ var settings:Dictionary = {
 }
 
 func _print(string, args) -> void: print("  ", string + ": ", args)
+
+func _input(event:InputEvent) -> void:
+	if Input.is_action_pressed("ctrl"): ctrl_pressed = true
+	if Input.is_action_pressed("shift"): shift_pressed = true
+	if Input.is_action_just_released("ctrl"): ctrl_pressed = false
+	if Input.is_action_just_released("shift"): shift_pressed = false
 
 func _ready() -> void:
 	settings.default_metadata_path = ProjectSettings.globalize_path("user://metadata/")

@@ -250,6 +250,10 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	var creation_time:String = Database.GetCreationTime(image_hash)
 	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
 	set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + "\ncreation time: " + creation_time + "\nsize: " + ("-1" if size == "" else String.humanize_size(size.to_int())) + "\npaths: " + String(paths))
+	#set_item_text(index, String(index+1))
+	# If I include text options, will need to edit scroll() to account for the increased vertical height
+	# would also need to limit it to one line of text, and I don't believe I was ever successful in calculating 
+	# the correct offset in the past
 	sc.unlock()
 
 var selected_items:Dictionary = {}
@@ -267,12 +271,23 @@ func deselect_all() -> void:
 	selected_items.clear()
 	self.unselect_all()
 
+func uncolor_all() -> void: 
+	for idx in selected_items: 
+		self.set_item_custom_bg_color(idx, Color.transparent)
+		
+func color_all() -> void:
+	for idx in selected_items: 
+		self.set_item_custom_bg_color(idx, Color.red) 
+
 func select_items() -> void:
+	#uncolor_all()
 	selected_items.clear()
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
 	for i in arr_index.size():
 		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_import_id]][arr_index[i]]
+	#print(selected_items)
+	#color_all()
 	
 	var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][last_index]
 	var paths:Array = Database.GetPaths(image_hash)
@@ -288,8 +303,9 @@ func select_items() -> void:
 
 func select_all_items() -> void: 
 	selected_items.clear()
+	var import_id:String = Globals.current_import_id
 	for i in curr_page_image_count: 
-		selected_items[i] = page_history[[curr_page_number, Globals.current_import_id]][i]#current_page_komi64s[i]
+		selected_items[i] = page_history[[curr_page_number, import_id]][i]#current_page_komi64s[i]
 		self.select(i, false)
 
 var ctrl_pressed:bool = false
