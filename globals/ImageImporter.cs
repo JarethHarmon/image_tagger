@@ -97,22 +97,34 @@ public class ImageImporter : Node
 			return result;
 		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return Database.ImageType.FAIL; }
 	}
+	
 	public int GetActualFormat(string imagePath)
 	{
-		if ((bool) globals.Call("is_apng", imagePath)) return Database.ImageType.APNG;
-		string format = _GetActualFormat(imagePath);
-		if (format == "JPG") return Database.ImageType.JPG;
-		if (format == "PNG") return Database.ImageType.PNG;
-		return Database.ImageType.OTHER;
+		(string sformat, int width, int height) = _GetImageInfo(imagePath);
+		int format = Database.ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = Database.ImageType.APNG;
+		else if (sformat == "JPG") format = Database.ImageType.JPG;
+		else if (sformat == "PNG") format = Database.ImageType.PNG;
+		return format;
 	}
-	private static string _GetActualFormat(string imagePath)
+	
+	public (int, int, int) GetImageInfo(string imagePath)
+	{
+		(string sformat, int width, int height) = _GetImageInfo(imagePath);
+		int format = Database.ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = Database.ImageType.APNG;
+		else if (sformat == "JPG") format = Database.ImageType.JPG;
+		else if (sformat == "PNG") format = Database.ImageType.PNG;
+		
+		return (format, width, height);
+	}
+	private static (string, int, int) _GetImageInfo(string imagePath)
 	{
 		try {
-			if (imagePath.Length() < MAX_PATH_LENGTH) 
-				return new MagickImageInfo(imagePath).Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG");
-			else
-				return new MagickImageInfo(LoadFile(imagePath)).Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG");
-		} catch (Exception ex) { GD.Print("ImageImporter::GetActualFormat() : ", ex); return ""; }
+			var info = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImageInfo(imagePath) : new MagickImageInfo(LoadFile(imagePath));
+			string format = info.Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG");
+			return (format, info.Width, info.Height);
+		} catch (Exception ex) { GD.Print("ImageImporter::_GetImageInfo() : ", ex); return ("", 0, 0); }
 	}
 	// for loading images besides bmp/jpg/png (or bmp/jpg/png that have some sort of issue)
 	public static Godot.Image LoadUnsupportedImage(string imagePath, long imageSize)
@@ -321,7 +333,7 @@ public class ImageImporter : Node
 			//GD.Print(imagePath);
 			
 			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
-			int imageType = GetActualFormat(imagePath);
+			(int imageType, int width, int height) = GetImageInfo(imagePath);
 			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
 			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
 			
@@ -337,7 +349,7 @@ public class ImageImporter : Node
 				// not going to worry about those for now, but eventually they will be a passed argument(s)
 			// ratings will also be irrelevant for initial insert
 			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
-			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath);
+			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath, width, height);
 			
 			return ImportCodes.SUCCESS;	
 		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return ImportCodes.FAILED; }

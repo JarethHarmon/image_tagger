@@ -59,7 +59,7 @@ margin_left = 57.0
 margin_right = 145.0
 margin_bottom = 24.0
 text = "File Hash"
-items = [ "File Hash", null, false, 0, null, "File Path", null, true, 1, null, "File Size", null, false, 2, null, "File Upload Time", null, true, 3, null, "File Creation Time", null, false, 4, null, "Tag Count", null, false, 5, null, "Random", null, true, 6, null ]
+items = [ "File Hash", null, false, 0, null, "File Path", null, true, 1, null, "File Size", null, false, 2, null, "File Upload Time", null, true, 3, null, "File Creation Time", null, false, 4, null, "Dimensions", null, false, 5, null, "Tag Count", null, false, 6, null, "Random", null, true, 7, null ]
 selected = 0
 
 [node name="order_by" type="OptionButton" parent="margin/vbox/sort_buttons"]

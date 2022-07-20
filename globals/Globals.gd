@@ -12,7 +12,7 @@ extends Node
 #	o once the import finishes it should update the button to ' Import (success) ' ; but clicking on it would still show the full counts (success/fail/etc)
 
 
-enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, TagCount, Random }
+enum SortBy { FileHash, FilePath, FileSize, FileCreationUtc, FileUploadUtc, Dimensions, TagCount, Random }
 enum OrderBy { Ascending=0, Descending=1 }
 enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
 

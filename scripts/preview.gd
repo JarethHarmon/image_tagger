@@ -155,8 +155,6 @@ func _manager_thread() -> void:
 func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
-	#manager_done = true
-	#print("manager exited")
 
 enum formats { FAIL=-1, JPG=0, PNG, APNG, OTHER=7}
 
@@ -165,7 +163,7 @@ func _thread(args:Array) -> void:
 	var image_hash:String = args[0]
 	var path:String = args[1]
 	var thread_id:int = args[2]
-	#print(thread_id, " entered")
+
 	if stop_threads or thread_status[thread_id] == status.CANCELED:
 		call_deferred("_done", thread_id, path)
 		return
@@ -206,10 +204,8 @@ func _thread(args:Array) -> void:
 	else: pass
 	call_deferred("_done", thread_id, path)
 
-# should not be called directly by user
 func _done(thread_id:int, path:String) -> void:
 	_stop(thread_id)
-	#print(thread_id, " exited")
 	resize_current_image(path)
 
 func _stop(thread_id:int) -> void:

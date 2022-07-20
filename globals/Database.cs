@@ -17,7 +17,6 @@ using LiteDB;
 // this way I also do not need to include diffHash and colorHash inside groups/imports
 
 
-// I think I will remove lists of hashes from every class, now should query directly over hashInfo to find things with specific groupIds/importIds/tagIds/etc
 /*=========================================================================================
 										Classes
 =========================================================================================*/
@@ -28,8 +27,9 @@ using LiteDB;
 		public const int FileSize = 2;
 		public const int FileCreationUtc = 3;
 		public const int FileUploadUtc = 4;
-		public const int TagCount = 5;
-		public const int Random = 6;
+		public const int Dimensions = 5;
+		public const int TagCount = 6;
+		public const int Random = 7;
 	}
 	public class OrderBy
 	{
@@ -441,7 +441,7 @@ public class Database : Node
 	}
 	
 	// 0 = new, 1 = no change, 2 = update, -1 = fail
-	public int InsertHashInfo(string _imageHash, ulong _diffHash, float[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath)
+	public int InsertHashInfo(string _imageHash, ulong _diffHash, float[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath, int _width, int _height)
 	{
 		try {
 			var hashInfo = colHashes.FindById(_imageHash);
@@ -454,6 +454,8 @@ public class Database : Node
 					thumbnailType = _thumbnailType,
 					type = imageType,
 					size = imageSize,
+					width = _width,
+					height = _height,
 					creationUtc = imageCreationUtc,
 					uploadUtc = DateTime.Now.Ticks,
 					imports = new HashSet<string>{importId},
@@ -508,12 +510,13 @@ public class Database : Node
 	private List<HashInfo> _QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
 	{
 		try {
-			bool sortByTagCount = false, sortByRandom = false, counted=false;
+			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, counted=false;
 			string columnName = "_Id";
 
 			if (sortBy == SortBy.FileSize) columnName = "size";
 			else if (sortBy == SortBy.FileCreationUtc) columnName = "creationUtc";
 			else if (sortBy == SortBy.FileUploadUtc) columnName = "uploadUtc";
+			else if (sortBy == SortBy.Dimensions) sortByDimensions = true;
 			else if (sortBy == SortBy.TagCount) sortByTagCount = true;
 			else if (sortBy == SortBy.Random) sortByRandom = true;
 			
@@ -546,6 +549,10 @@ public class Database : Node
 				else return null; // default/placeholder, should not be called yet
 			} else if (sortByRandom) {
 				// not sure yet
+			} else if (sortByDimensions) {
+				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.width * x.height);
+				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.width * x.height);
+				else return null;
 			} else {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(columnName);
 				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(columnName);
