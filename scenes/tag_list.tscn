@@ -65,17 +65,29 @@ align = 1
 
 [node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
 margin_left = 62.0
-margin_right = 1727.0
+margin_right = 1553.0
 margin_bottom = 26.0
 size_flags_horizontal = 3
 clear_button_enabled = true
 placeholder_text = "Type delimiter-separated tags..."
 
 [node name="remove_tags" type="Button" parent="margin/vbox/hbox"]
-margin_left = 1731.0
+margin_left = 1557.0
+margin_right = 1696.0
+margin_bottom = 26.0
+text = "  Remove Selected  "
+
+[node name="copy_selected" type="Button" parent="margin/vbox/hbox"]
+margin_left = 1700.0
+margin_right = 1818.0
+margin_bottom = 26.0
+text = "  Copy Selected  "
+
+[node name="select_all" type="Button" parent="margin/vbox/hbox"]
+margin_left = 1822.0
 margin_right = 1910.0
 margin_bottom = 26.0
-text = "  Remove Selected Tag(s)  "
+text = "  Select All  "
 
 [node name="hsep" type="HSeparator" parent="margin/vbox"]
 margin_top = 30.0
@@ -120,4 +132,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [connection signal="button_up" from="margin/vbox/hbox/remove_tags" to="." method="_on_remove_tags_button_up"]
+[connection signal="button_up" from="margin/vbox/hbox/copy_selected" to="." method="_on_copy_selected_button_up"]
+[connection signal="button_up" from="margin/vbox/hbox/select_all" to="." method="_on_select_all_button_up"]
 [connection signal="gui_input" from="margin/vbox/margin/scroll/bg" to="." method="_on_bg_gui_input"]

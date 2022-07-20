@@ -173,3 +173,13 @@ func _on_bg_gui_input(event:InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == BUTTON_LEFT:
 			deselect_all()
+
+func _on_copy_selected_button_up() -> void:
+	var tags:String = ""
+	var delim:String = delimiter
+	for tag in selected_tags: tags += tag + delim
+	OS.set_clipboard(tags)
+
+func _on_select_all_button_up() -> void:
+	for tag in current_tags: 
+		select(tag)
