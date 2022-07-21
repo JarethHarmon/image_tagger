@@ -60,12 +60,12 @@ func indicate_selected_button(import_id:String) -> void:
 	last_selected_import = import_id
 	
 func create_import_buttons() -> void: 
-	var import_ids:Array = Database.GetAllImportIds()
-	update_button_text("All", true, Database.GetImportSuccessCount("All"), Database.GetTotalCount("All"), "All")
+	var import_ids:Array = Database.GetImportIds()
+	update_button_text("All", true, Database.GetSuccessCount("All"), Database.GetTotalCount("All"), "All")
 	for import_id in import_ids:
 		var total_count:int = Database.GetTotalCount(import_id)
 		var finished:bool = Database.GetFinished(import_id)
-		create_import_button(import_id, finished, total_count, Database.GetSuccessOrDuplicateCount(import_id), Database.GetImportName(import_id))
+		create_import_button(import_id, finished, total_count, Database.GetSuccessOrDuplicateCount(import_id), Database.GetName(import_id))
 		if not finished:
 			append_arg([import_id, total_count])
 	start_manager()
@@ -89,7 +89,8 @@ func create_new_import_button(import_id:String, count:int) -> void:
 	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
 	button_list.add_child(b)
 	buttons[import_id] = b
-	Database.CreateImportInfo(import_id, count);
+	var import_name:String = "Import" # ??? set here somehow
+	Database.CreateImport(import_id, count, import_name);
 	ImageScanner.CommitImport()
 	append_arg([import_id, count])
 	start_manager()

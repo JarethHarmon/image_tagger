@@ -12,17 +12,9 @@ using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
 
-public class ImportCodes
-{
-	public const int SUCCESS = 0;
-	public const int DUPLICATE = 1;
-	public const int IGNORED = 2;
-	public const int FAILED = -1;
-}
-
 public class ImageImporter : Node
 {
-	
+
 /*=========================================================================================
 									   Variables
 =========================================================================================*/
@@ -78,7 +70,7 @@ public class ImageImporter : Node
 	private int _SaveThumbnail(string imagePath, string thumbPath, long imageSize)
 	{
 		try {
-			int result = Database.ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
+			int result = (int)Data.ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			im.Strip();
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
@@ -90,31 +82,31 @@ public class ImageImporter : Node
 			}
 			else {
 				im.Format = MagickFormat.Png;
-				result = Database.ImageType.PNG;
+				result = (int)Data.ImageType.PNG;
 				im.Write(thumbPath);
 				new ImageOptimizer().LosslessCompress(thumbPath);
 			}
 			return result;
-		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return Database.ImageType.FAIL; }
+		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)Data.ImageType.ERROR; }
 	}
 	
 	public int GetActualFormat(string imagePath)
 	{
 		(string sformat, int width, int height) = _GetImageInfo(imagePath);
-		int format = Database.ImageType.OTHER;
-		if ((bool) globals.Call("is_apng", imagePath)) format = Database.ImageType.APNG;
-		else if (sformat == "JPG") format = Database.ImageType.JPG;
-		else if (sformat == "PNG") format = Database.ImageType.PNG;
+		int format = (int)Data.ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = (int)Data.ImageType.APNG;
+		else if (sformat == "JPG") format = (int)Data.ImageType.JPG;
+		else if (sformat == "PNG") format = (int)Data.ImageType.PNG;
 		return format;
 	}
 	
 	public (int, int, int) GetImageInfo(string imagePath)
 	{
 		(string sformat, int width, int height) = _GetImageInfo(imagePath);
-		int format = Database.ImageType.OTHER;
-		if ((bool) globals.Call("is_apng", imagePath)) format = Database.ImageType.APNG;
-		else if (sformat == "JPG") format = Database.ImageType.JPG;
-		else if (sformat == "PNG") format = Database.ImageType.PNG;
+		int format = (int)Data.ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = (int)Data.ImageType.APNG;
+		else if (sformat == "JPG") format = (int)Data.ImageType.JPG;
+		else if (sformat == "PNG") format = (int)Data.ImageType.PNG;
 		
 		return (format, width, height);
 	}
@@ -216,35 +208,6 @@ public class ImageImporter : Node
 /*=========================================================================================
 									   Importing
 =========================================================================================*/
-	
-	/*public void ImportImages(string importId, int imageCount)
-	{
-		int successCount = 0, duplicateCount = 0, ignoredCount = 0, failedCount = 0;
-		var images = iscan.GetImages(importId); 
-		// imagePath,imageType,imageCreationUtc,imageSize
-		db.CreateImportInfo(importId);
-		foreach ((string,long,long) imageInfo in images) {
-			int result = _ImportImage(imageInfo, importId, imageCount);
-			if (result == ImportCodes.SUCCESS) successCount++;
-			else if (result == ImportCodes.DUPLICATE) duplicateCount++;
-			else if (result == ImportCodes.IGNORED) ignoredCount++;
-			else failedCount++;
-			db.UpdateImportCount(importId, result);
-			signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
-			signals.Call("emit_signal", "update_import_button", importId, false, successCount, imageCount, db.GetImportName(importId));
-			// update Import database (function call will also update dictionary (if user is viewing the page for this import))
-			// update import_button
-		}
-		db.FinishImport(importId);
-		signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
-		signals.Call("emit_signal", "update_import_button", importId, true, successCount, imageCount, db.GetImportName(importId));
-		db.CheckpointHashDB();
-		db.CheckpointImportDB();
-	}*/
-	
-	//private HashSet<string> importsThatHaveCalledFinish = new HashSet<string>();
-	//private bool CheckImportFinishedBefore(string importId)
-	
 	public int ImportImage(string importId, int imageCount)
 	{
 		var image = iscan.GetImage(importId);
@@ -255,8 +218,8 @@ public class ImageImporter : Node
 		db.UpdateImportCount(importId, result);
 		
 		if (!db.ImportFinished(importId)) {
-			signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
-			signals.Call("emit_signal", "update_import_button", importId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetImportName(importId));
+			signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
+			signals.Call("emit_signal", "update_import_button", importId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
 		}
 		return 0;	
 	}
@@ -264,9 +227,8 @@ public class ImageImporter : Node
 	public void FinishImport(string importId, int imageCount)
 	{	
 		db.FinishImport(importId);
-		//GD.Print(db.GetSuccessOrDuplicateCount(importId));
-		signals.Call("emit_signal", "update_import_button", "All", true, db.GetImportSuccessCount("All"), db.GetTotalCount("All"), db.GetImportName("All"));
-		signals.Call("emit_signal", "update_import_button", importId, true, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetImportName(importId));
+		signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
+		signals.Call("emit_signal", "update_import_button", importId, true, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
 		Remove(importId);
@@ -313,21 +275,21 @@ public class ImageImporter : Node
 		// I think duplicates should just add path/importid and load like successful images (incrementing duplicate count instead of success count though)
 		try {
 			(string imagePath, long imageCreationUtc, long imageSize) = imageInfo;
-			// check that the path/type/time/size meet the conditions specified by user (return ImportCodes.IGNORED if not)
+			// check that the path/type/time/size meet the conditions specified by user (return ImportCode.IGNORED if not)
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
 			
 			if (CheckOrAdd(importId, imageHash)) {
 				db.AddPath(imageHash, imagePath);
-				return ImportCodes.IGNORED;
+				return (int)Data.ImportCode.IGNORED;
 			}
-			//if (db.DuplicateImportId(imageHash, importId)) return ImportCodes.IGNORED;
+			//if (db.DuplicateImportId(imageHash, importId)) return (int)Data.ImportCode.IGNORED;
 			
 			// I also need to add this importId to the 'imports' HashSet of HashInfo
 			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
 			if (db.HashDatabaseContains(imageHash)) {
 				db.AddImportId(imageHash, importId);
 				db.AddPath(imageHash, imagePath);
-				return ImportCodes.DUPLICATE;
+				return (int)Data.ImportCode.DUPLICATE;
 			}
 			
 			//GD.Print(imagePath);
@@ -335,7 +297,7 @@ public class ImageImporter : Node
 			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
 			(int imageType, int width, int height) = GetImageInfo(imagePath);
 			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
-			if (thumbnailType == Database.ImageType.FAIL) return ImportCodes.FAILED;
+			if (thumbnailType == (int)Data.ImageType.ERROR) return (int)Data.ImportCode.FAILED;
 			
 			ulong diffHash = DifferenceHash(savePath);
 			float[] colorHash = ColorHash(savePath); // 4 = int[64] (1 = int[256])
@@ -351,8 +313,8 @@ public class ImageImporter : Node
 			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
 			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath, width, height);
 			
-			return ImportCodes.SUCCESS;	
-		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return ImportCodes.FAILED; }
+			return (int)Data.ImportCode.SUCCESS;	
+		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return (int)Data.ImportCode.FAILED; }
 	}
 	
 }

@@ -17,6 +17,11 @@ onready var tq:Mutex = Mutex.new()		# mutex for interacting with thumb_queue
 onready var th:Mutex = Mutex.new()		# mutex for interacting with thumb_history
 
 # data structures
+# change to a { {}:{} } data structure, need to include search settings and image_hashes in values
+#	search settings should include tag arrays, import_id, group_id, image_hash (for similarity sorting) 
+#	as is relevant
+# all tabs will use this system; new tabs that are opened (like similarity sorting) will generate a new import_id
+# and upload themselves to the database
 var page_history:Dictionary = {}		# [page_number, load_id, type_id]:[image_hashes] :: stores last M pages of image_hashes
 var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails  ->> image_hash:{texture&metadata}
 var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
@@ -99,9 +104,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	Signals.emit_signal("max_pages_changed", queried_page_count)
-	#print(count_results)
-	#print(queried_image_count)
-	#print(queried_page_count)
 	
 	# display time taken for query
 	#var text:String = String(queried_image_count) + " : %1.3f ms" % [float(OS.get_ticks_usec()-time)/1000.0] 
@@ -120,7 +122,6 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	if not page_history.has(current_page): 
 		page_queue.push_back(current_page)
 	page_history[current_page] = hash_arr
-	#print(page_history.keys())
 	
   # set page image count
 	curr_page_image_count = hash_arr.size()
@@ -291,7 +292,6 @@ var selected_items:Dictionary = {}
 var last_index:int = 0
 var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
-	#print_debug(self.get_num_columns())
 	selected_item = index
 	last_index = index
 	if called_already: return
@@ -317,7 +317,6 @@ func select_items() -> void:
 	if arr_index.size() == 0: return
 	for i in arr_index.size():
 		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_import_id]][arr_index[i]]
-	#print(selected_items)
 	#color_all()
 	
 	var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][last_index]
@@ -347,7 +346,7 @@ var shift_pressed:bool = false
 # (based on whether selected_item is in selected_items already)
 var selected_item:int = 0
 var last_selected_item:int = 0
-#func _input(event:InputEvent) -> void:
+
 func _unhandled_input(event:InputEvent) -> void:
 	if Input.is_action_pressed("ctrl"): ctrl_pressed = true
 	if Input.is_action_pressed("shift"): shift_pressed = true
@@ -438,14 +437,17 @@ func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_column_width = value
 	thumb_size.value = value
 
-#func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 func _toggle_thumbnail_tooltips() -> void:
 	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips
 	if show_tooltips:
 		for idx in self.get_item_count():
 			var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][idx]
-			th.lock() ; var dict:Dictionary = thumb_history[image_hash] ; th.unlock()
-			self.set_item_tooltip(idx, _create_tooltip(image_hash, dict, idx))
+			th.lock()
+			if thumb_history.has(image_hash):
+				var dict:Dictionary = thumb_history[image_hash]
+				th.unlock()
+				self.set_item_tooltip(idx, _create_tooltip(image_hash, dict, idx))
+			else: th.unlock()
 	else:
 		for idx in self.get_item_count():
 			self.set_item_tooltip(idx, "")

@@ -7,8 +7,8 @@ onready var import_panel:PopupPanel = $ppanel_import
 onready var darkened_background:ColorRect = $background/bg_darken
 
 onready var file_dialog:FileDialog = $FileDialog
-onready var file_context:PopupMenu = $pmenu_file_context
-onready var view_context:PopupMenu = $pmenu_view_context
+onready var file_context:PopupMenu = $context_menu/pmenu_file
+onready var view_context:PopupMenu = $context_menu/pmenu_view
 
 func _ready() -> void:
 	Signals.connect("file_button_pressed", self, "_file_pressed")

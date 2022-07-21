@@ -197,7 +197,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="popups" type="MarginContainer" parent="."]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
@@ -248,22 +247,27 @@ margin_top = 1.0
 margin_right = -1.0
 margin_bottom = -1.0
 
-[node name="pmenu_file_context" type="PopupMenu" parent="popups"]
+[node name="context_menu" type="Control" parent="popups"]
 margin_left = 50.0
 margin_top = 50.0
-margin_right = 178.0
-margin_bottom = 92.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="pmenu_file" type="PopupMenu" parent="popups/context_menu"]
+margin_right = 128.0
+margin_bottom = 42.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 items = [ "Import Images", null, 0, false, false, 0, 0, null, "", false ]
 hide_on_checkable_item_selection = false
 allow_search = true
 
-[node name="pmenu_view_context" type="PopupMenu" parent="popups"]
-margin_left = 50.0
-margin_top = 50.0
-margin_right = 1870.0
-margin_bottom = 1030.0
+[node name="pmenu_view" type="PopupMenu" parent="popups/context_menu"]
+margin_right = 1820.0
+margin_bottom = 980.0
 items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false ]
 
 [node name="FileDialog" type="FileDialog" parent="popups"]
@@ -296,8 +300,8 @@ margin_bottom = 877.0
 
 [connection signal="dragged" from="margin/vbox/hsplit" to="margin/vbox/hsplit" method="_on_hsplit_dragged"]
 [connection signal="popup_hide" from="popups/ppanel_import" to="popups" method="_on_ppanel_import_popup_hide"]
-[connection signal="index_pressed" from="popups/pmenu_file_context" to="popups" method="_on_pmenu_file_context_index_pressed"]
-[connection signal="index_pressed" from="popups/pmenu_view_context" to="popups" method="_on_pmenu_view_context_index_pressed"]
+[connection signal="index_pressed" from="popups/context_menu/pmenu_file" to="popups" method="_on_pmenu_file_context_index_pressed"]
+[connection signal="index_pressed" from="popups/context_menu/pmenu_view" to="popups" method="_on_pmenu_view_context_index_pressed"]
 [connection signal="dir_selected" from="popups/FileDialog" to="popups" method="_on_FileDialog_dir_selected"]
 [connection signal="files_selected" from="popups/FileDialog" to="popups" method="_on_FileDialog_files_selected"]
 

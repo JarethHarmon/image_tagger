@@ -42,6 +42,7 @@ using LiteDB;
 	{
 		public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
 		public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
+		public string imageName { get; set; }			// the first file name found for the image, can be changed manually or by cycling through paths
 		
 		public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
 		public float[] colorHash { get; set; }			// the ColorHash() of the thumbnail
@@ -75,7 +76,6 @@ using LiteDB;
 		public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
 		public int canceledCount { get; set; }			// number of paths that were removed from files when this import was canceled
 		public int removedCount { get; set; }			// the number of paths that have been manually removed from this import by the user (may not keep)
-		public int hiddenCount { get; set; }			// the number of paths that have been hidden from normal view for this import (for easier viewing of non-tagged images)
 		public int totalCount { get; set; }				// the total original number of images included in this import (regardless of whether they successfully imported)
 		public bool finished { get; set; }
 		public string importName { get; set; }
@@ -110,20 +110,6 @@ public class Database : Node
 {
 
 /*=========================================================================================
-									   Subclasses
-=========================================================================================*/
-	public class ImageType
-	{
-		// primarily for types with better built-in support, any random types and those the user adds will be assigend 'other'
-		public const int JPG = 0;
-		public const int PNG = 1;
-		public const int APNG = 2;
-		// ...
-		public const int OTHER = 7;
-		public const int FAIL = -1;
-	}
-
-/*=========================================================================================
 									   Variables
 =========================================================================================*/
 	public bool useJournal = true;
@@ -152,6 +138,7 @@ public class Database : Node
 	{
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		importer = (ImageImporter) GetNode("/root/ImageImporter");
+		GD.Print(Data.ImportCode.SUCCESS);
 	}
 	
 	public int Create() 
@@ -224,7 +211,7 @@ public class Database : Node
 				colImports.Update(iinfo);
 			}
 		}
-		colImports.Update(ImportsTryGetValue("All"));			
+		colImports.Update(GetImport("All"));			
 	}
 	
 	public void Destroy() 
@@ -241,113 +228,83 @@ public class Database : Node
 	public void CheckpointTagDB() { dbTags.Checkpoint(); }
 	
 /*=========================================================================================
-									Database Access
+								  Imports Database Access
 =========================================================================================*/
-	private int lastQueriedCount = 0;
-	public int GetLastQueriedCount() { return lastQueriedCount; }
 	
 	public int GetSuccessOrDuplicateCount(string importId)
-	{
-		return GetImportSuccessCount(importId) + GetDuplicateCount(importId);
+	{ 
+		ImportInfo importInfo;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.successCount + importInfo.duplicateCount : 0;
 	}
-	
-	public int GetImportSuccessCount(string importId)
+	public int GetSuccessCount(string importId)
 	{
 		ImportInfo importInfo;
-		dictImports.TryGetValue(importId, out importInfo);
-		return importInfo.successCount;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.successCount : 0;
 	}
-	
 	public int GetDuplicateCount(string importId)
 	{
 		ImportInfo importInfo;
-		dictImports.TryGetValue(importId, out importInfo);
-		return importInfo.duplicateCount;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.duplicateCount : 0;
 	}
-	
 	public int GetTotalCount(string importId)
 	{
 		ImportInfo importInfo;
-		if (!dictImports.TryGetValue(importId, out importInfo)) return 0;
-		return importInfo.totalCount;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.totalCount : 0;
 	}
 	public bool GetFinished(string importId)
 	{
 		ImportInfo importInfo;
-		dictImports.TryGetValue(importId, out importInfo);
-		return importInfo.finished;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.finished : true;
 	}
-	public string GetImportName(string importId)
+	public string GetName(string importId)
 	{
 		ImportInfo importInfo;
-		dictImports.TryGetValue(importId, out importInfo);
-		return importInfo.importName;
+		bool success = dictImports.TryGetValue(importId, out importInfo);
+		return (success) ? importInfo.importName : "Import";
 	}
-	
-	public bool DuplicateImportId(string imageHash, string importId)
-	{
-		if (dictHashes.ContainsKey(imageHash)) 
-		{
-		//	GD.Print("in dict");
-			return dictHashes[imageHash].imports.Contains(importId);
-		} try {
-			//GD.Print("check db");
-			var result = colHashes.FindById(imageHash);
-			if (result == null) return false;
-			return result.imports.Contains(importId);
-		} catch (Exception ex) { return false; }
-	}
-	
-	public void CreateAllInfo()
-	{
-		try {
-			var importInfo = colImports.FindById("All");
-			if (importInfo == null) {
-				importInfo = new ImportInfo {
-					importId = "All",
-					successCount = 0,
-					ignoredCount = 0,
-					failedCount = 0,
-					duplicateCount = 0,
-					finished = true,
-					importName = "All",
-					importTime = 0,
-				};
-				colImports.Insert(importInfo);
-			}
-			ImportsTryAdd("All", importInfo);
-			//dictImports["All"] = importInfo;
-		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
-	}
-	public void LoadAllImportInfo()
-	{
-		try {
-			var results = colImports.FindAll();
-			foreach (ImportInfo importInfo in results) {
-				ImportsTryAdd(importInfo.importId, importInfo);
-				//dictImports[importInfo.importId] = importInfo;
-			}
-		} catch(Exception ex) { GD.Print("Database::LoadAllImportInfo()() : ", ex); return; }
-	}
-	
-	public void ImportsTryAdd(string importId, ImportInfo importInfo)
-	{
-		bool result = dictImports.TryAdd(importId, importInfo);
-		if (!result) {
-			ImportInfo temp;
-			result = dictImports.TryGetValue(importId, out temp);
-			result = dictImports.TryUpdate(importId, importInfo, temp);
-		}
-	}
-	
-	public ImportInfo ImportsTryGetValue(string importId)
+	public ImportInfo GetImport(string importId)
 	{
 		ImportInfo importInfo = null;
 		dictImports.TryGetValue(importId, out importInfo);
 		return importInfo;
 	}
-	
-	public void CreateImportInfo(string _importId, int _totalCount)
+	public string[] GetImportIds()
+	{
+		return dictImports.Keys.ToArray();
+	}
+	public void LoadImportInfo()
+	{
+		try {
+			var results = colImports.FindAll();
+			foreach (ImportInfo importInfo in results) 
+				AddImport(importInfo.importId, importInfo);
+		} catch(Exception ex) { GD.Print("Database::LoadImportInfo()() : ", ex); return; }
+	}
+	public void CreateAllInfo() 
+	{
+		try {
+			var allInfo = colImports.FindById("All");
+			if (allInfo == null) {
+				allInfo = new ImportInfo {
+					importId = "All",
+					successCount = 0,
+					failedCount = 0,
+					removedCount = 0,
+					finished = true,
+					importName = "All",
+					importTime = 0,
+				};
+				colImports.Insert(allInfo);
+			}
+			AddImport("All", allInfo);
+		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
+	}
+	public void CreateImport(string _importId, int _totalCount, string _importName="Import") 
 	{
 		try {
 			var importInfo = new ImportInfo {
@@ -356,64 +313,74 @@ public class Database : Node
 				ignoredCount = 0,
 				failedCount = 0,
 				duplicateCount = 0,
+				removedCount = 0,
 				totalCount = _totalCount,
 				finished = false,
-				importName = "Import",
+				importName = _importName,
 				importTime = DateTime.Now.Ticks,
 			};
-			ImportsTryAdd(_importId, importInfo);
-			//dictImports[_importId] = importInfo;
+			AddImport(_importId, importInfo);
 			colImports.Insert(importInfo);
-		} catch(Exception ex) { GD.Print("Database::CreateImportInfo() : ", ex); return; }
+		} catch (Exception ex) { GD.Print("Database::CreateImport() : ", ex); return; }
 	}
-	public void UpdateImportCount(string importId, int countResult)
+	public void AddImport(string importId, ImportInfo importInfo)
+	{
+		bool result = dictImports.TryAdd(importId, importInfo);
+		if (!result) {
+			ImportInfo temp;
+			result = dictImports.TryGetValue(importId, out temp);
+			result = dictImports.TryUpdate(importId, importInfo, temp);
+		}
+	}
+	public void UpdateImportCount(string importId, int countResult) 
 	{
 		try {
-			// move ImportCodes to Database
+			var importInfo = GetImport(importId);
+			var allInfo = GetImport("All");
 			
-			var importInfo = ImportsTryGetValue(importId);
-			//if (importInfo == null) importInfo = colImports.FindById(importId);
-			var allInfo = ImportsTryGetValue("All");
-		//	if (allInfo == null) allInfo = colImports.FindById("All");
-			
-			if (countResult == 0) { 
+			if (countResult == (int)Data.ImportCode.SUCCESS) {
 				importInfo.successCount++;
 				allInfo.successCount++;
-			} else if (countResult == 1) {
-				importInfo.duplicateCount++;
-				allInfo.duplicateCount++;
-			} else if (countResult == 2) {
-				importInfo.ignoredCount++;
-				allInfo.ignoredCount++;
-			} else {
+			} 
+			else if (countResult == (int)Data.ImportCode.DUPLICATE) importInfo.duplicateCount++;
+			else if (countResult == (int)Data.ImportCode.IGNORED) importInfo.ignoredCount++;
+			else { 
 				importInfo.failedCount++;
 				allInfo.failedCount++;
 			}
-			ImportsTryAdd("All", allInfo);
-			ImportsTryAdd(importId, importInfo);
-			//dictImports["All"] = allInfo;
-			//dictImports[importId] = importInfo;
-			//colImports.Update(importInfo);
-			//colImports.Update(allInfo);			
+			AddImport("All", allInfo);
+			AddImport(importId, importInfo);
 		} catch(Exception ex) { GD.Print("Database::UpdateImportCount() : ", ex); return; }
 	}
 	public void FinishImport(string importId)
 	{
 		try {
-			var importInfo = ImportsTryGetValue(importId);//colImports.FindById(importId);
-			var allInfo = ImportsTryGetValue("All");//colImports.FindById("All");
+			var importInfo = GetImport(importId);
+			var allInfo = GetImport("All");
 			importInfo.finished = true;
-			ImportsTryAdd(importId, importInfo);
-			//dictImports[importId] = importInfo;
+			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
 		} catch(Exception ex) { GD.Print("Database::FinishImport() : ", ex); return; }
 	}
-	public string[] GetAllImportIds()
-	{
-		return dictImports.Keys.ToArray();
-	}
+
+/*=========================================================================================
+									 Database Access
+=========================================================================================*/	
+	private int _lastQueriedCount = 0;
+	public int GetLastQueriedCount() { return _lastQueriedCount; }
 	
+	public bool CheckDuplicate(string imageHash, string importId)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return dictHashes[imageHash].imports.Contains(importId);
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return false;
+			return result.imports.Contains(importId);
+		} catch (Exception ex) { return false; }
+	}
+
 	public int AddImportId(string imageHash, string importId)
 	{
 		try {
@@ -521,7 +488,7 @@ public class Database : Node
 			else if (sortBy == SortBy.Random) sortByRandom = true;
 			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
-				lastQueriedCount = (importId.Equals("All")) ? GetImportSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
+				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
 				
 				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
@@ -541,7 +508,7 @@ public class Database : Node
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
-			if (countResults && !counted) lastQueriedCount = query.Count(); // slow
+			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 			
 			if (sortByTagCount) {
 				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
@@ -564,7 +531,7 @@ public class Database : Node
 				is PredicateBuilder (which is slower I believe) */
 			
 			var list = query.Skip(offset).Limit(count).ToList();
-			//lastQueriedCount = list.Count;		
+			//_lastQueriedCount = list.Count;		
 			//GD.Print(list.Count);
 			return list;
 		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }

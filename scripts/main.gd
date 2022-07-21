@@ -45,7 +45,7 @@ func _begin() -> void:
 	if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
 	# load import groups from database (and other list metadata)
 	Database.CreateAllInfo()
-	Database.LoadAllImportInfo()
+	Database.LoadImportInfo()
 	Database.LoadInProgressPaths()
 	
 	Signals.emit_signal("import_info_load_finished")	
