@@ -97,6 +97,7 @@ func create_tab_button(tab_id:String, finished:bool, total_count:int, success_co
 	var b:Button = Button.new()
 	b.text = "  " + tab_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
 
@@ -113,6 +114,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	var b:Button = Button.new()
 	b.text = "  " + tab_name + " (0/" + String(count) + ")  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
 	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "", null, null, null)
@@ -126,6 +128,7 @@ func create_similarity_tab(tab_id:String, image_hash:String) -> void:
 	var b:Button = Button.new()
 	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
 
@@ -136,9 +139,22 @@ func create_new_similarity_tab(image_hash:String) -> void:
 	var b:Button = Button.new()
 	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
 	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash, null, null, null)
+
+func _on_tab_button_gui_input(event:InputEvent, tab_id:String) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == BUTTON_RIGHT:
+			delete_tab(tab_id)
+
+func delete_tab(tab_id:String) -> void:
+	if not buttons.has(tab_id): return
+	var button:Button = buttons[tab_id]
+	buttons.erase(tab_id)
+	button_list.remove_child(button)
+	Database.RemoveTab(tab_id)
 
 func update_button_text(tab_id:String, finished:bool, success_count:int, total_count:int, import_name:String) -> void:
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]

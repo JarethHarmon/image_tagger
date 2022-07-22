@@ -334,6 +334,13 @@ public class Database : Node
 			dictTabs["All"] = tabInfo;
 		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
 	}
+	public void RemoveTab(string tabId)
+	{
+		try {
+			dictTabs.Remove(tabId);
+			colTabs.Delete(tabId);
+		} catch (Exception ex) { GD.Print("Database::RemoveTab() : ", ex); return; }
+	}
 	public void CreateTab(string _tabId, int _tabType, string _tabName, int totalCount=0, string _importId="", string _groupId="", string _tag="", string _similarityHash="", string[] _tagsAll=null, string[] _tagsAny=null, string[] _tagsNone=null)
 	{
 		try {
