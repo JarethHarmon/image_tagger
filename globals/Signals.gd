@@ -21,6 +21,7 @@ signal update_import_button(import_id, finished, success_count, total_count, imp
 signal toggle_thumbnail_tooltips
 
 signal select_all_pressed
+signal all_selected_items(selection)
 signal deselect_all_pressed
 
 signal start_scan(folder, recursive)

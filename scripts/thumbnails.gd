@@ -343,7 +343,8 @@ func select_all_items() -> void:
 	for i in curr_page_image_count: 
 		selected_items[i] = page_history[[curr_page_number, tab_id]][i]
 		self.select(i, false)
-
+	Signals.emit_signal("all_selected_items", selected_items)
+	
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
 

@@ -22,12 +22,15 @@ func _ready() -> void:
 	tag_entry.connect("text_entered", self, "tag_entered")
 	delimiter_entry.connect("text_changed", self, "delimiter_changed")
 	Signals.connect("load_image_tags", self, "_load_tags")
+	Signals.connect("all_selected_items", self, "set_selection")
+	
+func set_selection(selection:Dictionary) -> void:
+	selected_thumbnails = selection
 
 func _load_tags(image_hash:String, selection:Dictionary) -> void:
 	clear_tag_list()
 	curr_hash = image_hash
 	var tags:Array = Database.GetTags(image_hash)
-	#print_debug(tags)
 	for tag in tags: add_tag(tag)
 	selected_thumbnails = selection
 
@@ -35,9 +38,6 @@ func delimiter_changed(text:String) -> void: delimiter = text if text != "" else
 
 func tag_entered(text:String) -> void:
 	if text == "": return
-	if curr_hash == "": 
-		tag_entry.text = ""	
-		return
 	var tags:Array = text.split(delimiter, false) as Array if use_delimiter else [text]
 	for tag in tags:
 		add_tag(tag)
@@ -78,6 +78,7 @@ func add_tag(tag:String) -> void:
 func upload_tags(tags:Array, selection:Dictionary) -> void:
 	var selected_hashes:Array = []
 	for idx in selection: selected_hashes.push_back(selection[idx])
+	if selected_hashes.empty(): return
 	var thread:Thread = Thread.new()
 	thread.start(self, "_thread", [thread, tags, selected_hashes])
 
