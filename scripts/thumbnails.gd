@@ -253,6 +253,11 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	if Globals.settings.show_thumbnail_tooltips:
 		var tooltip:String = _create_tooltip(image_hash, dict, index)
 		set_item_tooltip(index, tooltip)
+	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
+		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+		var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+		set_item_text(index, String(similarity) + "%")
+		
 	#set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + +  + "\npaths: " + String(paths))
 	#set_item_text(index, String(index+1))
 	# If I include text options, will need to edit scroll() to account for the increased vertical height
@@ -453,7 +458,6 @@ func _toggle_thumbnail_tooltips() -> void:
 		for idx in self.get_item_count():
 			self.set_item_tooltip(idx, "")
 			
-
 func _on_thumbnails_item_rmb_selected(index:int, _at_position:Vector2) -> void:
 	# actual code should show a context menu
 	var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][index]

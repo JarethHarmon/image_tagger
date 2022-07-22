@@ -129,6 +129,7 @@ public class Database : Node
 	
 	public ImageScanner iscan;
 	public ImageImporter importer;
+	public Node globals;
 	
 /*=========================================================================================
 									 Initialization
@@ -137,6 +138,7 @@ public class Database : Node
 	{
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		importer = (ImageImporter) GetNode("/root/ImageImporter");
+		globals = (Node) GetNode("/root/Globals");
 		GD.Print(Data.ImportCode.SUCCESS);
 	}
 	
@@ -755,7 +757,6 @@ public class Database : Node
 		bool result = dictImports.TryGetValue(importId, out importInfo);
 		if (!result) return false;
 		return importInfo.finished;
-		//return (dictImports.ContainsKey(importId)) ? dictImports[importId].finished : false;
 	}
 	
 /*=========================================================================================
@@ -765,22 +766,30 @@ public class Database : Node
 	{
 		int numColors = h1.Length, same = 0;
 		float difference = 0f;
-		
 		for (int color = 0; color < numColors; color++) {
 			float percent1 = h1[color], percent2 = h2[color];
 			difference += Math.Abs(percent1-percent2);
 			if (percent1 > 0 && percent2 > 0) same++;
+			else if (percent1 == percent2) same++;
 		}
 		
-		float p1 = (float)same/numColors;
-		float p2 = 1f-difference;
+		float p1 = 100f * (float)same/numColors;
+		float p2 = 100f-(difference/2f);
 		
 		return 0.5f * (p1+p2);
 	}
-	
+
 	public double DifferenceSimilarity(ulong h1, ulong h2)
 	{
 		return CompareHash.Similarity(h1, h2);
 	}
 	
+	public float GetAverageSimilarityTo(string compareHash, string imageHash)
+	{
+		var hashInfo1 = dictHashes[compareHash];
+		var hashInfo2 = dictHashes[imageHash];
+		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
+		double difference = DifferenceSimilarity(hashInfo1.diffHash, hashInfo2.diffHash);
+		return (color+(float)difference)/2f;
+	}
 }
