@@ -38,6 +38,7 @@ func reset() -> void:
 	paths.clear()
 	types.clear()
 	sizes.clear()
+	import_name.text = ""
 	import_id = ImageImporter.CreateImportID()
 
 # once the user starts importing, the settings are finalized and the importer closes
