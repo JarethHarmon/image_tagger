@@ -29,6 +29,8 @@ signal folder_selected(folder)
 signal new_import_started(import_id, count, import_name) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
 signal new_import_canceled
 
+signal create_similarity_tab(image_hash)
+
 signal show_import_menu
 
 # core_buttons

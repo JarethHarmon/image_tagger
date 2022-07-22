@@ -33,6 +33,7 @@ func _ready() -> void:
 	Signals.connect("new_import_started", self, "create_new_tab_button")
 	Signals.connect("import_info_load_finished", self, "create_tab_buttons")
 	Signals.connect("update_import_button", self, "update_button_text")
+	Signals.connect("create_similarity_tab", self, "create_new_similarity_tab")
 	buttons["All"] = all_button
 	
 	create_threads(max_total_threads)
@@ -74,13 +75,15 @@ func create_tab_buttons() -> void:
 			var success_count:int = Database.GetSuccessOrDuplicateCount(import_id)
 			var total_count:int = Database.GetTotalCount(import_id)
 			var finished:bool = Database.GetFinished(import_id)
-			var import_name:String = Database.GetName(import_id)
-			create_tab_button(tab_id, finished, total_count, success_count, import_name)
+			var tab_name:String = Database.GetName(tab_id)
+			create_tab_button(tab_id, finished, total_count, success_count, tab_name)
 			if not finished:
 				append_arg([import_id, total_count])
 		elif tab_type == Globals.Tab.IMAGE_GROUP: pass
 		elif tab_type == Globals.Tab.TAG: pass
-		elif tab_type == Globals.Tab.SIMILARITY: pass
+		elif tab_type == Globals.Tab.SIMILARITY: 
+			var image_hash:String = Database.GetSimilarityHash(tab_id)
+			create_similarity_tab(tab_id, image_hash)
 		#var import_id:String = Database.GetImportId(tab_id)
 		#var group_id:String = Database.GetGroupId(tab_id)
 		#var tag:String = Database.GetTag(tab_id)
@@ -88,16 +91,16 @@ func create_tab_buttons() -> void:
 
 	start_manager()
 		
-func create_tab_button(tab_id:String, finished:bool, total_count:int, success_count:int, import_name:String) -> void:
+func create_tab_button(tab_id:String, finished:bool, total_count:int, success_count:int, tab_name:String) -> void:
 	if tab_id == "All": return
 	if total_count <= 0: return # remove it from import database (check on c# side when loading though)
 	var b:Button = Button.new()
-	b.text = "  " + import_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
+	b.text = "  " + tab_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
 
-func create_new_tab_button(import_id:String, count:int, import_name:String) -> void:
+func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void:
 	if count <= 0: return
 	if import_id == "": return
 	if argument_queue.has(import_id): return
@@ -108,14 +111,34 @@ func create_new_tab_button(import_id:String, count:int, import_name:String) -> v
 	# import_id is instead used as part of its settings
 	
 	var b:Button = Button.new()
-	b.text = "  " + import_name + " (0/" + String(count) + ")  "
+	b.text = "  " + tab_name + " (0/" + String(count) + ")  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
-	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, count, import_id, import_name, "", "", "", null, null, null)
+	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "", null, null, null)
 	ImageScanner.CommitImport()
 	append_arg(tab_id)
 	start_manager()
+
+func create_similarity_tab(tab_id:String, image_hash:String) -> void:
+	if tab_id == "": return
+	if image_hash == "": return
+	var b:Button = Button.new()
+	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
+	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	button_list.add_child(b)
+	buttons[tab_id] = b
+
+func create_new_similarity_tab(image_hash:String) -> void:
+	if image_hash == "": return
+	var tab_id:String = ImageImporter.CreateTabID()
+	
+	var b:Button = Button.new()
+	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
+	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
+	button_list.add_child(b)
+	buttons[tab_id] = b
+	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash, null, null, null)
 
 func update_button_text(tab_id:String, finished:bool, success_count:int, total_count:int, import_name:String) -> void:
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]

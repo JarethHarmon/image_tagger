@@ -228,7 +228,7 @@ public class ImageImporter : Node
 		
 		if (!db.ImportFinished(importId)) {
 			signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-			signals.Call("emit_signal", "update_import_button", tabId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
+			signals.Call("emit_signal", "update_import_button", tabId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(tabId));
 		}
 		return 0;	
 	}
@@ -240,7 +240,7 @@ public class ImageImporter : Node
 		
 		db.FinishImport(importId);
 		signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-		signals.Call("emit_signal", "update_import_button", tabId, true, db.GetSuccessOrDuplicateCount(importId), db.GetTotalCount(importId), db.GetName(importId));
+		signals.Call("emit_signal", "update_import_button", tabId, true, db.GetSuccessOrDuplicateCount(importId), db.GetTotalCount(importId), db.GetName(tabId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
 		Remove(importId);

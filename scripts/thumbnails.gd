@@ -105,7 +105,6 @@ func start_query(tab_id:String, tags_all:Array=[], tags_any:Array=[], tags_none:
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	Signals.emit_signal("max_pages_changed", queried_page_count)
-	
 	# display time taken for query
 	#var text:String = String(queried_image_count) + " : %1.3f ms" % [float(OS.get_ticks_usec()-time)/1000.0] 
 	#get_node("/root/main/Label").text = text
@@ -454,3 +453,9 @@ func _toggle_thumbnail_tooltips() -> void:
 		for idx in self.get_item_count():
 			self.set_item_tooltip(idx, "")
 			
+
+func _on_thumbnails_item_rmb_selected(index:int, _at_position:Vector2) -> void:
+	# actual code should show a context menu
+	var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][index]
+	Signals.emit_signal("create_similarity_tab", image_hash)
+

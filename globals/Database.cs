@@ -86,6 +86,7 @@ using LiteDB;
 	{
 		public string tabId { get; set; }				// used to uniquely identify this tab
 		public int tabType { get; set; }				// identifies which of the following 4 tab types will be used
+		public string tabName { get; set; }
 		public string importId { get; set; }			// used for tabs created by double-clicking an import
 		public string groupId { get; set; }				// used for tabs created by double-clicking a group
 		public string tag { get; set; }					// used for tabs created by double-clicking a tag
@@ -262,17 +263,21 @@ public class Database : Node
 		bool success = dictImports.TryGetValue(importId, out importInfo);
 		return (success) ? importInfo.finished : true;
 	}
-	public string GetName(string importId)
+	/*public string GetName(string importId)
 	{
 		ImportInfo importInfo;
 		bool success = dictImports.TryGetValue(importId, out importInfo);
 		return (success) ? importInfo.importName : "Import";
-	}
+	}*/
 	public ImportInfo GetImport(string importId)
 	{
 		ImportInfo importInfo = null;
 		dictImports.TryGetValue(importId, out importInfo);
 		return importInfo;
+	}
+	public string GetName(string tabId)
+	{
+		return (dictTabs.ContainsKey(tabId)) ? (dictTabs[tabId].tabName == null) ? "Import" : dictTabs[tabId].tabName : "Import";
 	}
 	public string[] GetImportIds()
 	{
@@ -288,7 +293,7 @@ public class Database : Node
 			var results = colImports.FindAll();
 			foreach (ImportInfo importInfo in results) 
 				AddImport(importInfo.importId, importInfo);
-		} catch (Exception ex) { GD.Print("Database::LoadImportInfo()() : ", ex); return; }
+		} catch (Exception ex) { GD.Print("Database::LoadImportInfo() : ", ex); return; }
 	}
 	public void LoadTabInfo()
 	{
@@ -309,7 +314,6 @@ public class Database : Node
 					failedCount = 0,
 					removedCount = 0,
 					finished = true,
-					importName = "All",
 					importTime = 0,
 				};
 				colImports.Insert(allInfo);
@@ -320,6 +324,7 @@ public class Database : Node
 				tabInfo = new TabInfo {
 					tabId = "All",
 					tabType = 0, // may need to change eventually
+					tabName = "All",
 					importId = "All",
 				};
 				colTabs.Insert(tabInfo);
@@ -327,13 +332,13 @@ public class Database : Node
 			dictTabs["All"] = tabInfo;
 		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
 	}
-	public void CreateTab(string _tabId, int _tabType, int totalCount=0, string _importId="", string importName="Import", string _groupId="", string _tag="", string _similarityHash="", string[] _tagsAll=null, string[] _tagsAny=null, string[] _tagsNone=null)
+	public void CreateTab(string _tabId, int _tabType, string _tabName, int totalCount=0, string _importId="", string _groupId="", string _tag="", string _similarityHash="", string[] _tagsAll=null, string[] _tagsAny=null, string[] _tagsNone=null)
 	{
-		// insert into tab collection (tabId : importId relationship)
 		try {
 			var tabInfo = new TabInfo { 
 				tabId = _tabId,
 				tabType = _tabType,
+				tabName = _tabName,
 				importId = _importId,
 				groupId = _groupId,
 				tag = _tag,
@@ -344,18 +349,22 @@ public class Database : Node
 			};
 			dictTabs[_tabId] = tabInfo;
 			colTabs.Insert(tabInfo);
-			if (!_importId.Equals("")) CreateImport(_importId, totalCount, importName);	
+			if (!_importId.Equals("")) CreateImport(_importId, totalCount);	
 		} catch (Exception ex) { GD.Print("Database::CreateTab() : ", ex); return; }
 	}
 	public string GetImportId(string tabId)
 	{
 		return (dictTabs.ContainsKey(tabId)) ? dictTabs[tabId].importId : "";
 	}
+	public string GetSimilarityHash(string tabId)
+	{
+		return (dictTabs.ContainsKey(tabId)) ? dictTabs[tabId].similarityHash : "";
+	}
 	public int GetTabType(string tabId)
 	{
 		return (dictTabs.ContainsKey(tabId)) ? dictTabs[tabId].tabType : 0;
 	}
-	public void CreateImport(string _importId, int _totalCount, string _importName) 
+	public void CreateImport(string _importId, int _totalCount) 
 	{
 		try {
 			var importInfo = new ImportInfo {
@@ -367,7 +376,6 @@ public class Database : Node
 				removedCount = 0,
 				totalCount = _totalCount,
 				finished = false,
-				importName = _importName,
 				importTime = DateTime.Now.Ticks,
 			};
 			AddImport(_importId, importInfo);
@@ -527,12 +535,24 @@ public class Database : Node
 			}
 			// image group
 			// tag
-			// similarity
+			else if (tabType == (int)Data.Tab.SIMILARITY) {
+				//string importId = GetImportId(tabId);
+				string imageHash = GetSimilarityHash(tabId);
+				var temp = colHashes.FindById(imageHash);
+				if (temp == null) return new string[0];
+				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.diffHash, offset, count, order, (int)Data.Similarity.AVERAGE); 
+				if (hashInfos == null) return new string[0];
+				foreach (HashInfo hashInfo in hashInfos) {
+					results.Add(hashInfo.imageHash);
+					dictHashes[hashInfo.imageHash] = hashInfo;
+				}
+			}
 			return results.ToArray();
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
 	}
+	// consider simplifying further by removing All from this one and creating a dedicated function for it
+	// or could go the other direction and add groupId back to this (really only one line of difference as is)
 	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
-	//private List<HashInfo> _QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
 	{
 		try {
 			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, counted=false;
@@ -594,41 +614,19 @@ public class Database : Node
 			return list;
 		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }
 	}
-	private const int colorSimilarity = 0;
-	private const int differenceSimilarity = 1;
-	private const int averageSimilarity = 2;
+
 	// this method is much slower than query method above, use only for similarity (would like to find another way)
 	// this method will not filter out tags at the current time, import tabs/all do work though
-	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Data.Order.DESCENDING, int similarityMode=averageSimilarity)
+	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Data.Order.DESCENDING, int similarityMode=(int)Data.Similarity.AVERAGE)
 	{
-		/*if (similarityMode == averageSimilarity)
-			return colHashes.Find(Query.All())
-				.Where(x => importId == "All" || x.imports.Contains(importId))
-				.OrderByDescending(x => (ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0)
-				.Skip(offset)
-				.Take(count)
-				.ToList();
-		if (similarityMode == colorSimilarity)
-			return colHashes.Find(Query.All())
-				.Where(x => importId == "All" || x.imports.Contains(importId))
-				.OrderByDescending(x => ColorSimilarity(x.colorHash, colorHash))
-				.Skip(offset)
-				.Take(count)
-				.ToList();
-		if (similarityMode == differenceSimilarity)
-			return colHashes.Find(Query.All())
-				.Where(x => importId == "All" || x.imports.Contains(importId))
-				.OrderByDescending(x => DifferenceSimilarity(x.diffHash, diffHash))
-				.Skip(offset)
-				.Take(count)
-				.ToList();*/
+		_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 		if (order == (int)Data.Order.DESCENDING)
 			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderByDescending(x => 
-					(similarityMode == averageSimilarity) ? 
+					(similarityMode == (int)Data.Similarity.AVERAGE) ? 
 						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
-						(similarityMode == differenceSimilarity) ?
+						(similarityMode == (int)Data.Similarity.DIFFERENCE) ?
 							DifferenceSimilarity(x.diffHash, diffHash) :
 							ColorSimilarity(x.colorHash, colorHash))
 				.Skip(offset)
@@ -638,9 +636,9 @@ public class Database : Node
 			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderBy(x => 
-					(similarityMode == averageSimilarity) ? 
+					(similarityMode == (int)Data.Similarity.AVERAGE) ? 
 						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
-						(similarityMode == differenceSimilarity) ?
+						(similarityMode == (int)Data.Similarity.DIFFERENCE) ?
 							DifferenceSimilarity(x.diffHash, diffHash) :
 							ColorSimilarity(x.colorHash, colorHash))
 				.Skip(offset)

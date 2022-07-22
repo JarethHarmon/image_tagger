@@ -265,6 +265,7 @@ text = "  Next  "
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size" to="margin/vbox/thumbnails" method="_on_thumbnail_size_value_changed"]
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size_entry" to="margin/vbox/thumbnails" method="_on_thumbnail_size_entry_value_changed"]
 [connection signal="button_up" from="margin/vbox/sort_buttons/select_all" to="margin/vbox/sort_buttons" method="_on_select_all_button_up"]
+[connection signal="item_rmb_selected" from="margin/vbox/thumbnails" to="margin/vbox/thumbnails" method="_on_thumbnails_item_rmb_selected"]
 [connection signal="multi_selected" from="margin/vbox/thumbnails" to="margin/vbox/thumbnails" method="_on_thumbnails_multi_selected"]
 [connection signal="pressed" from="margin/vbox/page_buttons/prev_page" to="margin/vbox/page_buttons" method="_on_prev_page_pressed"]
 [connection signal="pressed" from="margin/vbox/page_buttons/first_page" to="margin/vbox/page_buttons" method="_on_first_page_pressed"]
