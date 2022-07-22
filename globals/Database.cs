@@ -793,6 +793,7 @@ public class Database : Node
 	
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)
 	{
+		if (!dictHashes.ContainsKey(compareHash) || !dictHashes.ContainsKey(imageHash)) return 0f;
 		var hashInfo1 = dictHashes[compareHash];
 		var hashInfo2 = dictHashes[imageHash];
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);

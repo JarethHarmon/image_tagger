@@ -48,10 +48,11 @@ func _on_tab_button_pressed(tab_id:String) -> void:
 
 func indicate_selected_button(tab_id:String) -> void:
 	if last_selected_tab != "": 
-		buttons[last_selected_tab].remove_stylebox_override("normal")
-		buttons[last_selected_tab].remove_stylebox_override("focus")
-		buttons[last_selected_tab].remove_color_override("font_color")
-		buttons[last_selected_tab].remove_color_override("font_color_focus")
+		if buttons.has(last_selected_tab):
+			buttons[last_selected_tab].remove_stylebox_override("normal")
+			buttons[last_selected_tab].remove_stylebox_override("focus")
+			buttons[last_selected_tab].remove_color_override("font_color")
+			buttons[last_selected_tab].remove_color_override("font_color_focus")
 	
 	var color:Color = Color.white
 	var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
@@ -155,6 +156,8 @@ func delete_tab(tab_id:String) -> void:
 	buttons.erase(tab_id)
 	button_list.remove_child(button)
 	Database.RemoveTab(tab_id)
+	if last_selected_tab == tab_id:
+		_on_tab_button_pressed("All")
 
 func update_button_text(tab_id:String, finished:bool, success_count:int, total_count:int, import_name:String) -> void:
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]
