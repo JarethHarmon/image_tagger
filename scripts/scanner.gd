@@ -9,6 +9,7 @@ extends Control
 # should have a toggle to only display the folders (to make it easier to remove from path_list by folder)
 
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
+onready var import_name:LineEdit = $margin/vsplit/panel2/margin/vbox/hbox1/import_name
 
 onready var indices:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices
 onready var paths:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/paths
@@ -88,7 +89,6 @@ func _thread() -> void:
 		OS.delay_msec(50)
 	call_deferred("_done")
 
-
 func _done() -> void:
 	if scan_thread.is_active() or scan_thread.is_alive():
 		scan_thread.wait_to_finish()
@@ -131,8 +131,9 @@ func create_item_lists(paths_sizes:Array) -> void:
 		index += 1
 
 func _on_begin_import_button_up() -> void: 
-	print(import_id)
-	Signals.emit_signal("new_import_started", import_id, index)
+	#print(import_id)
+	var _import_name:String = import_name.text if import_name.text != "" else "Import"
+	Signals.emit_signal("new_import_started", import_id, index, _import_name)
 	reset()
 
 func _on_cancel_import_button_up() -> void:

@@ -20,23 +20,6 @@ using LiteDB;
 /*=========================================================================================
 										Classes
 =========================================================================================*/
-	public class SortBy
-	{
-		public const int FileHash = 0;
-		public const int FilePath = 1;
-		public const int FileSize = 2;
-		public const int FileCreationUtc = 3;
-		public const int FileUploadUtc = 4;
-		public const int Dimensions = 5;
-		public const int TagCount = 6;
-		public const int Random = 7;
-	}
-	public class OrderBy
-	{
-		public const int Ascending = 0;
-		public const int Descending = 1;
-	}
-
 	// global full_image (id copy/move full images) and thumbnail storage paths should be auto-blacklisted
 	public class HashInfo
 	{
@@ -98,7 +81,20 @@ using LiteDB;
 		public string[] members { get; set; }			// an ordered list of imageHashes for this group (pages of a chapter for example)
 		public string[] subGroups { get; set; }			// an ordered list of subgroup groupId's (chapters of a manga for example)
 	}
-
+	
+	public class TabInfo
+	{
+		public string tabId { get; set; }				// used to uniquely identify this tab
+		public int tabType { get; set; }				// identifies which of the following 4 tab types will be used
+		public string importId { get; set; }			// used for tabs created by double-clicking an import
+		public string groupId { get; set; }				// used for tabs created by double-clicking a group
+		public string tag { get; set; }					// used for tabs created by double-clicking a tag
+		public string similarityHash { get; set; }		// used for tabs created by sorting by image similarity (this is the hash being compared against)
+		public string[] tagsAll { get; set; }
+		public string[] tagsAny { get; set; }
+		public string[] tagsNone { get; set; }
+	}
+	
 	public class TagInfo
 	{
 		public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
@@ -121,12 +117,14 @@ public class Database : Node
 	public ILiteCollection<ImportInfo> colImports;
 	public ILiteCollection<GroupInfo> colGroups;
 	public ILiteCollection<TagInfo> colTags;
+	public ILiteCollection<TabInfo> colTabs;
 	
 	public Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();		// maybe keep an array of imageHashes for those that have changed (so can iterate them and call col.Update())
 	//public Dictionary<string, ImportInfo> dictImports = new Dictionary<string, ImportInfo>();
 	public ConcurrentDictionary<string, ImportInfo> dictImports = new ConcurrentDictionary<string, ImportInfo>();
 	public Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
 	public Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
+	public Dictionary<string, TabInfo> dictTabs = new Dictionary<string, TabInfo>();
 	
 	public ImageScanner iscan;
 	public ImageImporter importer;
@@ -160,7 +158,10 @@ public class Database : Node
 				
 				dbTags = new LiteDatabase(metadataPath + "tag_info.db");
 				BsonMapper.Global.Entity<TagInfo>().Id(x => x.tagId);
-				colTags = dbTags.GetCollection<TagInfo>("tags");				
+				colTags = dbTags.GetCollection<TagInfo>("tags");
+				
+				BsonMapper.Global.Entity<TabInfo>().Id(x => x.tabId);
+				colTabs = dbImports.GetCollection<TabInfo>("tabs");				
 			} 
 			return 0;
 		} 
@@ -277,13 +278,25 @@ public class Database : Node
 	{
 		return dictImports.Keys.ToArray();
 	}
+	public string[] GetTabIds()
+	{
+		return dictTabs.Keys.ToArray();
+	}
 	public void LoadImportInfo()
 	{
 		try {
 			var results = colImports.FindAll();
 			foreach (ImportInfo importInfo in results) 
 				AddImport(importInfo.importId, importInfo);
-		} catch(Exception ex) { GD.Print("Database::LoadImportInfo()() : ", ex); return; }
+		} catch (Exception ex) { GD.Print("Database::LoadImportInfo()() : ", ex); return; }
+	}
+	public void LoadTabInfo()
+	{
+		try {
+			var results = colTabs.FindAll();
+			foreach (TabInfo tabInfo in results)
+				dictTabs[tabInfo.tabId] = tabInfo;
+		} catch (Exception ex) { GD.Print("Database::LoadTabInfo() : ", ex); return;  }
 	}
 	public void CreateAllInfo() 
 	{
@@ -302,9 +315,47 @@ public class Database : Node
 				colImports.Insert(allInfo);
 			}
 			AddImport("All", allInfo);
+			var tabInfo = colTabs.FindById("All");
+			if (tabInfo == null) {
+				tabInfo = new TabInfo {
+					tabId = "All",
+					tabType = 0, // may need to change eventually
+					importId = "All",
+				};
+				colTabs.Insert(tabInfo);
+			}
+			dictTabs["All"] = tabInfo;
 		} catch(Exception ex) { GD.Print("Database::CreateAllInfo() : ", ex); return; }
 	}
-	public void CreateImport(string _importId, int _totalCount, string _importName="Import") 
+	public void CreateTab(string _tabId, int _tabType, int totalCount=0, string _importId="", string importName="Import", string _groupId="", string _tag="", string _similarityHash="", string[] _tagsAll=null, string[] _tagsAny=null, string[] _tagsNone=null)
+	{
+		// insert into tab collection (tabId : importId relationship)
+		try {
+			var tabInfo = new TabInfo { 
+				tabId = _tabId,
+				tabType = _tabType,
+				importId = _importId,
+				groupId = _groupId,
+				tag = _tag,
+				similarityHash = _similarityHash,
+				tagsAll = _tagsAll,
+				tagsAny = _tagsAny,
+				tagsNone = _tagsNone,				
+			};
+			dictTabs[_tabId] = tabInfo;
+			colTabs.Insert(tabInfo);
+			if (!_importId.Equals("")) CreateImport(_importId, totalCount, importName);	
+		} catch (Exception ex) { GD.Print("Database::CreateTab() : ", ex); return; }
+	}
+	public string GetImportId(string tabId)
+	{
+		return (dictTabs.ContainsKey(tabId)) ? dictTabs[tabId].importId : "";
+	}
+	public int GetTabType(string tabId)
+	{
+		return (dictTabs.ContainsKey(tabId)) ? dictTabs[tabId].tabType : 0;
+	}
+	public void CreateImport(string _importId, int _totalCount, string _importName) 
 	{
 		try {
 			var importInfo = new ImportInfo {
@@ -459,41 +510,48 @@ public class Database : Node
 		} catch (Exception ex) { return false; }
 	}
 	
-	public string[] QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
+	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
 	{
 		try {
 			dictHashes.Clear();
 			var results = new List<string>();
-			var hashInfos = _QueryDatabase(importId, offset, count, tagsAll, tagsAny, tagsNone, sortBy, orderBy, countResults, groupId);
-			if (hashInfos == null) return new string[0];
-			foreach(HashInfo hashInfo in hashInfos) {
-				results.Add(hashInfo.imageHash);
-				dictHashes[hashInfo.imageHash] = hashInfo;
+			int tabType = GetTabType(tabId);
+			if (tabType == (int)Data.Tab.IMPORT_GROUP) {
+				string importId = GetImportId(tabId);
+				var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, sort, order, countResults);
+				if (hashInfos == null) return new string[0];
+				foreach (HashInfo hashInfo in hashInfos) {
+					results.Add(hashInfo.imageHash);
+					dictHashes[hashInfo.imageHash] = hashInfo;
+				}
 			}
-
+			// image group
+			// tag
+			// similarity
 			return results.ToArray();
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
 	}
-	private List<HashInfo> _QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
+	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
+	//private List<HashInfo> _QueryDatabase(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sortBy = SortBy.FileHash, int orderBy = OrderBy.Ascending, bool countResults = false, string groupId = "")
 	{
 		try {
 			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, counted=false;
 			string columnName = "_Id";
 
-			if (sortBy == SortBy.FileSize) columnName = "size";
-			else if (sortBy == SortBy.FileCreationUtc) columnName = "creationUtc";
-			else if (sortBy == SortBy.FileUploadUtc) columnName = "uploadUtc";
-			else if (sortBy == SortBy.Dimensions) sortByDimensions = true;
-			else if (sortBy == SortBy.TagCount) sortByTagCount = true;
-			else if (sortBy == SortBy.Random) sortByRandom = true;
+			if (sort == (int)Data.Sort.SIZE) columnName = "size";
+			else if (sort == (int)Data.Sort.CREATION_TIME) columnName = "creationUtc";
+			else if (sort == (int)Data.Sort.UPLOAD_TIME) columnName = "uploadUtc";
+			else if (sort == (int)Data.Sort.DIMENSIONS) sortByDimensions = true;
+			else if (sort == (int)Data.Sort.TAG_COUNT) sortByTagCount = true;
+			else if (sort == (int)Data.Sort.RANDOM) sortByRandom = true;
 			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
 				
 				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
-					if (orderBy == OrderBy.Ascending) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
-					else if (orderBy == OrderBy.Descending) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
+					if (order == (int)Data.Order.ASCENDING) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
+					else if (order == (int)Data.Order.DESCENDING) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
 					else return null; // default/placeholder, should not be called yet
 				}
 			}
@@ -502,7 +560,7 @@ public class Database : Node
 			var query = colHashes.Query();
 			
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
-			if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
+			//if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
 			
 			if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
@@ -511,18 +569,18 @@ public class Database : Node
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 			
 			if (sortByTagCount) {
-				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.tags.Count);
-				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.tags.Count);
+				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.tags.Count);
+				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.tags.Count);
 				else return null; // default/placeholder, should not be called yet
 			} else if (sortByRandom) {
 				// not sure yet
 			} else if (sortByDimensions) {
-				if (orderBy == OrderBy.Ascending) query = query.OrderBy(x => x.width * x.height);
-				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(x => x.width * x.height);
+				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.width * x.height);
+				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.width * x.height);
 				else return null;
 			} else {
-				if (orderBy == OrderBy.Ascending) query = query.OrderBy(columnName);
-				else if (orderBy == OrderBy.Descending) query = query.OrderByDescending(columnName);
+				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(columnName);
+				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(columnName);
 				else return null; // default/placeholder, should not be called yet
 			}
 			
@@ -541,7 +599,7 @@ public class Database : Node
 	private const int averageSimilarity = 2;
 	// this method is much slower than query method above, use only for similarity (would like to find another way)
 	// this method will not filter out tags at the current time, import tabs/all do work though
-	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int orderBy = OrderBy.Descending, int similarityMode=averageSimilarity)
+	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Data.Order.DESCENDING, int similarityMode=averageSimilarity)
 	{
 		/*if (similarityMode == averageSimilarity)
 			return colHashes.Find(Query.All())
@@ -564,7 +622,7 @@ public class Database : Node
 				.Skip(offset)
 				.Take(count)
 				.ToList();*/
-		if (orderBy == OrderBy.Descending)
+		if (order == (int)Data.Order.DESCENDING)
 			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderByDescending(x => 

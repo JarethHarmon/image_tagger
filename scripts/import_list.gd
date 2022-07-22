@@ -27,77 +27,99 @@ var stop_manager:bool = false
 var pause_manager:bool = false
 var manager_done:bool = false
 
-var last_selected_import:String = ""
+var last_selected_tab:String = ""
 
 func _ready() -> void:
-	Signals.connect("new_import_started", self, "create_new_import_button")
-	Signals.connect("import_info_load_finished", self, "create_import_buttons")
+	Signals.connect("new_import_started", self, "create_new_tab_button")
+	Signals.connect("import_info_load_finished", self, "create_tab_buttons")
 	Signals.connect("update_import_button", self, "update_button_text")
 	buttons["All"] = all_button
 	
 	create_threads(max_total_threads)
 
 func _on_all_button_button_up() -> void: 
-	Signals.emit_signal("group_button_pressed", "All")
+	Signals.emit_signal("tab_button_pressed", "All")
 	indicate_selected_button("All")
-func _on_group_button_pressed(import_id:String) -> void: 
-	Signals.emit_signal("group_button_pressed", import_id)
-	indicate_selected_button(import_id)
+	
+func _on_tab_button_pressed(tab_id:String) -> void: 
+	Signals.emit_signal("tab_button_pressed", tab_id)
+	indicate_selected_button(tab_id)
 
-func indicate_selected_button(import_id:String) -> void:
-	if last_selected_import != "": 
-		buttons[last_selected_import].remove_stylebox_override("normal")
-		buttons[last_selected_import].remove_stylebox_override("focus")
-		buttons[last_selected_import].remove_color_override("font_color")
-		buttons[last_selected_import].remove_color_override("font_color_focus")
+func indicate_selected_button(tab_id:String) -> void:
+	if last_selected_tab != "": 
+		buttons[last_selected_tab].remove_stylebox_override("normal")
+		buttons[last_selected_tab].remove_stylebox_override("focus")
+		buttons[last_selected_tab].remove_color_override("font_color")
+		buttons[last_selected_tab].remove_color_override("font_color_focus")
 	
 	var color:Color = Color.white
 	var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
-	buttons[import_id].add_stylebox_override("normal", sbf)
-	buttons[import_id].add_stylebox_override("focus", sbf)
-	buttons[import_id].add_color_override("font_color", Color.black)
-	buttons[import_id].add_color_override("font_color_focus", Color.black)
-	last_selected_import = import_id
-	
-func create_import_buttons() -> void: 
-	var import_ids:Array = Database.GetImportIds()
+	buttons[tab_id].add_stylebox_override("normal", sbf)
+	buttons[tab_id].add_stylebox_override("focus", sbf)
+	buttons[tab_id].add_color_override("font_color", Color.black)
+	buttons[tab_id].add_color_override("font_color_focus", Color.black)
+	last_selected_tab = tab_id
+
+func create_tab_buttons() -> void: 
+	#var import_ids:Array = Database.GetImportIds()
+	var tab_ids:Array = Database.GetTabIds()
 	update_button_text("All", true, Database.GetSuccessCount("All"), Database.GetTotalCount("All"), "All")
-	for import_id in import_ids:
-		var total_count:int = Database.GetTotalCount(import_id)
-		var finished:bool = Database.GetFinished(import_id)
-		create_import_button(import_id, finished, total_count, Database.GetSuccessOrDuplicateCount(import_id), Database.GetName(import_id))
-		if not finished:
-			append_arg([import_id, total_count])
+	#for import_id in import_ids:
+	# need to either replace some of these counts with queried counts, or only show counts on imports
+	# need a way to access meta information for the imports
+	for tab_id in tab_ids:
+		var tab_type:int = Database.GetTabType(tab_id)
+		if tab_type == Globals.Tab.IMPORT_GROUP:
+			var import_id:String = Database.GetImportId(tab_id)
+			var success_count:int = Database.GetSuccessOrDuplicateCount(import_id)
+			var total_count:int = Database.GetTotalCount(import_id)
+			var finished:bool = Database.GetFinished(import_id)
+			var import_name:String = Database.GetName(import_id)
+			create_tab_button(tab_id, finished, total_count, success_count, import_name)
+			if not finished:
+				append_arg([import_id, total_count])
+		elif tab_type == Globals.Tab.IMAGE_GROUP: pass
+		elif tab_type == Globals.Tab.TAG: pass
+		elif tab_type == Globals.Tab.SIMILARITY: pass
+		#var import_id:String = Database.GetImportId(tab_id)
+		#var group_id:String = Database.GetGroupId(tab_id)
+		#var tag:String = Database.GetTag(tab_id)
+		#var similarity_hash:String = Database.GetSimilarityHash(tab_id)
+
 	start_manager()
 		
-func create_import_button(import_id:String, finished:bool, total_count:int, success_count:int, import_name:String) -> void:
-	if import_id == "All": return
+func create_tab_button(tab_id:String, finished:bool, total_count:int, success_count:int, import_name:String) -> void:
+	if tab_id == "All": return
 	if total_count <= 0: return # remove it from import database (check on c# side when loading though)
 	var b:Button = Button.new()
 	b.text = "  " + import_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
-	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
+	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	button_list.add_child(b)
-	buttons[import_id] = b
+	buttons[tab_id] = b
 
-func create_new_import_button(import_id:String, count:int) -> void:
+func create_new_tab_button(import_id:String, count:int, import_name:String) -> void:
 	if count <= 0: return
 	if import_id == "": return
 	if argument_queue.has(import_id): return
 	
+	var tab_id:String = ImageImporter.CreateTabID()
+	# this function also needs to take an import name (passed from scanner)
+	# tab_id should be used to match settings with the button, and to store button in database
+	# import_id is instead used as part of its settings
+	
 	var b:Button = Button.new()
-	b.text = "  Import (0, 0/" + String(count) + ")  " 
-	b.connect("button_up", self, "_on_group_button_pressed", [import_id])
+	b.text = "  " + import_name + " (0/" + String(count) + ")  "
+	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	button_list.add_child(b)
-	buttons[import_id] = b
-	var import_name:String = "Import" # ??? set here somehow
-	Database.CreateImport(import_id, count, import_name);
+	buttons[tab_id] = b
+	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, count, import_id, import_name, "", "", "", null, null, null)
 	ImageScanner.CommitImport()
-	append_arg([import_id, count])
+	append_arg(tab_id)
 	start_manager()
 
-func update_button_text(import_id:String, finished:bool, success_count:int, total_count:int, import_name="Import") -> void:
-	if not finished: buttons[import_id].text = "  %s (%d, %d/%d)  " % [import_name, success_count, success_count, total_count]
-	else: buttons[import_id].text = "  %s (%d)  " % [import_name, success_count]
+func update_button_text(tab_id:String, finished:bool, success_count:int, total_count:int, import_name:String) -> void:
+	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]
+	else: buttons[tab_id].text = "  %s (%d)  " % [import_name, success_count]
 
 
 func create_threads(num_threads:int) -> void:
@@ -206,7 +228,6 @@ func set_thread_args(thread_id:int, args) -> void:
 	argument_mutex.unlock()
 	
 func get_thread_args(thread_id:int):
-	# mutex probably not needed, but there might be some nearly-impossible sequence of events that requires it
 	argument_mutex.lock()
 	if thread_id >= thread_args.size(): 
 		argument_mutex.unlock()
@@ -218,59 +239,52 @@ func get_thread_args(thread_id:int):
 # not consistent at assigning threads, need to rethink logic at some point
 func _manager_thread() -> void:
 	var current_count:int = 0
-	var current_import_id = get_args()
+	var current_tab_id = get_args()
 	
 	while not stop_manager:
 		if not pause_manager:
-			if current_import_id == null: break
+			if current_tab_id == null: break
 			for thread_id in thread_args.size():
 				#print(thread_args)
-				if current_import_id == null: break
+				if current_tab_id == null: break
 				if current_count == max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
-					set_thread_args(thread_id, current_import_id)
+					set_thread_args(thread_id, current_tab_id)
 					current_count += 1
 					start_one()
 				
 		OS.delay_msec(delay_time)
 		if current_count == max_threads_per_import:
 			current_count = 0
-			current_import_id = get_args()
-			if current_import_id == null: break
+			current_tab_id = get_args()
+			if current_tab_id == null: break
 			
 	call_deferred("_manager_done")
 
 func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
-	#manager_done = true
-	#print("manager exited")
 
 # not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
-	#print(thread_id, " entered")
 	while thread_status[thread_id] != status.CANCELED:
 		if thread_status[thread_id] != status.PAUSED:
-			var args:Array = get_thread_args(thread_id)
+			var args = get_thread_args(thread_id)
 			if args != null:
-				var import_id:String = args[0]
-				var import_count:int = args[1]
-				var result:int = ImageImporter.ImportImage(import_id, import_count)
-				if result == results.EMPTY:# and manager_done:
+				var tab_id:String = args
+				var result:int = ImageImporter.ImportImage(tab_id)
+				if result == results.EMPTY:
 					argument_mutex.lock()
 					thread_args[thread_id] = null
 					if not thread_args.has(args):
 						argument_mutex.unlock()
-						ImageImporter.FinishImport(import_id, import_count)
+						ImageImporter.FinishImport(tab_id)
 					else: argument_mutex.unlock()
 					break
 		OS.delay_msec(delay_time)
 		if thread_id >= max_total_threads: break
 	call_deferred("_done", thread_id)
 
-# should not be called directly by user
 func _done(thread_id:int) -> void:
-	#thread_args[thread_id] = null
 	_stop(thread_id)
-	#print(thread_id, " exited")
 

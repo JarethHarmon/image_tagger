@@ -179,7 +179,11 @@ public class ImageImporter : Node
 	{
 		return "I" + GetRandomID(8); // get 64bit ID
 	}
-
+	public string CreateTabID()
+	{
+		return "T" + GetRandomID(8);
+	}	
+	
 	public float[] ColorHash(string path, int bucketSize=16) 
 	{
 		int[] colors = new int[256/bucketSize];
@@ -208,8 +212,13 @@ public class ImageImporter : Node
 /*=========================================================================================
 									   Importing
 =========================================================================================*/
-	public int ImportImage(string importId, int imageCount)
+	// replace ints with error codes
+	public int ImportImage(string tabId)
 	{
+		string importId = db.GetImportId(tabId);
+		if (importId.Equals("")) return 1;
+		int imageCount = db.GetTotalCount(importId);
+		
 		var image = iscan.GetImage(importId);
 		if (image.Item1 == null) return 1;
 		if (image.Item1 == "") return 1;
@@ -219,16 +228,19 @@ public class ImageImporter : Node
 		
 		if (!db.ImportFinished(importId)) {
 			signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-			signals.Call("emit_signal", "update_import_button", importId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
+			signals.Call("emit_signal", "update_import_button", tabId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
 		}
 		return 0;	
 	}
 	
-	public void FinishImport(string importId, int imageCount)
+	public void FinishImport(string tabId)
 	{	
+		string importId = db.GetImportId(tabId);
+		if (importId.Equals("")) return;
+		
 		db.FinishImport(importId);
 		signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-		signals.Call("emit_signal", "update_import_button", importId, true, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(importId));
+		signals.Call("emit_signal", "update_import_button", tabId, true, db.GetSuccessOrDuplicateCount(importId), db.GetTotalCount(importId), db.GetName(importId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
 		Remove(importId);

@@ -18,8 +18,7 @@ var current_page:int = 1
 var max_pages:int = 1
 var use_arrows:bool = false
 
-var last_import_id:String = ""
-
+var last_tab_id:String = ""
 
 func _ready() -> void: 
 	Signals.connect("max_pages_changed", self, "_max_pages_changed")
@@ -36,10 +35,10 @@ func change_page(page:int) -> void:
 	if (page < 1): return
 	if (page > max_pages): return
 	if (current_page == page): return
-	if last_import_id != Globals.current_import_id and current_page > 1:
+	if last_tab_id != Globals.current_tab_id and current_page > 1:
 		current_page = 1
 	else: current_page = page
-	last_import_id = Globals.current_import_id
+	last_tab_id = Globals.current_tab_id
 	Signals.emit_signal("page_changed", current_page)
 	page_label.text = String(current_page) + " / " + String(max_pages)
 	current_page_spinbox.value = current_page

@@ -20,7 +20,7 @@ func _ready() -> void:
 	Signals.connect("show_import_menu", self, "show_import_menu")
 	Signals.connect("settings_loaded", self, "_settings_loaded")
 	
-func hide_popups(_import_id:String="", _count:int=0) -> void:
+func hide_popups(_import_id:String="", _count:int=0, _import_name:String="") -> void:
 	self.hide()
 	darkened_background.hide()
 	file_context.hide()

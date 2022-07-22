@@ -26,7 +26,7 @@ signal deselect_all_pressed
 signal start_scan(folder, recursive)
 signal files_selected(files)
 signal folder_selected(folder)
-signal new_import_started(import_id, count) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
+signal new_import_started(import_id, count, import_name) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
 signal new_import_canceled
 
 signal show_import_menu
@@ -44,5 +44,5 @@ signal import_info_load_finished
 # button_pressed
 signal add_files
 signal add_folders
-signal group_button_pressed(import_id)
+signal tab_button_pressed(tab_id)
 signal clear_pressed

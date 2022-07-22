@@ -22,6 +22,7 @@ onready var th:Mutex = Mutex.new()		# mutex for interacting with thumb_history
 #	as is relevant
 # all tabs will use this system; new tabs that are opened (like similarity sorting) will generate a new import_id
 # and upload themselves to the database
+var tab_settings:Dictionary = {}
 var page_history:Dictionary = {}		# [page_number, load_id, type_id]:[image_hashes] :: stores last M pages of image_hashes
 var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails  ->> image_hash:{texture&metadata}
 var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
@@ -74,12 +75,12 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 		Signals.emit_signal("page_changed", curr_page_number)
 		queried_page_count = 0
 		total_image_count = 0
-	start_query(Globals.current_import_id, Globals.current_group_id, tags_all, tags_any, tags_none)
+	start_query(Globals.current_tab_id, tags_all, tags_any, tags_none)
 
 # need to decide if I should save query settings to history (ie attached on a per-import basis) or if I should apply them globally to any selected import button
-func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_any:Array=[], tags_none:Array=[]) -> void:
+func start_query(tab_id:String, tags_all:Array=[], tags_any:Array=[], tags_none:Array=[]) -> void:
 	if starting_load_process: return
-	if import_id == "": return
+	if tab_id == "": return
 	starting_load_process = true
 	stop_threads()
   # temp variables
@@ -88,9 +89,9 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	var num_threads:int = Globals.settings.load_threads
 	var current_sort:int = Globals.settings.current_sort
 	var current_order:int = Globals.settings.current_order
-	var current_page:Array = [curr_page_number, import_id]
+	var current_page:Array = [curr_page_number, tab_id]
 	var thumbnail_path:String = Globals.settings.thumbnail_path
-	var temp_query_settings = [import_id, group_id, tags_all, tags_any, tags_none]
+	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none]
 	
   # calculate offset
 	database_offset = (curr_page_number-1) * images_per_page
@@ -100,7 +101,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	last_query_settings = temp_query_settings
 	
 	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
-	hash_arr = Database.QueryDatabase(import_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, group_id)
+	hash_arr = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
 	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
 	Signals.emit_signal("max_pages_changed", queried_page_count)
@@ -110,6 +111,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
 	#get_node("/root/main/Label").text = text
 	
   # remove from page history
+	
 	if page_history.size() > Globals.settings.pages_to_store:
 		var page_to_remove:Array = page_queue.pop_front()
 		var thumbnails_to_unload:Array = page_history[page_to_remove]
@@ -126,7 +128,7 @@ func start_query(import_id:String, group_id:String="", tags_all:Array=[], tags_a
   # set page image count
 	curr_page_image_count = hash_arr.size()
 	
-	self.call_deferred("_threadsafe_clear", import_id, curr_page_number, curr_page_image_count, queried_page_count, num_threads) 
+	self.call_deferred("_threadsafe_clear", tab_id, curr_page_number, curr_page_image_count, queried_page_count, num_threads) 
 	
 # threading
 func stop_threads() -> void:
@@ -138,7 +140,7 @@ func stop_thread(thread_id:int) -> void:
 	if load_threads[thread_id].is_active() or load_threads[thread_id].is_alive():
 		load_threads[thread_id].wait_to_finish()
 
-func _threadsafe_clear(import_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
+func _threadsafe_clear(tab_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
 	#starting_load_process = false
 	sc.lock()
 	if self.get_item_count() > 0:
@@ -151,9 +153,9 @@ func _threadsafe_clear(import_id:String, page_number:int, image_count:int, page_
 		self.set_item_icon(i, icon_buffering)
 	# set page label text ( curr_page/total_pages )
 	sc.unlock()
-	prepare_thumbnail_loading(import_id, page_number, num_threads)
+	prepare_thumbnail_loading(tab_id, page_number, num_threads)
 
-func prepare_thumbnail_loading(import_id:String, page_number:int, num_threads:int) -> void:
+func prepare_thumbnail_loading(tab_id:String, page_number:int, num_threads:int) -> void:
 	load_threads.clear()
 	for i in num_threads: 
 		load_threads.append(Thread.new())
@@ -161,7 +163,7 @@ func prepare_thumbnail_loading(import_id:String, page_number:int, num_threads:in
 	ii.lock() ; item_index = 0 ; ii.unlock()
 	tq.lock()
 	thumb_queue.clear()
-	thumb_queue = page_history[[page_number, import_id]].duplicate()
+	thumb_queue = page_history[[page_number, tab_id]].duplicate()
 	tq.unlock()
 	
 	stopping_load_process = false
@@ -316,10 +318,10 @@ func select_items() -> void:
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
 	for i in arr_index.size():
-		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_import_id]][arr_index[i]]
+		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_tab_id]][arr_index[i]]
 	#color_all()
 	
-	var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][last_index]
+	var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][last_index]
 	var paths:Array = Database.GetPaths(image_hash)
 	if not paths.empty():
 		var f:File = File.new()
@@ -333,9 +335,9 @@ func select_items() -> void:
 
 func select_all_items() -> void: 
 	selected_items.clear()
-	var import_id:String = Globals.current_import_id
+	var tab_id:String = Globals.current_tab_id
 	for i in curr_page_image_count: 
-		selected_items[i] = page_history[[curr_page_number, import_id]][i]#current_page_komi64s[i]
+		selected_items[i] = page_history[[curr_page_number, tab_id]][i]
 		self.select(i, false)
 
 var ctrl_pressed:bool = false
@@ -441,7 +443,7 @@ func _toggle_thumbnail_tooltips() -> void:
 	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips
 	if show_tooltips:
 		for idx in self.get_item_count():
-			var image_hash:String = page_history[[curr_page_number, Globals.current_import_id]][idx]
+			var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][idx]
 			th.lock()
 			if thumb_history.has(image_hash):
 				var dict:Dictionary = thumb_history[image_hash]

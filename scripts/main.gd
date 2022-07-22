@@ -46,6 +46,7 @@ func _begin() -> void:
 	# load import groups from database (and other list metadata)
 	Database.CreateAllInfo()
 	Database.LoadImportInfo()
+	Database.LoadTabInfo()
 	Database.LoadInProgressPaths()
 	
 	Signals.emit_signal("import_info_load_finished")	

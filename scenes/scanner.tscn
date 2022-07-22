@@ -208,7 +208,15 @@ mouse_filter = 2
 size_flags_horizontal = 3
 custom_constants/separation = 10
 
+[node name="import_name" type="LineEdit" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_right = 240.0
+margin_bottom = 32.0
+rect_min_size = Vector2( 240, 0 )
+clear_button_enabled = true
+placeholder_text = "Enter a Name for the Import ..."
+
 [node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
+margin_left = 250.0
 margin_right = 1510.0
 margin_bottom = 32.0
 mouse_filter = 2
