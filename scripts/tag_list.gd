@@ -100,6 +100,8 @@ func scroll_to_end() -> void:
 
 func clear_tag_list() -> void:
 	current_tags.clear()
+	tags_array.clear()
+	selected_tags.clear()
 	for child in tag_flow.get_children():
 		child.queue_free()
 
