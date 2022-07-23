@@ -16,6 +16,16 @@ using LiteDB;
 // query by similarity should open a new tab specifically for that purpose (similarity tab, can then further limit it to first X or simi > n%) (can also filter by tags and change order (but not sort))
 // this way I also do not need to include diffHash and colorHash inside groups/imports
 
+/*
+	should store an index for the in-progress arrays and update it after every processed import
+	this way if the import makes it to 6700/6750 and then crashes, when it loads again it can 
+	start processing the arrays at index 6700 instead of at index 0
+	
+	even better would be to update the arrays themselves, but this would likely require repeatedly writing
+	the entirety of the arrays to the disk, which is less than ideal (an alternative would be to update them
+	periodically, which is something I will likely eventually do in general)
+*/
+
 /*=========================================================================================
 										Classes
 =========================================================================================*/
@@ -847,9 +857,8 @@ public class Database : Node
 	
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)
 	{
-		if (!dictHashes.ContainsKey(compareHash) || !dictHashes.ContainsKey(imageHash)) return 0f;
-		var hashInfo1 = dictHashes[compareHash];
-		var hashInfo2 = dictHashes[imageHash];
+		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
+		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
 		double difference = DifferenceSimilarity(hashInfo1.diffHash, hashInfo2.diffHash);
 		return (color+(float)difference)/2f;
