@@ -257,7 +257,6 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
 		var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
-		#set_item_text(index, String(similarity) + "%")
 		
 	#set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + +  + "\npaths: " + String(paths))
 	#set_item_text(index, String(index+1))
@@ -283,7 +282,7 @@ func _set_metadata(image_hash:String) -> void:
 	var creation_time:String = Database.GetCreationTime(image_hash)
 	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
 	th.lock()
-	# dimensions
+	# get dimensions too
 	var dict:Dictionary = {
 		"texture" : null,
 		"size" : size,

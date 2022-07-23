@@ -464,10 +464,6 @@ public class Database : Node
 			}
 			AddImport("All", allInfo);
 			AddImport(importId, importInfo);
-			// I am adding these calls back to prevent an issue where counts could be counted incorrectly
-			// could cause issues though since I do not remember why I removed them in the first place
-			// also I do not think this will fix the issue with the extra duplicate counts, so import tabs
-			// might now end up with blank pages (confirmed)
 			colImports.Update(allInfo);
 			colImports.Update(importInfo);
 		} catch(Exception ex) { GD.Print("Database::UpdateImportCount() : ", ex); return; }

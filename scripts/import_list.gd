@@ -25,7 +25,6 @@ var active_threads:int = 0			# the current number of active (hose currently proc
 
 var stop_manager:bool = false
 var pause_manager:bool = false
-var manager_done:bool = false
 
 var last_selected_tab:String = ""
 
@@ -167,7 +166,6 @@ func update_button_text(tab_id:String, finished:bool, success_count:int, total_c
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]
 	else: buttons[tab_id].text = "  %s (%d)  " % [import_name, success_count]
 
-
 func create_threads(num_threads:int) -> void:
 	if num_threads == thread_pool.size(): return
 	max_total_threads = num_threads
@@ -196,10 +194,6 @@ func create_threads(num_threads:int) -> void:
 func start_manager() -> void:
 	if not manager_thread.is_active(): 
 		manager_thread.start(self, "_manager_thread")
-
-func start(num_threads:int) -> void:
-	for i in num_threads:
-		start_one()
 
 func start_one() -> void:
 	if active_threads == max_total_threads: return
@@ -291,19 +285,15 @@ func _manager_thread() -> void:
 		if not pause_manager:
 			if current_tab_id == null: break
 			for thread_id in thread_args.size():
-				#print(thread_args)
-				if current_tab_id == null: break
-				if current_count == max_threads_per_import: break
+				if current_count >= max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
 					set_thread_args(thread_id, current_tab_id)
 					current_count += 1
 					start_one()
-				
 		OS.delay_msec(delay_time)
-		if current_count == max_threads_per_import:
+		if current_count >= max_threads_per_import:
 			current_count = 0
 			current_tab_id = get_args()
-			if current_tab_id == null: break
 			
 	call_deferred("_manager_done")
 
@@ -313,24 +303,35 @@ func _manager_done() -> void:
 
 # not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
-	while thread_status[thread_id] != status.CANCELED:
-		if thread_status[thread_id] != status.PAUSED:
-			var args = get_thread_args(thread_id)
-			if args != null:
-				var tab_id:String = args
+	var tab_id = get_thread_args(thread_id)
+	if tab_id != null:
+		while thread_status[thread_id] != status.CANCELED:
+			if thread_status[thread_id] != status.PAUSED:
 				var result:int = ImageImporter.ImportImage(tab_id)
-				if result == results.EMPTY:
-					argument_mutex.lock()
-					thread_args[thread_id] = null
-					if not thread_args.has(args):
-						argument_mutex.unlock()
-						ImageImporter.FinishImport(tab_id)
-					else: argument_mutex.unlock()
-					break
-		OS.delay_msec(delay_time)
-		if thread_id >= max_total_threads: break
-	call_deferred("_done", thread_id)
+				if result == results.EMPTY: break
+			OS.delay_msec(delay_time)
+			if thread_id >= max_total_threads: break
+	call_deferred("_done", [thread_id, tab_id])
 
-func _done(thread_id:int) -> void:
+func _done(args:Array) -> void:
+	var thread_id:int = args[0]
+	var tab_id = args[1]
 	_stop(thread_id)
+	set_thread_args(thread_id, null)
+	if not check_thread_args_has(tab_id):
+		ImageImporter.FinishImport(tab_id)
+	
+func check_thread_args_has(arg) -> bool:
+	if arg == null: return true
+	argument_mutex.lock()
+	var result:bool = false
+	if thread_args.has(arg): result = true
+	argument_mutex.unlock()
+	return result
 
+var frame:int = 0
+func _physics_process(delta) -> void:
+	if frame % 11 == 0:
+		print(thread_args)
+		frame = 0
+	frame += 1
