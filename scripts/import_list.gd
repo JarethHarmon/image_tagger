@@ -79,7 +79,8 @@ func create_tab_buttons() -> void:
 			var tab_name:String = Database.GetName(tab_id)
 			create_tab_button(tab_id, finished, total_count, success_count, tab_name)
 			if not finished:
-				append_arg([import_id, total_count])
+				append_arg(tab_id)
+				#append_arg([import_id, total_count])
 		elif tab_type == Globals.Tab.IMAGE_GROUP: pass
 		elif tab_type == Globals.Tab.TAG: pass
 		elif tab_type == Globals.Tab.SIMILARITY: 
@@ -96,7 +97,9 @@ func create_tab_button(tab_id:String, finished:bool, total_count:int, success_co
 	if tab_id == "All": return
 	if total_count <= 0: return # remove it from import database (check on c# side when loading though)
 	var b:Button = Button.new()
-	b.text = "  " + tab_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
+	if finished: b.text = "  " + tab_name + " (" + String(success_count) + ")  "
+	else: b.text = "  %s (%d/%d)  " % [tab_name, success_count, total_count]
+	#b.text = "  " + tab_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
