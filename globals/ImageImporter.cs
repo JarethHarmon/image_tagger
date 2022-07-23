@@ -290,21 +290,27 @@ public class ImageImporter : Node
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCode.IGNORED if not)
 			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
 			
+			// checks if the current import has already processed this hash
 			if (CheckOrAdd(importId, imageHash)) {
 				db.AddPath(imageHash, imagePath);
 				return (int)Data.ImportCode.IGNORED;
 			}
-			//if (db.DuplicateImportId(imageHash, importId)) return (int)Data.ImportCode.IGNORED;
 			
-			// I also need to add this importId to the 'imports' HashSet of HashInfo
-			// also need to add the imagePath to the 'paths' HashSet of HashInfo 
+			// checks if the current import has already processed this hash by checking if the hash 
+			// is in the database AND the hashInfo imports list contains this importId (can probably replace above check with this)
+			//	which means that the importedHashes array of saved data is not needed anymore
+			if (db.HashDatabaseContainsImport(imageHash, importId)) {
+				db.AddPath(imageHash, imagePath);
+				return (int)Data.ImportCode.IGNORED;
+			}
+			
+			// checks if the hash has been imported before in another import
 			if (db.HashDatabaseContains(imageHash)) {
 				db.AddImportId(imageHash, importId);
 				db.AddPath(imageHash, imagePath);
 				return (int)Data.ImportCode.DUPLICATE;
 			}
 			
-			//GD.Print(imagePath);
 			
 			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
 			(int imageType, int width, int height) = GetImageInfo(imagePath);

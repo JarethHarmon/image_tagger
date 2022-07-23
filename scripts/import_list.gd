@@ -123,6 +123,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	buttons[tab_id] = b
 	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "", null, null, null)
 	ImageScanner.CommitImport()
+	Database.UploadImportArrays(import_id)
 	append_arg(tab_id)
 	start_manager()
 

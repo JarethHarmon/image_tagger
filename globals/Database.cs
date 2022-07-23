@@ -16,7 +16,6 @@ using LiteDB;
 // query by similarity should open a new tab specifically for that purpose (similarity tab, can then further limit it to first X or simi > n%) (can also filter by tags and change order (but not sort))
 // this way I also do not need to include diffHash and colorHash inside groups/imports
 
-
 /*=========================================================================================
 										Classes
 =========================================================================================*/
@@ -173,6 +172,9 @@ public class Database : Node
 	
 	public void LoadInProgressPaths()
 	{
+		/*var now = DateTime.Now;
+		GD.Print(colHashes.Count());
+		GD.Print(DateTime.Now-now);*/
 		foreach (string iid in dictImports.Keys) {
 			ImportInfo iinfo = dictImports[iid];
 			if (!iinfo.finished && iinfo.inProgressPaths != null) {
@@ -185,15 +187,49 @@ public class Database : Node
 						if (iinfo.importedHashes.Length != 0)
 							importer.AddToImportedHashes(iinfo.importId, iinfo.importedHashes);
 				}
-				iinfo.inProgressPaths = null;
-				iinfo.inProgressTimes = null;
-				iinfo.inProgressSizes = null;
-				iinfo.importedHashes = null;
-				colImports.Update(iinfo);
 			}
 		}
 	}
+	// should be called when an import finishes
+	public void ClearInProgressArrays(string importId)
+	{
+		try {
+			var importInfo = colImports.FindById(importId);
+			if (importInfo == null) return;
+			importInfo.inProgressPaths = null;
+			importInfo.inProgressTimes = null;
+			importInfo.inProgressSizes = null;
+			importInfo.importedHashes = null;
+			colImports.Update(importInfo);
+		} catch (Exception ex) { GD.Print("Database::ClearInProgressArrays() : ", ex); return; }
+	}
 	
+	// should be called when an import starts
+	public void UploadImportArrays(string importId)
+	{
+		try {
+			if (!dictImports.ContainsKey(importId)) return;
+			var importInfo = dictImports[importId];
+			var fileArray = iscan.GetInProgressPaths(importId);
+			var paths = new List<string>();
+			var times = new List<long>();
+			var sizes = new List<long>();
+			
+			foreach ((string,long,long) file in fileArray) {
+				paths.Add(file.Item1);
+				times.Add(file.Item2);
+				sizes.Add(file.Item3);
+			}
+			
+			importInfo.inProgressPaths = paths.ToArray();
+			importInfo.inProgressTimes = times.ToArray();
+			importInfo.inProgressSizes = sizes.ToArray();
+			importInfo.importedHashes = importer.GetImportedHashes(importId);
+			colImports.Update(importInfo);			
+		} catch (Exception ex) { GD.Print("Database:UploadImportArrays() : ", ex); return; }
+	}
+	
+	// should be called when program is about to exit
 	public void SaveInProgressPaths()
 	{
 		foreach (string iid in dictImports.Keys) {
@@ -418,6 +454,12 @@ public class Database : Node
 			}
 			AddImport("All", allInfo);
 			AddImport(importId, importInfo);
+			// I am adding these calls back to prevent an issue where counts could be counted incorrectly
+			// could cause issues though since I do not remember why I removed them in the first place
+			// also I do not think this will fix the issue with the extra duplicate counts, so import tabs
+			// might now end up with blank pages (confirmed)
+			colImports.Update(allInfo);
+			colImports.Update(importInfo);
 		} catch(Exception ex) { GD.Print("Database::UpdateImportCount() : ", ex); return; }
 	}
 	public void FinishImport(string importId)
@@ -429,6 +471,7 @@ public class Database : Node
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
+			ClearInProgressArrays(importId);
 		} catch(Exception ex) { GD.Print("Database::FinishImport() : ", ex); return; }
 	}
 
@@ -524,6 +567,17 @@ public class Database : Node
 			var result = colHashes.FindById(imageHash);
 			if (result == null) return false;
 			return true;
+		} catch (Exception ex) { return false; }
+	}
+	
+	public bool HashDatabaseContainsImport(string imageHash, string importId)
+	{
+		try {
+			var hashInfo = colHashes.FindById(imageHash);
+			if (hashInfo == null) return false;
+			if (hashInfo.imports == null) return false;
+			if (hashInfo.imports.Contains(importId)) return true;
+			return false;
 		} catch (Exception ex) { return false; }
 	}
 	
