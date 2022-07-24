@@ -19,7 +19,7 @@ var thread_args:Array = []			# the arguments associated with a specific thread  
 var last_arg = null					# import_id for this script
 
 var delay_time:int = 50				# how long to wait in the thread loop before checking argument_queue again
-var max_total_threads:int = 4		# the max number of threads that can run simultaneously
+var max_total_threads:int = 5		# the max number of threads that can run simultaneously
 var max_threads_per_import:int = 3	#
 var active_threads:int = 0			# the current number of active (hose currently processing) threads
 
@@ -304,21 +304,26 @@ func _manager_done() -> void:
 # not consistent at calling FinishImport (I think)
 func _thread(thread_id:int) -> void:
 	var tab_id = get_thread_args(thread_id)
+	var finished:bool = false
 	if tab_id != null:
 		while thread_status[thread_id] != status.CANCELED:
 			if thread_status[thread_id] != status.PAUSED:
 				var result:int = ImageImporter.ImportImage(tab_id)
-				if result == results.EMPTY: break
+				if result == results.EMPTY: 
+					finished = true
+					break
 			OS.delay_msec(delay_time)
 			if thread_id >= max_total_threads: break
-	call_deferred("_done", [thread_id, tab_id])
+	call_deferred("_done", [thread_id, tab_id, finished])
 
 func _done(args:Array) -> void:
 	var thread_id:int = args[0]
 	var tab_id = args[1]
+	var finished:bool = args[2]
 	_stop(thread_id)
 	set_thread_args(thread_id, null)
-	if not check_thread_args_has(tab_id):
+	# this way it will not try to finish the import when the program is closing, only when the import is done
+	if not check_thread_args_has(tab_id) and finished:
 		ImageImporter.FinishImport(tab_id)
 	
 func check_thread_args_has(arg) -> bool:
@@ -331,7 +336,7 @@ func check_thread_args_has(arg) -> bool:
 
 var frame:int = 0
 func _physics_process(delta) -> void:
-	if frame % 11 == 0:
+	if frame % 12 == 0:
 		print(thread_args)
 		frame = 0
 	frame += 1

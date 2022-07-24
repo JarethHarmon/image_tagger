@@ -216,12 +216,11 @@ public class ImageImporter : Node
 	public int ImportImage(string tabId)
 	{
 		string importId = db.GetImportId(tabId);
-		if (importId.Equals("")) return 1;
+		if (importId.Equals("") || importId == null) return 1;
 		int imageCount = db.GetTotalCount(importId);
 		
 		var image = iscan.GetImage(importId);
-		if (image.Item1 == null) return 1;
-		if (image.Item1 == "") return 1;
+		if (image.Item1 == null || image.Item1.Equals("")) return 1;
 	
 		int result = _ImportImage(image, importId, imageCount);
 		db.UpdateImportCount(importId, result);
