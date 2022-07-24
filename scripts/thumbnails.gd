@@ -389,20 +389,25 @@ func _unhandled_input(event:InputEvent) -> void:
 	shift_pressed = false
 	
 func scroll(down:bool=true) -> void:
-	var fixed_y:int = self.fixed_icon_size.y
-	var vsep:int = 3 
-	var linesep:int = 3
-	var sidesep:int = vsep/2
+	#var fixed_y:int = self.fixed_icon_size.y
+	#var vsep:int = 3 
+	#var linesep:int = 3
+	#var sidesep:int = vsep/2
+	if self.get_item_count() <= 1: return
 	var vscroll:VScrollBar = self.get_v_scroll()
 	var current_columns:int = self.get_num_columns()
 	var num_rows:int = ceil(self.get_item_count()/current_columns)
 	var current_row:int = selected_item/current_columns
-
+	var max_value:int = vscroll.max_value
+	var has_text:bool = not self.get_item_text(0) == ""
+	
 	if down:
-		if current_row > 1: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		#if current_row > 1: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		if current_row > 1: vscroll.set_value((current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1)))
 		else: vscroll.set_value(0)
 	else:
-		if current_row < num_rows-2: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		#if current_row < num_rows-2: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
+		if current_row < num_rows-2: vscroll.set_value((current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1)))
 		else: vscroll.set_value(vscroll.max_value)
 
 func color_selection(index:int, selected:bool) -> void:
