@@ -313,7 +313,7 @@ func _thread(thread_id:int) -> void:
 					finished = true
 					break
 			#OS.delay_msec(delay_time)
-			OS.delay_msec(20)
+			#OS.delay_msec(20)
 			if thread_id >= max_total_threads: break
 	call_deferred("_done", [thread_id, tab_id, finished])
 

@@ -187,7 +187,7 @@ func _thread(thread_id:int) -> void:
 			tq.unlock()
 			load_thumbnail(image_hash, index)
 		#OS.delay_msec(50)
-		OS.delay_msec(20)
+		#OS.delay_msec(20)
 	call_deferred("stop_thread", thread_id)
 
 # thumbnail loading

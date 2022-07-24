@@ -1,8 +1,35 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://scripts/preview.gd" type="Script" id=1]
 [ext_resource path="res://scripts/viewport_display.gd" type="Script" id=2]
 [ext_resource path="res://scripts/preview_buttons.gd" type="Script" id=3]
+[ext_resource path="res://assets/buffer-01.png" type="Texture" id=4]
+[ext_resource path="res://assets/buffer-06.png" type="Texture" id=5]
+[ext_resource path="res://assets/buffer-05.png" type="Texture" id=6]
+[ext_resource path="res://assets/buffer-03.png" type="Texture" id=7]
+[ext_resource path="res://assets/buffer-02.png" type="Texture" id=8]
+[ext_resource path="res://assets/buffer-04.png" type="Texture" id=9]
+[ext_resource path="res://assets/buffer-08.png" type="Texture" id=10]
+[ext_resource path="res://assets/buffer-07.png" type="Texture" id=11]
+
+[sub_resource type="AnimatedTexture" id=1]
+frames = 8
+fps = 12.0
+frame_0/texture = ExtResource( 4 )
+frame_1/texture = ExtResource( 8 )
+frame_1/delay_sec = 0.0
+frame_2/texture = ExtResource( 7 )
+frame_2/delay_sec = 0.0
+frame_3/texture = ExtResource( 9 )
+frame_3/delay_sec = 0.0
+frame_4/texture = ExtResource( 6 )
+frame_4/delay_sec = 0.0
+frame_5/texture = ExtResource( 5 )
+frame_5/delay_sec = 0.0
+frame_6/texture = ExtResource( 11 )
+frame_6/delay_sec = 0.0
+frame_7/texture = ExtResource( 10 )
+frame_7/delay_sec = 0.0
 
 [node name="preview" type="Control"]
 anchor_right = 1.0
@@ -151,6 +178,30 @@ margin_left = 1744.0
 margin_right = 1910.0
 margin_bottom = 40.0
 text = "Color Grading"
+
+[node name="hbox" type="HBoxContainer" parent="margin"]
+visible = false
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 53.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+
+[node name="space" type="Control" parent="margin/hbox"]
+margin_right = 1858.0
+margin_bottom = 48.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="buffering" type="TextureRect" parent="margin/hbox"]
+margin_left = 1862.0
+margin_right = 1910.0
+margin_bottom = 48.0
+rect_min_size = Vector2( 48, 48 )
+texture = SubResource( 1 )
+expand = true
 
 [connection signal="gui_input" from="margin/vbox/viewport_display" to="margin/vbox/viewport_display" method="_on_viewport_display_gui_input"]
 [connection signal="pressed" from="margin/vbox/flow/visibility" to="margin" method="_on_visibility_pressed"]

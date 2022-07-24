@@ -1,7 +1,7 @@
 extends Control
 
 const smooth_pixel:Material = preload("res://shaders/SmoothPixel.tres")
-const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
+#const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
 
 export (NodePath) onready var camera = get_node(camera)
 export (NodePath) onready var viewport = get_node(viewport)
@@ -18,6 +18,8 @@ onready var filter_button:CheckButton = $margin/vbox/flow/filter
 onready var fxaa_button:CheckButton = $margin/vbox/flow/fxaa
 onready var edge_mix_button:CheckButton = $margin/vbox/flow/edge_mix
 onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
+
+onready var buffering:HBoxContainer = $margin/hbox
 
 enum status { INACTIVE = 0, ACTIVE, PAUSED, CANCELED }
 
@@ -109,7 +111,8 @@ func _load_full_image(image_hash:String, path:String) -> void:
 	image_mutex.unlock()
 	
 	if use_buffering_icon: 
-		preview.set_texture(buffer_icon)
+		buffering.show()
+		#preview.set_texture(buffer_icon)
 	append_args(image_hash, path)
 	start_manager()
 
@@ -249,6 +252,7 @@ func resize_current_image(path:String="") -> void:
 	current_image.set_size_override(calc_size(current_image))
 	yield(get_tree(), "idle_frame")
 	preview.set_texture(current_image)
+	buffering.hide()
 
 func calc_size(it:ImageTexture) -> Vector2:
 	var size_1:Vector2 = viewport_display.rect_size
