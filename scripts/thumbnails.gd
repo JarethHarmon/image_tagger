@@ -1,11 +1,5 @@
 extends ItemList
 
-# I believe I have fixed the main issues with this approach;
-#	I do still want to have a page history that will have to keep track of:
-#	all page settings (order/sort/page_number/tab_id/tags_all/tags_any/tags_none/filters(once I add them)
-#	and match those with the image_hashes for that page; then I would just substitute a history access for 
-#	the database query if the page is in history (keep ~40 pages by default)
-
 const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") 
 const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
 
@@ -134,9 +128,13 @@ func _query_thread(args:Array) -> void:
   # query the database
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
 		if Storage.HasPage(lqh):
-			queried_image_count = Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))
+			if Globals.current_tab_type == Globals.Tab.IMPORT_GROUP:
+				queried_image_count = Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))
+			elif Globals.current_tab_type == Globals.Tab.SIMILARITY:
+				queried_image_count = Database.GetSuccessCount("All")
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
+			Database.PopulateDictHashes(image_hashes)
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
@@ -281,51 +279,52 @@ func _thread(thread_id:int) -> void:
 func load_thumbnail(image_hash:String, index:int) -> void:
 	th.lock()
 	if thumb_history.has(image_hash):
-		th.unlock()
-		if stop_thumbnail_threads: return
-		_threadsafe_set_icon(image_hash, index)
+		if thumb_history[image_hash].texture != null:
+			th.unlock()
+			if stop_thumbnail_threads: return
+			_threadsafe_set_icon(image_hash, index)
+			return
+	th.unlock()
+	_set_metadata(image_hash)
+	
+	var f:File = File.new()
+	var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
+	var e:int = f.open(p, File.READ)
+	
+	if stop_thumbnail_threads: return
+	if e != OK: 
+		_threadsafe_set_icon(image_hash, index, true)
+		return
+	
+	if stop_thumbnail_threads: return
+	var file_type:int = Database.GetFileType(image_hash)
+	
+	if file_type == Globals.ImageType.FAIL:
+		_threadsafe_set_icon(image_hash, index, true)
+		return
+	
+	if stop_thumbnail_threads: return
+	var i:Image = Image.new()
+	var b:PoolByteArray = f.get_buffer(f.get_len())
+	if file_type == Globals.ImageType.PNG: 
+		e = i.load_png_from_buffer(b)
+	elif file_type == Globals.ImageType.JPG: 
+		e = i.load_jpg_from_buffer(b)
 	else:
-		th.unlock()
-		_set_metadata(image_hash)
-		
-		var f:File = File.new()
-		var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
-		var e:int = f.open(p, File.READ)
-		
-		if stop_thumbnail_threads: return
-		if e != OK: 
-			_threadsafe_set_icon(image_hash, index, true)
-			return
-		
-		if stop_thumbnail_threads: return
-		var file_type:int = Database.GetFileType(image_hash)
-		
-		if file_type == Globals.ImageType.FAIL:
-			_threadsafe_set_icon(image_hash, index, true)
-			return
-		
-		if stop_thumbnail_threads: return
-		var i:Image = Image.new()
-		var b:PoolByteArray = f.get_buffer(f.get_len())
-		if file_type == Globals.ImageType.PNG: 
-			e = i.load_png_from_buffer(b)
-		elif file_type == Globals.ImageType.JPG: 
-			e = i.load_jpg_from_buffer(b)
-		else:
-			_threadsafe_set_icon(image_hash, index, true)
-			return
-		if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
-		
-		if stop_thumbnail_threads: return
-		var it:ImageTexture = ImageTexture.new()
-		it.create_from_image(i, 0) # FLAGS # 4
-		it.set_meta("image_hash", image_hash)
-		
-		th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
-		lt.lock() ; loaded_thumbnails.push_back(image_hash) ; lt.unlock()
-		
-		if stop_thumbnail_threads: return
-		_threadsafe_set_icon(image_hash, index)
+		_threadsafe_set_icon(image_hash, index, true)
+		return
+	if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
+	
+	if stop_thumbnail_threads: return
+	var it:ImageTexture = ImageTexture.new()
+	it.create_from_image(i, 0) # FLAGS # 4
+	it.set_meta("image_hash", image_hash)
+	
+	th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
+	lt.lock() ; loaded_thumbnails.push_back(image_hash) ; lt.unlock()
+	
+	if stop_thumbnail_threads: return
+	_threadsafe_set_icon(image_hash, index)
 
 func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
 	var im_tex:Texture

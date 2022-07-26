@@ -148,7 +148,7 @@ public class Database : Node
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		importer = (ImageImporter) GetNode("/root/ImageImporter");
 		globals = (Node) GetNode("/root/Globals");
-		GD.Print(Data.ImportCode.SUCCESS);
+		//GD.Print(Data.ImportCode.SUCCESS);
 	}
 	
 	public int Create() 
@@ -589,6 +589,19 @@ public class Database : Node
 			if (hashInfo.imports.Contains(importId)) return true;
 			return false;
 		} catch (Exception ex) { return false; }
+	}
+	
+	public void PopulateDictHashes(string[] imageHashes)
+	{
+		try {
+			//var now = DateTime.Now;
+			dictHashes.Clear();
+			foreach (string imageHash in imageHashes) {
+				var hashInfo = colHashes.FindById(imageHash);
+				dictHashes[imageHash] = hashInfo;
+			}
+			//GD.Print(DateTime.Now-now);
+		} catch (Exception ex) { GD.Print("Database::PopulateDictHashes(): ", ex); return; }
 	}
 	
 	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
