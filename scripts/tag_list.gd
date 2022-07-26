@@ -148,13 +148,19 @@ func select(tag:String) -> void:
 	
 func deselect(tag:String) -> void:
 	current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].normal)
-	current_tags[tag].button.remove_color_override("font_color")
+	if use_colored_text:
+		current_tags[tag].button.add_color_override("font_color", current_tags[tag].color * 1.5)
+	else:
+		current_tags[tag].button.remove_color_override("font_color")
 	selected_tags.erase(tag)
 
 func deselect_all() -> void:
 	for tag in selected_tags: 
 		current_tags[tag].button.add_stylebox_override("normal", current_tags[tag].normal)
-		current_tags[tag].button.remove_color_override("font_color")
+		if use_colored_text:
+			current_tags[tag].button.add_color_override("font_color", current_tags[tag].color * 1.5)
+		else:
+			current_tags[tag].button.remove_color_override("font_color")
 	selected_tags.clear()
 
 # need to keep a selected data structure and allow multi select
