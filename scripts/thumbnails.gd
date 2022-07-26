@@ -129,8 +129,9 @@ func _query_thread(args:Array) -> void:
   # query the database
 	var import_id:String = ""
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
-		import_id = Database.GetImportId(tab_id)
-		if import_id == "": import_id = "All"
+		var temp =  Database.GetImportId(tab_id)
+		if temp == null or temp == "": temp = "All"
+		import_id = temp
 		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
 		
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
