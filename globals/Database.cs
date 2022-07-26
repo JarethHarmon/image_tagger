@@ -662,7 +662,7 @@ public class Database : Node
 	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
 	{
 		try {
-			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, counted=false;
+			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, sortByDefaultRating = false, counted=false;
 			string columnName = "_Id";
 
 			if (sort == (int)Data.Sort.SIZE) columnName = "size";
@@ -671,6 +671,7 @@ public class Database : Node
 			else if (sort == (int)Data.Sort.DIMENSIONS) sortByDimensions = true;
 			else if (sort == (int)Data.Sort.TAG_COUNT) sortByTagCount = true;
 			else if (sort == (int)Data.Sort.RANDOM) sortByRandom = true;
+			else if (sort == (int)Data.Sort.DEFAULT_RATING) sortByDefaultRating = true;
 			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
@@ -704,6 +705,10 @@ public class Database : Node
 			} else if (sortByDimensions) {
 				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.width * x.height);
 				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.width * x.height);
+				else return null;
+			} else if (sortByDefaultRating) {
+				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.ratings["Default"]);
+				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.ratings["Default"]);
 				else return null;
 			} else {
 				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(columnName);
