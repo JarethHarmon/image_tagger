@@ -2,6 +2,7 @@ extends MarginContainer
 
 onready var hsep:HSeparator = $vbox/hsep
 onready var flow:HFlowContainer = $vbox/flow
+onready var hbox:HBoxContainer = $vbox/hbox
 
 var hidden:bool = false
 
@@ -14,6 +15,8 @@ func _on_visibility_pressed() -> void:
 	if hidden:
 		hsep.hide()
 		flow.hide()
+		hbox.hide()
 	else:
 		hsep.show()
 		flow.show()
+		hbox.show()

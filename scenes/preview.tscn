@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://scripts/preview.gd" type="Script" id=1]
 [ext_resource path="res://scripts/viewport_display.gd" type="Script" id=2]
 [ext_resource path="res://scripts/preview_buttons.gd" type="Script" id=3]
 [ext_resource path="res://assets/animated_buffer.tres" type="Texture" id=4]
+[ext_resource path="res://scenes/rating.tscn" type="PackedScene" id=5]
 
 [sub_resource type="StyleBoxFlat" id=1]
 bg_color = Color( 0, 0, 0, 0.501961 )
@@ -65,18 +66,40 @@ size_flags_vertical = 3
 
 [node name="viewport_display" type="TextureRect" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 1018.0
+margin_bottom = 963.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 expand = true
 stretch_mode = 7
 script = ExtResource( 2 )
 
+[node name="hbox" type="HBoxContainer" parent="margin/vbox"]
+margin_top = 967.0
+margin_right = 1910.0
+margin_bottom = 1012.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="rating" parent="margin/vbox/hbox" instance=ExtResource( 5 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 271.0
+margin_bottom = 45.0
+
+[node name="space" type="Control" parent="margin/vbox/hbox"]
+margin_left = 275.0
+margin_right = 1910.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
 [node name="hsep" type="HSeparator" parent="margin/vbox"]
-margin_top = 1022.0
+margin_top = 1016.0
 margin_right = 1910.0
 margin_bottom = 1026.0
 mouse_filter = 2
+custom_constants/separation = 10
 
 [node name="flow" type="HFlowContainer" parent="margin/vbox"]
 margin_top = 1030.0

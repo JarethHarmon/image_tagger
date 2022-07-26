@@ -48,12 +48,18 @@ func _ready() -> void:
 	
 	Signals.connect("resize_preview_image", self, "resize_current_image")
 	Signals.connect("load_full_image", self, "_load_full_image")
+	Signals.connect("rating_set", self, "_rating_set")
 	
 	create_threads(max_threads)
 	
 	# connect to settings_loaded signal here
 	_on_settings_loaded()
-	
+
+func _rating_set(rating:int) -> void:
+	if not current_image.has_meta("image_hash"): return
+	var image_hash:String = current_image.get_meta("image_hash")
+	Database.AddRating(image_hash, "Default", rating)
+
 func _on_settings_loaded() -> void:
 	smooth_pixel_button.pressed = Globals.settings.use_smooth_pixel
 	smooth_pixel_button.disabled = Globals.settings.use_filter
@@ -102,6 +108,7 @@ func _load_full_image(image_hash:String, path:String) -> void:
 		var it:ImageTexture = image_history[image_hash]
 		preview.set_texture(it)
 		current_image = it
+		Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
 		image_mutex.unlock()
 		return
 	
@@ -227,6 +234,7 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 	it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
 	
 	if image_hash != "":
+		it.set_meta("image_hash", image_hash)
 		image_mutex.lock()		
 		if image_queue.size() < Globals.settings.images_to_store:
 			image_history[image_hash] = it
@@ -243,6 +251,7 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		#	return
 		pass
 	current_image = it
+	Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
 
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return

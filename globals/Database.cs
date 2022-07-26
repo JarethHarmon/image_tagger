@@ -485,6 +485,33 @@ public class Database : Node
 	private int _lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return _lastQueriedCount; }
 	
+	public void AddRating(string imageHash, string ratingName, int ratingValue)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash)) {
+				if (dictHashes[imageHash].ratings == null) 
+					dictHashes[imageHash].ratings = new Dictionary<string, int>();
+				dictHashes[imageHash].ratings[ratingName] = ratingValue;
+			}
+			var hashInfo = colHashes.FindById(imageHash);
+			if (hashInfo == null) return;
+			if (hashInfo.ratings == null) 
+				hashInfo.ratings =	new Dictionary<string, int>();
+			hashInfo.ratings[ratingName] = ratingValue;
+			colHashes.Update(hashInfo);
+		} catch (Exception ex) { GD.Print("Database::AddRating() : ", ex); return; }		
+	}
+	public int GetRating(string imageHash, string ratingName)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash)) 
+				if (dictHashes[imageHash].ratings != null)
+					return (dictHashes[imageHash].ratings.ContainsKey(ratingName)) ?
+						dictHashes[imageHash].ratings[ratingName] : 0;
+			return 0;
+		} catch (Exception ex) { GD.Print("Database::GetRating() : ", ex); return 0; }	
+	}
+	
 	public bool CheckDuplicate(string imageHash, string importId)
 	{
 		try {

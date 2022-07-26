@@ -1,5 +1,18 @@
 extends ItemList
 
+# one issue with the current approach to page history is that if the page has changed by a method not included
+# in the hash (e.g. additional/removed tags on images when sorting by tag count) ; the page will not update, and 
+# cannot be updated for the current query settings
+
+# one option is to just allow manual refreshes with F5 and the search button; though it requires a manual action
+# for each page that was previously loaded into memory for the tab with changed images
+
+# another option is to always re-query pages sorted by tag count, or any similar concepts in the future 
+
+# another option is to only re-query when it needs to, but that is not at all easy to determine 
+# 	(unless I am just too tired and missing something obvious)
+
+
 const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") 
 const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
 
