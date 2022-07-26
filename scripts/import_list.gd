@@ -19,8 +19,6 @@ var thread_args:Array = []			# the arguments associated with a specific thread  
 var last_arg = null					# import_id for this script
 
 var delay_time:int = 50				# how long to wait in the thread loop before checking argument_queue again
-var max_total_threads:int = 5		# the max number of threads that can run simultaneously
-var max_threads_per_import:int = 3	#
 var active_threads:int = 0			# the current number of active (hose currently processing) threads
 
 var stop_manager:bool = false
@@ -35,7 +33,7 @@ func _ready() -> void:
 	Signals.connect("create_similarity_tab", self, "create_new_similarity_tab")
 	buttons["All"] = all_button
 	
-	create_threads(max_total_threads)
+	create_threads(Globals.settings.max_import_threads)
 
 func _on_all_button_button_up() -> void: 
 	Signals.emit_signal("tab_button_pressed", "All")
@@ -168,7 +166,7 @@ func update_button_text(tab_id:String, finished:bool, success_count:int, total_c
 
 func create_threads(num_threads:int) -> void:
 	if num_threads == thread_pool.size(): return
-	max_total_threads = num_threads
+	Globals.settings.max_import_threads = num_threads
 	
 	if num_threads > thread_pool.size():
 		for i in num_threads - thread_pool.size():
@@ -196,7 +194,7 @@ func start_manager() -> void:
 		manager_thread.start(self, "_manager_thread")
 
 func start_one() -> void:
-	if active_threads == max_total_threads: return
+	if active_threads == Globals.settings.max_import_threads: return
 	for thread_id in thread_pool.size():
 		if thread_status[thread_id] == status.INACTIVE:
 			thread_status[thread_id] = status.ACTIVE
@@ -209,7 +207,7 @@ func pause_all() -> void:
 		pause(thread_id)
 
 func pause(thread_id:int) -> void:
-	if thread_id >= max_total_threads: return
+	if thread_id >= Globals.settings.max_import_threads: return
 	if thread_status[thread_id] > status.PAUSED: return
 	if thread_status[thread_id] < status.ACTIVE: return
 	
@@ -224,7 +222,7 @@ func cancel_all() -> void:
 		_stop(thread_id)
 
 func cancel(thread_id:int) -> void:
-	if thread_id >= max_total_threads: return
+	if thread_id >= Globals.settings.max_import_threads: return
 	if thread_status[thread_id] == status.INACTIVE: return
 	thread_status[thread_id] = status.CANCELED
 	_stop(thread_id)
@@ -285,13 +283,13 @@ func _manager_thread() -> void:
 		if not pause_manager:
 			if current_tab_id == null: break
 			for thread_id in thread_args.size():
-				if current_count >= max_threads_per_import: break
+				if current_count >= Globals.settings.max_threads_per_import: break
 				if get_thread_args(thread_id) == null:
 					set_thread_args(thread_id, current_tab_id)
 					current_count += 1
 					start_one()
 		OS.delay_msec(delay_time)
-		if current_count >= max_threads_per_import:
+		if current_count >= Globals.settings.max_threads_per_import:
 			current_count = 0
 			current_tab_id = get_args()
 			
@@ -312,7 +310,7 @@ func _thread(thread_id:int) -> void:
 				if result == results.EMPTY: 
 					finished = true
 					break
-			if thread_id >= max_total_threads: break
+			if thread_id >= Globals.settings.max_import_threads: break
 	call_deferred("_done", [thread_id, tab_id, finished])
 
 func _done(args:Array) -> void:

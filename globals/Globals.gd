@@ -49,6 +49,8 @@ var settings:Dictionary = {
   # Import
 	"use_recursion" : false,
 	"max_bytes_to_check_apng" : 256,
+	"max_import_threads" : 5,
+	"max_threads_per_import" : 3,
 
   # Thumbnails
 	"images_per_page" : 400,
