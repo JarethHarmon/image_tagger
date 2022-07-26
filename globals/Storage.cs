@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 namespace Data
 {
@@ -12,6 +13,37 @@ namespace Data
 	
 	public class Storage : Node
 	{
+		private int _maxStoredPages = 500;
+		public void SetMaxStoredPages(int maxPages) { _maxStoredPages = maxPages; }
 		
+		public List<int> pageQueue = new List<int>();
+		public Dictionary<int, string[]> storedPages = new Dictionary<int, string[]>();
+		
+		public void AddPage(int hashId, string[] hashes)
+		{
+			if (pageQueue.Count >= _maxStoredPages){
+				int removedHash = pageQueue[0];
+				pageQueue.RemoveAt(0);
+				storedPages.Remove(removedHash);
+			}
+			storedPages[hashId] = hashes;
+			pageQueue.Add(hashId);
+		}
+		public void UpdatePageQueuePosition(int hashId) 
+		{
+			int removeIndex = pageQueue.FindIndex(x => x == hashId);
+			if (removeIndex < 0) return;
+			int removedHash = pageQueue[removeIndex];
+			pageQueue.RemoveAt(removeIndex);
+			pageQueue.Add(removedHash);
+		}
+		public string[] GetPage(int hashId)
+		{
+			return (HasPage(hashId)) ? storedPages[hashId] : new string[0];
+		}
+		public bool HasPage(int hashId)
+		{
+			return storedPages.ContainsKey(hashId);
+		}
 	}
 }

@@ -1,59 +1,58 @@
 extends ItemList
 
-# constants
+# I believe I have fixed the main issues with this approach;
+#	I do still want to have a page history that will have to keep track of:
+#	all page settings (order/sort/page_number/tab_id/tags_all/tags_any/tags_none/filters(once I add them)
+#	and match those with the image_hashes for that page; then I would just substitute a history access for 
+#	the database query if the page is in history (keep ~40 pages by default)
+
+const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") 
 const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
-const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") # want to remove this eventually
 
-# nodes
+enum Status { INACTIVE, ACTIVE, CANCELED, ERROR }
+
+onready var lt:Mutex = Mutex.new()			# mutex for interacting with loaded_thumbnails
+onready var sc:Mutex = Mutex.new()			# mutex for interacting with scene
+onready var tq:Mutex = Mutex.new()			# mutex for interacting with thumb_queue
+onready var th:Mutex = Mutex.new()			# mutex for interacting with thumb_history
+
+var tab_history:Dictionary = {} 			# { tab_id:{ "scroll":scroll_percentage , "page":page } }
+var thumb_history:Dictionary = {}			# { image_hash:ImageTexture }
+var current_query:Dictionary = {}			# the query currently being processed
+var current_hashes:Dictionary = {}			# { index:image_hash } the image_hashes and their index for the currently viewed page
+var selected_items:Dictionary = {}
+
+var loaded_thumbnails:Array = []			# [ fifo_queue_version_of_thumb_history.keys() ] 
+var thumb_queue:Array = []					# [ hashes_waiting_to_load ]
+var thumbnail_threads:Array = []			# [ threads_used_for_loading_thumbnails ]  
+var last_query_settings:Array = []			# the settings used for the last query (used to avoid counting query results multiple times)
+
+var stop_thumbnail_threads:bool = false		# whether the thumbnail threads should stop processing
+var called_already:bool = false
+var ctrl_pressed:bool = false
+var shift_pressed:bool = false
+
+var selected_item:int = 0
+var last_selected_item:int = 0
+var last_index:int = 0
+var curr_page_number:int = 1				# 
+var curr_page_image_count:int = 0
+var total_image_count:int = 0
+var queried_page_count:int = 1
+var queried_image_count:int = 1
+var database_offset:int = 0
+
 var page_label:Label
-
-# signal connections
 func _page_label_ready(node_path:NodePath) -> void: page_label = get_node(node_path) 
-
-# instance variables
-onready var sc:Mutex = Mutex.new()		# mutex for interacting with scene
-onready var ii:Mutex = Mutex.new()		# mutex for interacting with item_index
-onready var tq:Mutex = Mutex.new()		# mutex for interacting with thumb_queue
-onready var th:Mutex = Mutex.new()		# mutex for interacting with thumb_history
-
-# data structures
-# change to a { {}:{} } data structure, need to include search settings and image_hashes in values
-#	search settings should include tag arrays, import_id, group_id, image_hash (for similarity sorting) 
-#	as is relevant
-# all tabs will use this system; new tabs that are opened (like similarity sorting) will generate a new import_id
-# and upload themselves to the database
-var tab_settings:Dictionary = {}
-var page_history:Dictionary = {}		# [page_number, load_id, type_id]:[image_hashes] :: stores last M pages of image_hashes
-var thumb_history:Dictionary = {}		# image_hash:ImageTexture :: stores last P loaded thumbnails  ->> image_hash:{texture&metadata}
-var image_queue:Array = []				# [image_hashes] :: fifo queue of last N loaded full image hashes  
-var page_queue:Array = []				# [[page_number, load_id, type_id]] :: fifo queue of last M pages
-var thumb_queue:Array = []				# [image_hashes] :: fifo queue of the thumbnails waiting to be loaded for the current page
-var load_threads:Array = []				# array of threads for loading thumbnails
-
-# variables
-var item_index:int = 0					# current index in the item_list
-var curr_page_number:int = 1			# the viewed page for the current query
-var curr_page_image_count:int = 0		# the number of thumbnails for the current page
-var total_image_count:int = 0			# the total number of images for the the current group (all/import_group/image_group)
-var queried_page_count:int = 1			# the number of pages for the current query (queried_image_count/images_per_page)
-var queried_image_count:int = 0			# the number of images returned by the current query
-var database_offset:int = 0				# the offset in the database for the current query ((current_page_number-1)*images_per_page)
-
-var last_query_settings:Array = []		# the settings used for the last query (used to avoid counting query results multiple times)
-
-var starting_load_process:bool = false	# whether a page is beginning the load process
-var stopping_load_process:bool = false	# whether a page is attempting to stop loading
-
-# when user loads a page (including by clicking a group button) it should take the tID, lID and p# and check if present in page history first
-# when a page is removed from page_history, iterate over its hash array and remove those from loaded_thumbnails
-
-# signal connections
 func _curr_page_changed(new_page:int) -> void: 
-	# should set it based on a (new?) history data structure that saves the last viewed page for each importId (or 1 if it does not exist)
+	var tab_id:String = Globals.current_tab_id
+	if tab_history.has(tab_id):
+		tab_history[tab_id].page = new_page
+	else:
+		tab_history[tab_id] = {"scroll":0.0, "page":new_page}
 	curr_page_number = new_page
-	Signals.emit_signal("change_page")
+	Signals.emit_signal("change_page", new_page)
 
-# initialization
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
@@ -61,141 +60,229 @@ func _ready() -> void:
 	Signals.connect("select_all_pressed", self, "select_all_items")
 	Signals.connect("deselect_all_pressed", self, "deselect_all")
 	Signals.connect("toggle_thumbnail_tooltips", self, "_toggle_thumbnail_tooltips")
-
-func _prepare_query(include_tags:Array=[], exclude_tags:Array=[]) -> void:
-	# include = [ [ A,B ] , [ C,D ] , [ E ] ]
-	#		means that an image must include one of : (A and B) or (C and D) or (E)
-	# this will be the default, current prepare_query() should call this and construct tags like this instead
-	# then I need to design UI to support these mini tag groupings
-	pass
-	
+	self.get_v_scroll().connect("scrolling", self, "_scrolling")
+	self.get_v_scroll().connect("value_changed", self, "_scrolling")
+#-----------------------------------------------------------------------#
+#					Querying and Loading Thumbnails						#
+#-----------------------------------------------------------------------#
+var first_time:bool = true # prevents scroll from being reset when going back to the same page (would not be needed if I fixed logic to not call this function twice)
 func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], new_query:bool=true) -> void: 
+	var query:Dictionary = {
+		"tab_id" : Globals.current_tab_id,
+		"tags_all" : tags_all,
+		"tags_any" : tags_any,
+		"tags_none" : tags_none,
+	}
 	if new_query:
 		curr_page_number = 1
-		Signals.emit_signal("page_changed", curr_page_number)
 		queried_page_count = 0
 		total_image_count = 0
-	start_query(Globals.current_tab_id, tags_all, tags_any, tags_none)
 
-# need to decide if I should save query settings to history (ie attached on a per-import basis) or if I should apply them globally to any selected import button
-func start_query(tab_id:String, tags_all:Array=[], tags_any:Array=[], tags_none:Array=[]) -> void:
-	if starting_load_process: return
-	if tab_id == "": return
-	starting_load_process = true
-	stop_threads()
-  # temp variables
-	var hash_arr:Array = []
+		if tab_history.has(query.tab_id):
+			curr_page_number = tab_history[query.tab_id].page
+		
+		# EXTREMELY IMPORTANT NOTE: SIGNALS, BY DEFAULT, EXECUTE IMMEDIATELY, IN-PLACE, IF ON THE MAIN THREAD
+		# THIS MEANS THAT WITHOUT A DEFERRED CALL THIS FUNCTION ACTUALLY ITERATES INTO THIS CONDITION, RECIEVES THE SIGNAL
+		# THEN ITERATES AGAIN TO COMPLETION (TAKING THE ELSE CONDITION) BEFORE RETURNING AND FINISHING THIS SECTION	
+		# DOES NOT CAUSE MAJOR ISSUES ONLY BECAUSE THIS CONDITION RETURNS
+		Signals.call_deferred("emit_signal", "page_changed", curr_page_number)
+		first_time = false
+		return # not ideal solution; need to restructure overall order; for now prevents querying twice
+		# was: button -> sp -> pq(true)(qt) -> cpc -> pc -> sp -> pq(false) -> qt
+		# now: button -> sp -> pq(true) -> cpc -> pc -> sp -> pq(false) -> qt
+	else:
+		if first_time:
+			tab_history[query.tab_id].scroll = 0.0	
+	current_query = query
+	yield(get_tree(), "idle_frame")
+	yield(get_tree(), "idle_frame") 
+	var thread:Thread = Thread.new()
+	thread.start(self, "_query_thread", [thread, query])
+	first_time = true
+
+func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
+	if query == current_query: return false
+	thread.call_deferred("wait_to_finish")
+	return true
+
+func _query_thread(args:Array) -> void:
+	var thread:Thread = args[0]
+	var query:Dictionary = args[1]
+	var tab_id:String = query.tab_id
+	var tags_all:Array = query.tags_all
+	var tags_any:Array = query.tags_any
+	var tags_none:Array = query.tags_none
+	
+	if _is_invalid_query(thread, query): return
+	
+  # set temp variables	
+	var image_hashes:Array = []
 	var images_per_page:int = Globals.settings.images_per_page
-	var num_threads:int = Globals.settings.load_threads
 	var current_sort:int = Globals.settings.current_sort
 	var current_order:int = Globals.settings.current_order
-	var current_page:Array = [curr_page_number, tab_id]
-	var thumbnail_path:String = Globals.settings.thumbnail_path
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none]
+	var num_threads:int = Globals.settings.load_threads
 	
-  # calculate offset
+  # calculate the offset and whether it should count the query
 	database_offset = (curr_page_number-1) * images_per_page
-
-  # query database
 	var count_results:bool = not(temp_query_settings == last_query_settings)
 	last_query_settings = temp_query_settings
 	
-	# total_count is only used for updating import button, so attach that information to the import buttons themselves, have them query it when the user clicks one
-	hash_arr = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
-	queried_image_count = Database.GetLastQueriedCount() # just returns a private int, will be updated by the QueryDatabase() call if count_results is true (ie when query settings have changed)
-	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int
+	var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none] # add filters to this once implemented
+	var lqh:int = lqc.hash()
+	
+  # query the database
+	if tags_all.empty() and tags_any.empty() and tags_none.empty():
+		if Storage.HasPage(lqh):
+			queried_image_count = Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))
+			image_hashes = Storage.GetPage(lqh)
+			Storage.UpdatePageQueuePosition(lqh)
+	if image_hashes.empty():	
+		if _is_invalid_query(thread, query): return
+		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
+		queried_image_count = Database.GetLastQueriedCount()
+		Storage.AddPage(lqh, image_hashes)
+		if _is_invalid_query(thread, query): return
+	
+  # get the correct values for page variables
+	curr_page_image_count = image_hashes.size()
+	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
+	if _is_invalid_query(thread, query): return
 	Signals.emit_signal("max_pages_changed", queried_page_count)
-	# display time taken for query
-	#var text:String = String(queried_image_count) + " : %1.3f ms" % [float(OS.get_ticks_usec()-time)/1000.0] 
-	#get_node("/root/main/Label").text = text
 	
-  # remove from page history
+	create_thumbnail_threads(num_threads)
+	if _is_invalid_query(thread, query): return
 	
-	if page_history.size() > Globals.settings.pages_to_store:
-		var page_to_remove:Array = page_queue.pop_front()
-		var thumbnails_to_unload:Array = page_history[page_to_remove]
-		th.lock()
-		for thumbnail in thumbnails_to_unload: thumb_history.erase(thumbnail)
-		th.unlock()
-		page_history.erase(page_to_remove)
+	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
+	thread.call_deferred("wait_to_finish")
 
-  # add to page history
-	if not page_history.has(current_page): 
-		page_queue.push_back(current_page)
-	page_history[current_page] = hash_arr
-	
-  # set page image count
-	curr_page_image_count = hash_arr.size()
-	
-	self.call_deferred("_threadsafe_clear", tab_id, curr_page_number, curr_page_image_count, queried_page_count, num_threads) 
-	
-# threading
-func stop_threads() -> void:
-	stopping_load_process = true
-	for t in load_threads.size():
-		stop_thread(t)
-
-func stop_thread(thread_id:int) -> void:
-	if load_threads[thread_id].is_active() or load_threads[thread_id].is_alive():
-		load_threads[thread_id].wait_to_finish()
-
-func _threadsafe_clear(tab_id:String, page_number:int, image_count:int, page_count:int, num_threads:int) -> void:
-	#starting_load_process = false
+func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	sc.lock()
+	var scroll_mult:float = 0.0
+	if tab_history.has(query.tab_id):
+		scroll_mult = tab_history[query.tab_id].scroll
 	if self.get_item_count() > 0:
 		yield(get_tree(), "idle_frame")
 		self.clear()
 		yield(get_tree(), "idle_frame")
 		yield(get_tree(), "idle_frame")
 	for i in image_count:
-		self.add_item("") # self.add_item(page_history[[page_number, import_id]][i]) # 
-		self.set_item_icon(i, icon_buffering)
-	# set page label text ( curr_page/total_pages )
-	sc.unlock()
-	prepare_thumbnail_loading(tab_id, page_number, num_threads)
-
-func prepare_thumbnail_loading(tab_id:String, page_number:int, num_threads:int) -> void:
-	load_threads.clear()
-	for i in num_threads: 
-		load_threads.append(Thread.new())
-	
-	ii.lock() ; item_index = 0 ; ii.unlock()
-	tq.lock()
+		self.add_item("", icon_buffering) 
 	thumb_queue.clear()
-	thumb_queue = page_history[[page_number, tab_id]].duplicate()
+	var vscroll:VScrollBar = self.get_v_scroll()
+	yield(get_tree(), "idle_frame")
+	vscroll.set_value(vscroll.max_value * scroll_mult)
+	sc.unlock()
+	if query != current_query: return
+	start_loading(query, image_hashes, image_count)
+	
+func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
+	var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
+	var thumbnail_path:String = Globals.settings.thumbnail_path
+	
+  # set current_hashes, iterate it to look for any thumbnails that are already loaded, set them and update their position in queue if found
+	var dict_image_hashes:Dictionary = {}
+	for idx in image_hashes.size():
+		dict_image_hashes[idx] = image_hashes[idx]
+	current_hashes = dict_image_hashes.duplicate()
+	if _set_thumbnails_from_history(query, dict_image_hashes): 
+		sc.unlock() ; return
+	
+  # remove hashes/thumbnails from history and queue if necessary
+	lt.lock()
+	var tq_size:int = loaded_thumbnails.size()
+	var di_size:int = dict_image_hashes.size()
+	if tq_size + di_size > max_loaded_thumbnails:
+		var kept_hashes:Array = loaded_thumbnails.slice(di_size, tq_size)
+		th.lock()
+		for i in di_size:
+			thumb_history.erase(loaded_thumbnails[i])
+		th.unlock()
+		loaded_thumbnails = kept_hashes
+	lt.unlock()
+	tq.lock()
+	for idx in dict_image_hashes:
+		thumb_queue.push_back([idx, dict_image_hashes[idx]])
 	tq.unlock()
+	if query != current_query: 
+		sc.unlock() ; return
 	
-	stopping_load_process = false
-	for t in load_threads.size():
-		if not load_threads[t].is_active():
-			load_threads[t].start(self, "_thread", t)
-	starting_load_process = false # putting this here instead of line 140 is more stable, but results in slower page changing
-	# need to try and improve page changing speed in general
-	
-func _thread(thread_id:int) -> void:
-	while not stopping_load_process:
-		tq.lock()
-		if thumb_queue.empty():
-			tq.unlock()
-			break
-		else:
-			ii.lock()
-			var image_hash:String = thumb_queue.pop_front()
-			var index:int = item_index
-			item_index += 1
-			ii.unlock()
-			tq.unlock()
-			load_thumbnail(image_hash, index)
-		#OS.delay_msec(50)
-		#OS.delay_msec(20)
-	call_deferred("stop_thread", thread_id)
+  # start the thumbnail threads to load the remaining thumbnails
+	_start_thumbnail_loading_threads()
+	sc.unlock()
 
-# thumbnail loading
+func _set_thumbnails_from_history(query:Dictionary, image_hashes:Dictionary) -> bool:
+	var temp:Array = image_hashes.keys()
+	for idx in temp:
+		if query != current_query: return true
+		var image_hash:String = image_hashes[idx]
+		image_hashes.erase(image_hash)
+		th.lock()
+		if not thumb_history.has(image_hash): 
+			th.unlock()
+			continue
+		var im_tex:Texture = thumb_history[image_hash].texture
+		th.unlock() ; lt.lock()
+		loaded_thumbnails.erase(image_hash)
+		loaded_thumbnails.push_back(image_hash)
+		lt.unlock()
+		var text:String = ""
+		if Globals.current_tab_type == Globals.Tab.SIMILARITY:
+			var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+			var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+			text = "%1.2f" % [similarity] + "%"
+		if query != current_query: return true
+		self.set_item_icon(idx, im_tex)
+		self.set_item_text(idx, text)
+	return false
+	
+func _start_thumbnail_loading_threads() -> void:
+	for thread_id in thumbnail_threads.size():
+		thumbnail_threads[thread_id].start(self, "_thread", thread_id)
+
+func create_thumbnail_threads(num_threads:int) -> void:
+	stop_thumbnail_threads()
+	thumbnail_threads.clear()
+	for thread_id in num_threads:
+		thumbnail_threads.push_back(Thread.new())
+
+func stop_thumbnail_threads() -> void:
+	stop_thumbnail_threads = true
+	for thread_id in thumbnail_threads.size():
+		stop_thumbnail_thread(thread_id)
+	stop_thumbnail_threads = false
+
+func stop_thumbnail_thread(thread_id:int) -> void:
+	if thumbnail_threads[thread_id].is_active() or thumbnail_threads[thread_id].is_alive():
+		thumbnail_threads[thread_id].wait_to_finish()
+
+func get_args():
+	tq.lock()
+	var result = null
+	if not thumb_queue.empty():
+		result = thumb_queue.pop_front()
+	tq.unlock()
+	return result
+
+func append_args(args):
+	tq.lock()
+	thumb_queue.append(args)
+	tq.unlock()
+
+func _thread(thread_id:int) -> void:
+	while not stop_thumbnail_threads:
+		var args = get_args()
+		if args == null: break
+		var index:int = args[0]
+		var image_hash:String = args[1]
+		load_thumbnail(image_hash, index)
+	call_deferred("stop_thumbnail_thread", thread_id)
+
 func load_thumbnail(image_hash:String, index:int) -> void:
 	th.lock()
 	if thumb_history.has(image_hash):
 		th.unlock()
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		_threadsafe_set_icon(image_hash, index)
 	else:
 		th.unlock()
@@ -205,19 +292,19 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
 		var e:int = f.open(p, File.READ)
 		
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		if e != OK: 
 			_threadsafe_set_icon(image_hash, index, true)
 			return
 		
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		var file_type:int = Database.GetFileType(image_hash)
 		
 		if file_type == Globals.ImageType.FAIL:
 			_threadsafe_set_icon(image_hash, index, true)
 			return
 		
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		var i:Image = Image.new()
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		if file_type == Globals.ImageType.PNG: 
@@ -229,14 +316,15 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 			return
 		if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
 		
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		var it:ImageTexture = ImageTexture.new()
 		it.create_from_image(i, 0) # FLAGS # 4
 		it.set_meta("image_hash", image_hash)
 		
 		th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
+		lt.lock() ; loaded_thumbnails.push_back(image_hash) ; lt.unlock()
 		
-		if stopping_load_process: return
+		if stop_thumbnail_threads: return
 		_threadsafe_set_icon(image_hash, index)
 
 func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
@@ -248,7 +336,7 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		dict = thumb_history[image_hash]
 		im_tex = dict.texture
 		th.unlock()
-	if stopping_load_process: return
+	if stop_thumbnail_threads: return
 	sc.lock()
 	self.set_item_icon(index, im_tex)
 	if Globals.settings.show_thumbnail_tooltips:
@@ -258,14 +346,12 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
 		var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
-		
-	#set_item_tooltip(index, "sha256: " + image_hash + "\ndifference hash: " + diff_hash + "\ncolor hash: " + color_hash as String + +  + "\npaths: " + String(paths))
-	#set_item_text(index, String(index+1))
-	# If I include text options, will need to edit scroll() to account for the increased vertical height
-	# would also need to limit it to one line of text, and I don't believe I was ever successful in calculating 
-	# the correct offset in the past
 	sc.unlock()
 
+
+#-----------------------------------------------------------------------#
+#					             OTHER									#
+#-----------------------------------------------------------------------#
 func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	var tooltip:String = "index: " + String(index+1)
 	tooltip += "\nsize: " + ("-1" if dict.size == "" else String.humanize_size(dict.size.to_int()))
@@ -275,7 +361,6 @@ func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	tooltip += "\ncolor hash: " + String(dict.color_hash)
 	return tooltip
 
-# might need to be made threadsafe (or else change dictHashes to a ConcurrentDictionary)
 func _set_metadata(image_hash:String) -> void:
 	var size:String = Database.GetFileSize(image_hash)
 	var diff_hash:String = Database.GetDiffHash(image_hash)
@@ -295,9 +380,6 @@ func _set_metadata(image_hash:String) -> void:
 	thumb_history[image_hash] = dict
 	th.unlock()
 	
-var selected_items:Dictionary = {}
-var last_index:int = 0
-var called_already:bool = false
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
 	selected_item = index
 	last_index = index
@@ -323,10 +405,10 @@ func select_items() -> void:
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
 	for i in arr_index.size():
-		selected_items[arr_index[i]] = page_history[[curr_page_number, Globals.current_tab_id]][arr_index[i]]
+		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
 	#color_all()
 	
-	var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][last_index]
+	var image_hash:String = current_hashes[last_index]
 	var paths:Array = Database.GetPaths(image_hash)
 	if not paths.empty():
 		var f:File = File.new()
@@ -341,20 +423,15 @@ func select_items() -> void:
 func select_all_items() -> void: 
 	selected_items.clear()
 	var tab_id:String = Globals.current_tab_id
+	var hashes:Array = Database.GetHashes()
 	for i in curr_page_image_count: 
-		selected_items[i] = page_history[[curr_page_number, tab_id]][i]
+		selected_items[i] = hashes[i]
 		self.select(i, false)
 	Signals.emit_signal("all_selected_items", selected_items)
 	
-var ctrl_pressed:bool = false
-var shift_pressed:bool = false
-
 # need to add proper support for shift+up/down arrow key
 # (ie need to select/deselect everything between the last_selected_item and the selected_item 
 # (based on whether selected_item is in selected_items already)
-var selected_item:int = 0
-var last_selected_item:int = 0
-
 func _unhandled_input(event:InputEvent) -> void:
 	if Input.is_action_pressed("ctrl"): ctrl_pressed = true
 	if Input.is_action_pressed("shift"): shift_pressed = true
@@ -389,10 +466,6 @@ func _unhandled_input(event:InputEvent) -> void:
 	shift_pressed = false
 	
 func scroll(down:bool=true) -> void:
-	#var fixed_y:int = self.fixed_icon_size.y
-	#var vsep:int = 3 
-	#var linesep:int = 3
-	#var sidesep:int = vsep/2
 	if self.get_item_count() <= 1: return
 	var vscroll:VScrollBar = self.get_v_scroll()
 	var current_columns:int = self.get_num_columns()
@@ -400,16 +473,18 @@ func scroll(down:bool=true) -> void:
 	var current_row:int = selected_item/current_columns
 	var max_value:int = vscroll.max_value
 	var has_text:bool = not self.get_item_text(0) == ""
+	var value:int = 0
 	
 	if down:
-		#if current_row > 1: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
-		if current_row > 1: vscroll.set_value((current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1)))
-		else: vscroll.set_value(0)
+		if current_row > 1: value = (current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1))
 	else:
-		#if current_row < num_rows-2: vscroll.set_value(((current_row-1) * (fixed_y+linesep+vsep)) + sidesep)
-		if current_row < num_rows-2: vscroll.set_value((current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1)))
-		else: vscroll.set_value(vscroll.max_value)
+		if current_row < num_rows-2: value = (current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1))
+		else: value = vscroll.max_value
+	vscroll.set_value(value)
 
+func _scrolling(value:float=0.0) -> void:
+	tab_history[Globals.current_tab_id].scroll = value / self.get_v_scroll().max_value
+	
 func color_selection(index:int, selected:bool) -> void:
 	if self.get_item_count()-1 < index: return
 	if selected:
@@ -454,10 +529,10 @@ func _toggle_thumbnail_tooltips() -> void:
 	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips
 	if show_tooltips:
 		for idx in self.get_item_count():
-			var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][idx]
+			var image_hash:String = current_hashes[idx]
 			th.lock()
 			if thumb_history.has(image_hash):
-				var dict:Dictionary = thumb_history[image_hash]
+				var dict:Dictionary = thumb_history[image_hash].texture
 				th.unlock()
 				self.set_item_tooltip(idx, _create_tooltip(image_hash, dict, idx))
 			else: th.unlock()
@@ -467,6 +542,5 @@ func _toggle_thumbnail_tooltips() -> void:
 			
 func _on_thumbnails_item_rmb_selected(index:int, _at_position:Vector2) -> void:
 	# actual code should show a context menu
-	var image_hash:String = page_history[[curr_page_number, Globals.current_tab_id]][index]
+	var image_hash:String = current_hashes[index]
 	Signals.emit_signal("create_similarity_tab", image_hash)
-

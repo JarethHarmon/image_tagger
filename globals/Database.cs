@@ -242,26 +242,28 @@ public class Database : Node
 	// should be called when program is about to exit
 	public void SaveInProgressPaths()
 	{
-		foreach (string iid in dictImports.Keys) {
-			ImportInfo iinfo = dictImports[iid];
-			if (!iinfo.finished) {
-				var fileArray = iscan.GetInProgressPaths(iinfo.importId);
-				var paths = new List<string>();
-				var times = new List<long>();
-				var sizes = new List<long>();
-				foreach ((string,long,long) file in fileArray) {
-					paths.Add(file.Item1);
-					times.Add(file.Item2);
-					sizes.Add(file.Item3);
+		try {
+			foreach (string iid in dictImports.Keys) {
+				var iinfo = GetImport(iid);
+				if (!iinfo.finished) {
+					var fileArray = iscan.GetInProgressPaths(iinfo.importId);
+					var paths = new List<string>();
+					var times = new List<long>();
+					var sizes = new List<long>();
+					foreach ((string,long,long) file in fileArray) {
+						paths.Add(file.Item1);
+						times.Add(file.Item2);
+						sizes.Add(file.Item3);
+					}
+					iinfo.inProgressPaths = paths.ToArray();
+					iinfo.inProgressTimes = times.ToArray();
+					iinfo.inProgressSizes = sizes.ToArray();
+					iinfo.importedHashes = importer.GetImportedHashes(iinfo.importId);
+					colImports.Update(iinfo);
 				}
-				iinfo.inProgressPaths = paths.ToArray();
-				iinfo.inProgressTimes = times.ToArray();
-				iinfo.inProgressSizes = sizes.ToArray();
-				iinfo.importedHashes = importer.GetImportedHashes(iinfo.importId);
-				colImports.Update(iinfo);
 			}
-		}
-		colImports.Update(GetImport("All"));			
+			colImports.Update(GetImport("All"));		
+		} catch (Exception ex) { GD.Print("Database::SaveInProgressPaths() : ", ex); return; }	
 	}
 	
 	public void Destroy() 
@@ -285,6 +287,8 @@ public class Database : Node
 	{ 
 		ImportInfo importInfo;
 		bool success = dictImports.TryGetValue(importId, out importInfo);
+		if (importId.Equals("All"))
+			return (success) ? importInfo.successCount : 0; 
 		return (success) ? importInfo.successCount + importInfo.duplicateCount : 0;
 	}
 	public int GetSuccessCount(string importId)
@@ -760,6 +764,11 @@ public class Database : Node
 /*=========================================================================================
 								 Data Structure Access
 =========================================================================================*/
+	public string[] GetHashes()
+	{
+		return dictHashes.Keys.ToArray();
+	}
+	
 	public int GetFileType(string imageHash) 
 	{
 		return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].thumbnailType : -1;

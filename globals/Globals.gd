@@ -53,7 +53,8 @@ var settings:Dictionary = {
   # Thumbnails
 	"images_per_page" : 400,
 	"load_threads" : 3,
-	"pages_to_store" : 5,
+	"pages_to_store" : 500,
+	"max_loaded_thumbnails" : 10000,
 
   # Images
 	"images_to_store" : 10,
@@ -103,6 +104,7 @@ func load_settings() -> void:
 			if settings.has(setting):
 				settings[setting] = temp_settings[setting]
 	f.close()
+	Storage.SetMaxStoredPages(settings.pages_to_store)
 
 func create_settings_comparison_array(settings_dict:Dictionary) -> Array:
 	var result:Array = []

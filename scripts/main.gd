@@ -9,10 +9,13 @@ func _input(event:InputEvent) -> void:
 		if event.scancode == KEY_F8:
 			_notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
 
+var quitting:bool = false # prevents trying to quit multiple times (was causing errors)
 func _notification(what) -> void:
+	if quitting: return
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
+		quitting = true
 		OS.set_window_minimized(true)
-		thumbnails.stop_threads()
+		thumbnails.stop_thumbnail_threads()
 		importer.cancel_all()
 		previewer.stop_threads()
 		Database.SaveInProgressPaths()

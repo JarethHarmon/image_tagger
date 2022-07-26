@@ -22,6 +22,7 @@ var last_tab_id:String = ""
 
 func _ready() -> void: 
 	Signals.connect("max_pages_changed", self, "_max_pages_changed")
+	Signals.connect("change_page", self, "_change_page")
 	change_page(1) # keep for now
 	
 	if use_arrows:
@@ -40,8 +41,11 @@ func change_page(page:int) -> void:
 	else: current_page = page
 	last_tab_id = Globals.current_tab_id
 	Signals.emit_signal("page_changed", current_page)
-	page_label.text = String(current_page) + " / " + String(max_pages)
-	current_page_spinbox.value = current_page
+
+# using this signal is not ideal as it sets values twice for normal page changing, but this allows tab_history to work until I think of a better solution
+func _change_page(page:int) -> void:
+	current_page = page
+	current_page_spinbox.get_line_edit().text = String(page)
 	
 func _max_pages_changed(page_count:int) -> void: 
 	max_pages = page_count
