@@ -8,7 +8,7 @@ signal change_page
 signal page_changed(current_page)
 signal max_pages_changed(count)
 signal search_pressed(tags_all, tags_any, tags_none, new_query)
-signal image_import_finished(import_id)
+signal image_import_finished(tab_id)
 signal sort_changed
 signal order_changed
 

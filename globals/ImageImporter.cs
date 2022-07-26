@@ -243,6 +243,7 @@ public class ImageImporter : Node
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
 		Remove(importId);
+
 	}
 	
 	public void AddToImportedHashes(string importId, string[] hashes)

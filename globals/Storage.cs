@@ -16,8 +16,8 @@ namespace Data
 		private int _maxStoredPages = 500;
 		public void SetMaxStoredPages(int maxPages) { _maxStoredPages = maxPages; }
 		
-		public List<int> pageQueue = new List<int>();
-		public Dictionary<int, string[]> storedPages = new Dictionary<int, string[]>();
+		private List<int> pageQueue = new List<int>();
+		private Dictionary<int, string[]> storedPages = new Dictionary<int, string[]>();
 		
 		public void AddPage(int hashId, string[] hashes)
 		{
@@ -45,5 +45,6 @@ namespace Data
 		{
 			return storedPages.ContainsKey(hashId);
 		}
+
 	}
 }

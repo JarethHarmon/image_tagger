@@ -148,7 +148,6 @@ public class Database : Node
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		importer = (ImageImporter) GetNode("/root/ImageImporter");
 		globals = (Node) GetNode("/root/Globals");
-		//GD.Print(Data.ImportCode.SUCCESS);
 	}
 	
 	public int Create() 
@@ -311,16 +310,11 @@ public class Database : Node
 	}
 	public bool GetFinished(string importId)
 	{
+		if (importId.Equals("")) return true;
 		ImportInfo importInfo;
 		bool success = dictImports.TryGetValue(importId, out importInfo);
 		return (success) ? importInfo.finished : true;
 	}
-	/*public string GetName(string importId)
-	{
-		ImportInfo importInfo;
-		bool success = dictImports.TryGetValue(importId, out importInfo);
-		return (success) ? importInfo.importName : "Import";
-	}*/
 	public ImportInfo GetImport(string importId)
 	{
 		ImportInfo importInfo = null;

@@ -312,8 +312,6 @@ func _thread(thread_id:int) -> void:
 				if result == results.EMPTY: 
 					finished = true
 					break
-			#OS.delay_msec(delay_time)
-			#OS.delay_msec(20)
 			if thread_id >= max_total_threads: break
 	call_deferred("_done", [thread_id, tab_id, finished])
 
@@ -326,6 +324,7 @@ func _done(args:Array) -> void:
 	# this way it will not try to finish the import when the program is closing, only when the import is done
 	if not check_thread_args_has(tab_id) and finished:
 		ImageImporter.FinishImport(tab_id)
+		Signals.emit_signal("image_import_finished", tab_id)
 	
 func check_thread_args_has(arg) -> bool:
 	if arg == null: return true

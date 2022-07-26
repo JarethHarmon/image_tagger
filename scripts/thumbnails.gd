@@ -10,6 +10,8 @@ onready var sc:Mutex = Mutex.new()			# mutex for interacting with scene
 onready var tq:Mutex = Mutex.new()			# mutex for interacting with thumb_queue
 onready var th:Mutex = Mutex.new()			# mutex for interacting with thumb_history
 
+onready var buffer:CenterContainer = $cc
+
 var tab_history:Dictionary = {} 			# { tab_id:{ "scroll":scroll_percentage , "page":page } }
 var thumb_history:Dictionary = {}			# { image_hash:ImageTexture }
 var current_query:Dictionary = {}			# the query currently being processed
@@ -100,6 +102,8 @@ func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	return true
 
 func _query_thread(args:Array) -> void:
+	buffer.rect_min_size = self.rect_size / 4
+	buffer.show()
 	var thread:Thread = args[0]
 	var query:Dictionary = args[1]
 	var tab_id:String = query.tab_id
@@ -122,23 +126,26 @@ func _query_thread(args:Array) -> void:
 	var count_results:bool = not(temp_query_settings == last_query_settings)
 	last_query_settings = temp_query_settings
 	
-	var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none] # add filters to this once implemented
-	var lqh:int = lqc.hash()
-	
   # query the database
+	var import_id:String = ""
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
+		import_id = Database.GetImportId(tab_id)
+		if import_id == "": import_id = "All"
+		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
+		
+		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+		var lqh:int = lqc.hash()
 		if Storage.HasPage(lqh):
-			if Globals.current_tab_type == Globals.Tab.IMPORT_GROUP:
-				queried_image_count = Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))
-			elif Globals.current_tab_type == Globals.Tab.SIMILARITY:
-				queried_image_count = Database.GetSuccessCount("All")
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
 			Database.PopulateDictHashes(image_hashes)
+			
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
 		queried_image_count = Database.GetLastQueriedCount()
+		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+		var lqh:int = lqc.hash()
 		Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
 	
@@ -153,6 +160,7 @@ func _query_thread(args:Array) -> void:
 	
 	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
 	thread.call_deferred("wait_to_finish")
+	buffer.hide()
 
 func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	sc.lock()
@@ -531,7 +539,7 @@ func _toggle_thumbnail_tooltips() -> void:
 			var image_hash:String = current_hashes[idx]
 			th.lock()
 			if thumb_history.has(image_hash):
-				var dict:Dictionary = thumb_history[image_hash].texture
+				var dict:Dictionary = thumb_history[image_hash]
 				th.unlock()
 				self.set_item_tooltip(idx, _create_tooltip(image_hash, dict, idx))
 			else: th.unlock()

@@ -1,5 +1,6 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=5 format=2]
 
+[ext_resource path="res://assets/animated_buffer.tres" type="Texture" id=1]
 [ext_resource path="res://scripts/page_buttons.gd" type="Script" id=2]
 [ext_resource path="res://scripts/thumbnails.gd" type="Script" id=3]
 [ext_resource path="res://scripts/sort_buttons.gd" type="Script" id=4]
@@ -133,6 +134,26 @@ fixed_icon_size = Vector2( 240, 240 )
 script = ExtResource( 3 )
 
 [node name="Timer" type="Timer" parent="margin/vbox/thumbnails"]
+
+[node name="cc" type="CenterContainer" parent="margin/vbox/thumbnails"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="buffer" type="TextureRect" parent="margin/vbox/thumbnails/cc"]
+margin_left = 891.0
+margin_top = 435.0
+margin_right = 1019.0
+margin_bottom = 563.0
+rect_min_size = Vector2( 128, 128 )
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource( 1 )
+expand = true
 
 [node name="hsep4" type="HSeparator" parent="margin/vbox"]
 margin_top = 1038.0
