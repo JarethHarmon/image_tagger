@@ -66,7 +66,7 @@
 ##### Lag spikes when clicking between images
 - Partly caused by creating colors for tags 
 - Could be partly caused by creating thread
-- Unfortunately majority of the issue seems to be caused by creating the ImageTexture, and that should already be threaded (Godot might force creating of ImageTextures onto the main thread)
+- Unfortunately majority of the issue seems to be caused by creating the ImageTexture, and that should already be threaded (Godot might force creation of ImageTextures onto the main thread)
 
 ##### Page history prevents refreshing the page when the tags/rating of an image has changed
 - Need to make the Search button always re-query the database and add a hotkey [F5] to it
