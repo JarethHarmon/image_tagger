@@ -1,6 +1,8 @@
 # image_tagger
 
+---
 ### Information
+---
 ##### Multithreading
 - Most tasks are multi-threaded, including: importing images, loading thumbnails, loading full images, querying the database(s).
 - I have not encountered any significant threading issues recently, program might freeze when closing though.
@@ -10,6 +12,7 @@
 - Basic tagging of images is supported (ie manually typing out tags and pressing enter).
 - Tags are applied to all selected thumbnails.
 - Tags can be typed/entered in a delimiter-separated format (user can specify delimiter with the small text-entry box).
+- Selected tags can be copied to clipboard as a delimiter-separated string and then pasted to other images.
 
 ##### Viewing
 - Currently supports a few basic shaders and settings (like filter).
@@ -23,11 +26,15 @@
 - User can order by ascending/descending.
 - Uhere is a function to query by image similarity, but the UI for it is not created yet.
 
+##### Tabs
+- User can right-click a thumbnail to open a new tab where all images are sorted by similarity to the right-clicked image
+- User can right-click a tab to delete it (does not delete the import)
+
 ##### Thumbnails
 - There is a slider/spinbox to change the size of the thumbnails.
 - Using mouse + ctrl/shift for multi-selection of thumbnails works.
 - Using arrow keys to scroll and change previewed image works.
-- Using arrow keys + ctrl to select images works, currently shift just does the same thing ctrl does.
+- Using arrow keys + ctrl to select images works, currently shift does the same thing that ctrl does.
 
 ##### Importing
 - Images can be imported by clicking the File button, or by drag & dropping images/folders anywhere in the program.
@@ -44,4 +51,24 @@
 ##### Database
 - All information related to imports/images is saved to the database.
 - Settings are saved to a separate file, most things that can be toggled currently have a setting that is loaded when the program starts.
+
+---
+### Issues
+---
+##### Very large imports are not supported
+- Caused by the BsonDocument size limit for LiteDB (in-progress array storage needs to be rewritten)
+- Can be worked around by importing smaller groups of images at once (up to ~20K at a time should be fine)
+
+##### Querying the database can take much longer than it should while an import is in progress
+- The query does finish eventually
+- Cause is currently unknown, could be thread related
+
+##### Lag spikes when clicking between images
+- Partly caused by creating colors for tags 
+- Could be partly caused by creating thread
+- Unfortunately majority of the issue seems to be caused by creating the ImageTexture, and that should already be threaded (Godot might force creating of ImageTextures onto the main thread)
+
+##### Page history prevents refreshing the page when the tags/rating of an image has changed
+- Need to make the Search button always re-query the database and add a hotkey [F5] to it
+- Need to add an optional setting to always re-query the database when sorting by Tag Count or Rating
 
