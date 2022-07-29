@@ -12,105 +12,7 @@ using Alphaleonis.Win32.Filesystem;
 using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using LiteDB;
-
-// query by similarity should open a new tab specifically for that purpose (similarity tab, can then further limit it to first X or simi > n%) (can also filter by tags and change order (but not sort))
-// this way I also do not need to include diffHash and colorHash inside groups/imports
-
-/*
-	should store an index for the in-progress arrays and update it after every processed import
-	this way if the import makes it to 6700/6750 and then crashes, when it loads again it can 
-	start processing the arrays at index 6700 instead of at index 0
-	
-	even better would be to update the arrays themselves, but this would likely require repeatedly writing
-	the entirety of the arrays to the disk, which is less than ideal (an alternative would be to update them
-	periodically, which is something I will likely eventually do in general)
-*/
-
-/*=========================================================================================
-										Classes
-=========================================================================================*/
-	// global full_image (id copy/move full images) and thumbnail storage paths should be auto-blacklisted
-	public class HashInfo
-	{
-		public string imageHash { get; set; }			// the komi64 hash of the image (may use SHA512/256 instead)
-		public string gobPath { get; set; }				// the path the file uses if it is copied/moved by the program to a central location
-		public string imageName { get; set; }			// the first file name found for the image, can be changed manually or by cycling through paths
-		
-		public ulong diffHash { get; set; }				// the CoenM.ImageHash::DifferenceHash() of the thumbnail
-		public float[] colorHash { get; set; }			// the ColorHash() of the thumbnail
-		
-		public int width { get; set; }
-		public int height { get; set; }
-		public int flags { get; set; }					// a FLAG integer used for toggling filter, etc
-		public int thumbnailType { get; set; }			// jpg/png
-		public int type { get; set; }					// see ImageType
-		public long size { get; set; }					// the length of the file in bytes
-		public long creationUtc { get; set; }			// the time the file was created in ticks
-		public long uploadUtc { get; set; }				// the time the file was uploaded to the database in ticks
-		public long editUtc { get; set; }				// datetime.ticks of the last time this hashInfo was changed in any way
-		
-		public bool isGroupLeader { get; set; }			// whether this image is the leader (cover image/first image) of a group
-		public HashSet<string> imports { get; set; }	// the importIds of the imports the image was a part of
-		public HashSet<string> groups { get; set; }		// the groupIds of the groups the image is a part of
-		public HashSet<string> paths { get; set; }		// every file path the image has been found at
-		public HashSet<string> tags { get; set; }		// every tag that has been applied to the image
-		
-		public Dictionary<string, int> ratings { get; set; }	// rating_name : rating/10
-	}
-
-	/* holds metadata for an import */
-	public class ImportInfo
-	{
-		public string importId { get; set; }			// the ID of this import
-		public int successCount { get; set; }			// the number of successfully imported image in this import
-		public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
-		public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
-		public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
-		public int canceledCount { get; set; }			// number of paths that were removed from files when this import was canceled
-		public int removedCount { get; set; }			// the number of paths that have been manually removed from this import by the user (may not keep)
-		public int totalCount { get; set; }				// the total original number of images included in this import (regardless of whether they successfully imported)
-		public bool finished { get; set; }
-		public string importName { get; set; }
-		public long importTime { get; set; }
-		public string[] importedHashes { get; set; }
-		public string[] inProgressPaths { get; set; }
-		public long[] inProgressTimes { get; set; }
-		public long[] inProgressSizes { get; set; }
-	}
-
-	public class GroupInfo
-	{
-		public string groupId { get; set; }				// the ID of this group
-		public string groupName { get; set; }			// set to the ID by default, can be manually changed by user
-		public int count { get; set; }					// the number of images in this group
-		public long dateCreated { get; set; }			// datetime.ticks of the time this group was created
-		public long dateLastChanged { get; set; } 		// datetime.ticks of the last time this group had hashes added or removed 
-		public long dateLastEdited { get; set; }		// datetime.ticks of the last time this group was changed in any way
-		public HashSet<string> tags { get; set; }		// the tags applied to this group as a whole (may move this to hashinfo, -uses more space +easier to use  (not sure what the exact use case will be right now))
-		public string[] members { get; set; }			// an ordered list of imageHashes for this group (pages of a chapter for example)
-		public string[] subGroups { get; set; }			// an ordered list of subgroup groupId's (chapters of a manga for example)
-	}
-	
-	public class TabInfo
-	{
-		public string tabId { get; set; }				// used to uniquely identify this tab
-		public int tabType { get; set; }				// identifies which of the following 4 tab types will be used
-		public string tabName { get; set; }
-		public string importId { get; set; }			// used for tabs created by double-clicking an import
-		public string groupId { get; set; }				// used for tabs created by double-clicking a group
-		public string tag { get; set; }					// used for tabs created by double-clicking a tag
-		public string similarityHash { get; set; }		// used for tabs created by sorting by image similarity (this is the hash being compared against)
-		public string[] tagsAll { get; set; }
-		public string[] tagsAny { get; set; }
-		public string[] tagsNone { get; set; }
-	}
-	
-	public class TagInfo
-	{
-		public string tagId { get; set; }				// the internal ID of this tag (will probably be a simplified and standardized version of tagName)
-		public string tagName { get; set; }				// the displayed name for this tag
-		public HashSet<string> tagParents { get; set; }	// tags that should be auto-applied if this tag is applied
-	}
+using Data;
 
 public class Database : Node
 {
@@ -157,7 +59,7 @@ public class Database : Node
 				dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
 				BsonMapper.Global.Entity<HashInfo>().Id(x => x.imageHash);
 				colHashes = dbHashes.GetCollection<HashInfo>("hashes");
-				colHashes.EnsureIndex("tags_index", "$.tags[*]", false);
+				//colHashes.EnsureIndex("tags_index", "$.tags[*]", false);
 				
 				dbImports = new LiteDatabase(metadataPath + "import_info.db");
 				BsonMapper.Global.Entity<ImportInfo>().Id(x => x.importId);
@@ -385,7 +287,7 @@ public class Database : Node
 			colTabs.Delete(tabId);
 		} catch (Exception ex) { GD.Print("Database::RemoveTab() : ", ex); return; }
 	}
-	public void CreateTab(string _tabId, int _tabType, string _tabName, int totalCount=0, string _importId="", string _groupId="", string _tag="", string _similarityHash="", string[] _tagsAll=null, string[] _tagsAny=null, string[] _tagsNone=null)
+	public void CreateTab(string _tabId, int _tabType, string _tabName, int totalCount=0, string _importId="", string _groupId="", string _tag="", string _similarityHash="")
 	{
 		try {
 			var tabInfo = new TabInfo { 
@@ -395,10 +297,7 @@ public class Database : Node
 				importId = _importId,
 				groupId = _groupId,
 				tag = _tag,
-				similarityHash = _similarityHash,
-				tagsAll = _tagsAll,
-				tagsAny = _tagsAny,
-				tagsNone = _tagsNone,				
+				similarityHash = _similarityHash,			
 			};
 			dictTabs[_tabId] = tabInfo;
 			colTabs.Insert(tabInfo);
@@ -450,12 +349,12 @@ public class Database : Node
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
 			
-			if (countResult == (int)Data.ImportCode.SUCCESS) {
+			if (countResult == (int)ImportCode.SUCCESS) {
 				importInfo.successCount++;
 				allInfo.successCount++;
 			} 
-			else if (countResult == (int)Data.ImportCode.DUPLICATE) importInfo.duplicateCount++;
-			else if (countResult == (int)Data.ImportCode.IGNORED) importInfo.ignoredCount++;
+			else if (countResult == (int)ImportCode.DUPLICATE) importInfo.duplicateCount++;
+			else if (countResult == (int)ImportCode.IGNORED) importInfo.ignoredCount++;
 			else { 
 				importInfo.failedCount++;
 				allInfo.failedCount++;
@@ -550,23 +449,23 @@ public class Database : Node
 	}
 	
 	// 0 = new, 1 = no change, 2 = update, -1 = fail
-	public int InsertHashInfo(string _imageHash, ulong _diffHash, float[] _colorHash, int _flags, int _thumbnailType, int imageType, long imageSize, long imageCreationUtc, string importId, string imagePath, int _width, int _height)
+	public int InsertHashInfo(string _imageHash, ulong _differenceHash, float[] _colorHash, int _flags, int _thumbnailType, int _imageType, long imageSize, long imageCreationUtc, string importId, string imagePath, int _width, int _height)
 	{
 		try {
 			var hashInfo = colHashes.FindById(_imageHash);
 			if (hashInfo == null) {
 				hashInfo = new HashInfo {
 					imageHash = _imageHash,
-					diffHash = _diffHash,
+					differenceHash = _differenceHash,
 					colorHash = _colorHash,
 					flags = _flags,
 					thumbnailType = _thumbnailType,
-					type = imageType,
+					imageType = _imageType,
 					size = imageSize,
 					width = _width,
 					height = _height,
-					creationUtc = imageCreationUtc,
-					uploadUtc = DateTime.Now.Ticks,
+					creationTime = imageCreationUtc,
+					uploadTime = DateTime.Now.Ticks,
 					imports = new HashSet<string>{importId},
 					paths = new HashSet<string>{imagePath},
 				}; 
@@ -625,13 +524,13 @@ public class Database : Node
 		} catch (Exception ex) { GD.Print("Database::PopulateDictHashes(): ", ex); return; }
 	}
 	
-	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
+	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
 	{
 		try {
 			dictHashes.Clear();
 			var results = new List<string>();
 			int tabType = GetTabType(tabId);
-			if (tabType == (int)Data.Tab.IMPORT_GROUP) {
+			if (tabType == (int)Tab.IMPORT_GROUP) {
 				string importId = GetImportId(tabId);
 				var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, sort, order, countResults);
 				if (hashInfos == null) return new string[0];
@@ -642,12 +541,12 @@ public class Database : Node
 			}
 			// image group
 			// tag
-			else if (tabType == (int)Data.Tab.SIMILARITY) {
+			else if (tabType == (int)Tab.SIMILARITY) {
 				//string importId = GetImportId(tabId);
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
-				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.diffHash, offset, count, order, (int)Data.Similarity.AVERAGE); 
+				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, order, (int)Similarity.AVERAGE); 
 				if (hashInfos == null) return new string[0];
 				foreach (HashInfo hashInfo in hashInfos) {
 					results.Add(hashInfo.imageHash);
@@ -659,27 +558,27 @@ public class Database : Node
 	}
 	// consider simplifying further by removing All from this one and creating a dedicated function for it
 	// or could go the other direction and add groupId back to this (really only one line of difference as is)
-	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Data.Sort.SHA256, int order=(int)Data.Order.ASCENDING, bool countResults=false)
+	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
 	{
 		try {
 			bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, sortByDefaultRating = false, counted=false;
 			string columnName = "_Id";
 
-			if (sort == (int)Data.Sort.SIZE) columnName = "size";
-			else if (sort == (int)Data.Sort.CREATION_TIME) columnName = "creationUtc";
-			else if (sort == (int)Data.Sort.UPLOAD_TIME) columnName = "uploadUtc";
-			else if (sort == (int)Data.Sort.DIMENSIONS) sortByDimensions = true;
-			else if (sort == (int)Data.Sort.TAG_COUNT) sortByTagCount = true;
-			else if (sort == (int)Data.Sort.RANDOM) sortByRandom = true;
-			else if (sort == (int)Data.Sort.DEFAULT_RATING) sortByDefaultRating = true;
+			if (sort == (int)Sort.SIZE) columnName = "size";
+			else if (sort == (int)Sort.CREATION_TIME) columnName = "creationUtc";
+			else if (sort == (int)Sort.UPLOAD_TIME) columnName = "uploadUtc";
+			else if (sort == (int)Sort.DIMENSIONS) sortByDimensions = true;
+			else if (sort == (int)Sort.TAG_COUNT) sortByTagCount = true;
+			else if (sort == (int)Sort.RANDOM) sortByRandom = true;
+			else if (sort == (int)Sort.DEFAULT_RATING) sortByDefaultRating = true;
 			
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
 				
 				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
-					if (order == (int)Data.Order.ASCENDING) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
-					else if (order == (int)Data.Order.DESCENDING) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
+					if (order == (int)Order.ASCENDING) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
+					else if (order == (int)Order.DESCENDING) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
 					else return null; // default/placeholder, should not be called yet
 				}
 			}
@@ -697,22 +596,22 @@ public class Database : Node
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 			
 			if (sortByTagCount) {
-				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.tags.Count);
-				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.tags.Count);
+				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.tags.Count);
+				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.tags.Count);
 				else return null; // default/placeholder, should not be called yet
 			} else if (sortByRandom) {
 				// not sure yet
 			} else if (sortByDimensions) {
-				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.width * x.height);
-				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.width * x.height);
+				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.width * x.height);
+				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.width * x.height);
 				else return null;
 			} else if (sortByDefaultRating) {
-				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(x => x.ratings["Default"]);
-				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(x => x.ratings["Default"]);
+				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.ratings["Default"]);
+				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.ratings["Default"]);
 				else return null;
 			} else {
-				if (order == (int)Data.Order.ASCENDING) query = query.OrderBy(columnName);
-				else if (order == (int)Data.Order.DESCENDING) query = query.OrderByDescending(columnName);
+				if (order == (int)Order.ASCENDING) query = query.OrderBy(columnName);
+				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(columnName);
 				else return null; // default/placeholder, should not be called yet
 			}
 			
@@ -729,17 +628,17 @@ public class Database : Node
 
 	// this method is much slower than query method above, use only for similarity (would like to find another way)
 	// this method will not filter out tags at the current time, import tabs/all do work though
-	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Data.Order.DESCENDING, int similarityMode=(int)Data.Similarity.AVERAGE)
+	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Order.DESCENDING, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
-		if (order == (int)Data.Order.DESCENDING)
+		if (order == (int)Order.DESCENDING)
 			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderByDescending(x => 
-					(similarityMode == (int)Data.Similarity.AVERAGE) ? 
-						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
-						(similarityMode == (int)Data.Similarity.DIFFERENCE) ?
-							DifferenceSimilarity(x.diffHash, diffHash) :
+					(similarityMode == (int)Similarity.AVERAGE) ? 
+						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.differenceHash, diffHash))/2.0 : 
+						(similarityMode == (int)Similarity.DIFFERENCE) ?
+							DifferenceSimilarity(x.differenceHash, diffHash) :
 							ColorSimilarity(x.colorHash, colorHash))
 				.Skip(offset)
 				.Take(count)
@@ -748,10 +647,10 @@ public class Database : Node
 			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderBy(x => 
-					(similarityMode == (int)Data.Similarity.AVERAGE) ? 
-						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.diffHash, diffHash))/2.0 : 
-						(similarityMode == (int)Data.Similarity.DIFFERENCE) ?
-							DifferenceSimilarity(x.diffHash, diffHash) :
+					(similarityMode == (int)Similarity.AVERAGE) ? 
+						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.differenceHash, diffHash))/2.0 : 
+						(similarityMode == (int)Similarity.DIFFERENCE) ?
+							DifferenceSimilarity(x.differenceHash, diffHash) :
 							ColorSimilarity(x.colorHash, colorHash))
 				.Skip(offset)
 				.Take(count)
@@ -845,7 +744,7 @@ public class Database : Node
 	{
 		try {
 			if (dictHashes.ContainsKey(imageHash))
-				return dictHashes[imageHash].diffHash.ToString();
+				return dictHashes[imageHash].differenceHash.ToString();
 			return "";
 		} catch { return ""; }
 	}
@@ -861,7 +760,7 @@ public class Database : Node
 	{
 		try {
 			if (dictHashes.ContainsKey(imageHash))
-				return  new DateTime(dictHashes[imageHash].creationUtc).ToString();
+				return  new DateTime(dictHashes[imageHash].creationTime).ToString();
 			return "";
 		} catch { return ""; }
 	}
@@ -904,7 +803,7 @@ public class Database : Node
 		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
 		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
-		double difference = DifferenceSimilarity(hashInfo1.diffHash, hashInfo2.diffHash);
+		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
 		return (color+(float)difference)/2f;
 	}
 }

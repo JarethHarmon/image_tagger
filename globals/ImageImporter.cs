@@ -11,6 +11,7 @@ using Alphaleonis.Win32.Filesystem;
 using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
+using Data;
 
 public class ImageImporter : Node
 {
@@ -70,7 +71,7 @@ public class ImageImporter : Node
 	private int _SaveThumbnail(string imagePath, string thumbPath, long imageSize)
 	{
 		try {
-			int result = (int)Data.ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
+			int result = (int)ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			im.Strip();
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
@@ -82,31 +83,31 @@ public class ImageImporter : Node
 			}
 			else {
 				im.Format = MagickFormat.Png;
-				result = (int)Data.ImageType.PNG;
+				result = (int)ImageType.PNG;
 				im.Write(thumbPath);
 				new ImageOptimizer().LosslessCompress(thumbPath);
 			}
 			return result;
-		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)Data.ImageType.ERROR; }
+		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)ImageType.ERROR; }
 	}
 	
 	public int GetActualFormat(string imagePath)
 	{
 		(string sformat, int width, int height) = _GetImageInfo(imagePath);
-		int format = (int)Data.ImageType.OTHER;
-		if ((bool) globals.Call("is_apng", imagePath)) format = (int)Data.ImageType.APNG;
-		else if (sformat == "JPG") format = (int)Data.ImageType.JPG;
-		else if (sformat == "PNG") format = (int)Data.ImageType.PNG;
+		int format = (int)ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = (int)ImageType.APNG;
+		else if (sformat == "JPG") format = (int)ImageType.JPG;
+		else if (sformat == "PNG") format = (int)ImageType.PNG;
 		return format;
 	}
 	
 	public (int, int, int) GetImageInfo(string imagePath)
 	{
 		(string sformat, int width, int height) = _GetImageInfo(imagePath);
-		int format = (int)Data.ImageType.OTHER;
-		if ((bool) globals.Call("is_apng", imagePath)) format = (int)Data.ImageType.APNG;
-		else if (sformat == "JPG") format = (int)Data.ImageType.JPG;
-		else if (sformat == "PNG") format = (int)Data.ImageType.PNG;
+		int format = (int)ImageType.OTHER;
+		if ((bool) globals.Call("is_apng", imagePath)) format = (int)ImageType.APNG;
+		else if (sformat == "JPG") format = (int)ImageType.JPG;
+		else if (sformat == "PNG") format = (int)ImageType.PNG;
 		
 		return (format, width, height);
 	}
@@ -164,7 +165,7 @@ public class ImageImporter : Node
 			return algo.Hash(stream);
 		} catch (Exception ex) { GD.Print("Database::GetDifferenceHash() : ", ex); return 0; }
 	}
-	public string GetRandomID(int num_bytes)
+	private string GetRandomID(int num_bytes)
 	{
 		try{
 			byte[] bytes = new byte[num_bytes];
@@ -175,14 +176,12 @@ public class ImageImporter : Node
 		}
 		catch (Exception ex) { GD.Print("Database::GetRandomID() : ", ex); return ""; } 
 	}
-	public string CreateImportID()
-	{
-		return "I" + GetRandomID(8); // get 64bit ID
-	}
-	public string CreateTabID()
-	{
-		return "T" + GetRandomID(8);
-	}	
+
+	// get 64bit ID
+	public string CreateImportID() { return "I" + GetRandomID(8); }
+	public string CreateTabID() { return "T" + GetRandomID(8); }	
+	public string CreateGroupID() { return "G" + GetRandomID(8); }
+	public string CreateProgressID() { return "P" + GetRandomID(8); }
 	
 	public float[] ColorHash(string path, int bucketSize=16) 
 	{
@@ -293,7 +292,7 @@ public class ImageImporter : Node
 			// checks if the current import has already processed this hash
 			if (CheckOrAdd(importId, imageHash)) {
 				db.AddPath(imageHash, imagePath);
-				return (int)Data.ImportCode.IGNORED;
+				return (int)ImportCode.IGNORED;
 			}
 			
 			// checks if the current import has already processed this hash by checking if the hash 
@@ -301,21 +300,21 @@ public class ImageImporter : Node
 			//	which means that the importedHashes array of saved data is not needed anymore
 			if (db.HashDatabaseContainsImport(imageHash, importId)) {
 				db.AddPath(imageHash, imagePath);
-				return (int)Data.ImportCode.IGNORED;
+				return (int)ImportCode.IGNORED;
 			}
 			
 			// checks if the hash has been imported before in another import
 			if (db.HashDatabaseContains(imageHash)) {
 				db.AddImportId(imageHash, importId);
 				db.AddPath(imageHash, imagePath);
-				return (int)Data.ImportCode.DUPLICATE;
+				return (int)ImportCode.DUPLICATE;
 			}
 			
 			
 			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
 			(int imageType, int width, int height) = GetImageInfo(imagePath);
 			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
-			if (thumbnailType == (int)Data.ImageType.ERROR) return (int)Data.ImportCode.FAILED;
+			if (thumbnailType == (int)ImageType.ERROR) return (int)ImportCode.FAILED;
 			
 			ulong diffHash = DifferenceHash(savePath);
 			float[] colorHash = ColorHash(savePath); // 4 = int[64] (1 = int[256])
@@ -331,8 +330,8 @@ public class ImageImporter : Node
 			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
 			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath, width, height);
 			
-			return (int)Data.ImportCode.SUCCESS;	
-		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return (int)Data.ImportCode.FAILED; }
+			return (int)ImportCode.SUCCESS;	
+		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return (int)ImportCode.FAILED; }
 	}
 	
 }

@@ -7,7 +7,7 @@ extends ItemList
 # one option is to just allow manual refreshes with F5 and the search button; though it requires a manual action
 # for each page that was previously loaded into memory for the tab with changed images
 
-# another option is to always re-query pages sorted by tag count, or any similar concepts in the future 
+# another option is to always re-query pages sorted by tag count, or any similar concepts in the future (like ratings)
 
 # another option is to only re-query when it needs to, but that is not at all easy to determine 
 # 	(unless I am just too tired and missing something obvious)
@@ -106,8 +106,11 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 	yield(get_tree(), "idle_frame")
 	yield(get_tree(), "idle_frame") 
 	var thread:Thread = Thread.new()
-	thread.start(self, "_query_thread", [thread, query])
+	
+	thread.call_deferred("start", self, "_query_thread", [thread, query])
+	#thread.start(self, "_query_thread", [thread, query])
 	first_time = true
+	print("_p_q :: ", OS.get_ticks_msec()-Globals.time)
 
 func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	if query == current_query: return false
@@ -115,6 +118,7 @@ func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	return true
 
 func _query_thread(args:Array) -> void:
+	var time:int = OS.get_ticks_msec()
 	buffer.rect_min_size = self.rect_size / 4
 	buffer.show()
 	var thread:Thread = args[0]
@@ -140,6 +144,8 @@ func _query_thread(args:Array) -> void:
 	last_query_settings = temp_query_settings
 	
   # query the database
+	print("_qt_1 :: ", OS.get_ticks_msec()-time)
+	time = OS.get_ticks_msec()	
 	var import_id:String = ""
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
 		var temp =  Database.GetImportId(tab_id)
@@ -153,7 +159,8 @@ func _query_thread(args:Array) -> void:
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
 			Database.PopulateDictHashes(image_hashes)
-			
+	print("_qt_2 :: ", OS.get_ticks_msec()-time)	
+	time = OS.get_ticks_msec()
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
@@ -162,7 +169,8 @@ func _query_thread(args:Array) -> void:
 		var lqh:int = lqc.hash()
 		Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
-	
+	print("_qt_3 :: ", OS.get_ticks_msec()-time)	
+	time = OS.get_ticks_msec()
   # get the correct values for page variables
 	curr_page_image_count = image_hashes.size()
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
@@ -175,8 +183,10 @@ func _query_thread(args:Array) -> void:
 	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
 	thread.call_deferred("wait_to_finish")
 	buffer.hide()
+	print("_qt_4 :: ", OS.get_ticks_msec()-time)	
 
 func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
+	var time:int = OS.get_ticks_msec()
 	sc.lock()
 	var scroll_mult:float = 0.0
 	if tab_history.has(query.tab_id):
@@ -195,7 +205,8 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 	sc.unlock()
 	if query != current_query: return
 	start_loading(query, image_hashes, image_count)
-	
+	print("_t_c :: ", OS.get_ticks_msec()-time)
+
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
 	var thumbnail_path:String = Globals.settings.thumbnail_path

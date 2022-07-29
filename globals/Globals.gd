@@ -28,6 +28,8 @@ var current_imports:Dictionary = {}		# the list of in-progress imports
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
 
+var time:int = 0
+
 var settings_path:String = "user://settings.tres"
 
 var last_settings:Array = []

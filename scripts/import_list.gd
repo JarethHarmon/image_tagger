@@ -36,14 +36,17 @@ func _ready() -> void:
 	create_threads(Globals.settings.max_import_threads)
 
 func _on_all_button_button_up() -> void: 
+	Globals.time = OS.get_ticks_msec()
 	Signals.emit_signal("tab_button_pressed", "All")
 	indicate_selected_button("All")
 	
 func _on_tab_button_pressed(tab_id:String) -> void: 
+	Globals.time = OS.get_ticks_msec()
 	Signals.emit_signal("tab_button_pressed", tab_id)
 	indicate_selected_button(tab_id)
 
 func indicate_selected_button(tab_id:String) -> void:
+	var time:int = OS.get_ticks_msec()
 	if last_selected_tab != "": 
 		if buttons.has(last_selected_tab):
 			buttons[last_selected_tab].remove_stylebox_override("normal")
@@ -58,6 +61,7 @@ func indicate_selected_button(tab_id:String) -> void:
 	buttons[tab_id].add_color_override("font_color", Color.black)
 	buttons[tab_id].add_color_override("font_color_focus", Color.black)
 	last_selected_tab = tab_id
+	print("isb :: ", OS.get_ticks_msec()-time)
 
 func create_tab_buttons() -> void: 
 	#var import_ids:Array = Database.GetImportIds()
@@ -118,7 +122,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
-	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "", null, null, null)
+	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "")
 	ImageScanner.CommitImport()
 	Database.UploadImportArrays(import_id)
 	append_arg(tab_id)
@@ -144,7 +148,7 @@ func create_new_similarity_tab(image_hash:String) -> void:
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
 	button_list.add_child(b)
 	buttons[tab_id] = b
-	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash, null, null, null)
+	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash)
 
 func _on_tab_button_gui_input(event:InputEvent, tab_id:String) -> void:
 	if event is InputEventMouseButton:

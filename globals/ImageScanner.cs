@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Alphaleonis.Win32.Filesystem;
 
+// functions need to return error codes when relevant
+
 public class ImageScanner : Node
 {
 	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG"};
@@ -143,8 +145,13 @@ public class ImageScanner : Node
 	{
 		ConcurrentQueue<(string,long,long)> images;
 		(string,long,long) image = ("", 0, 0);
+		bool result = false;
 		if (this.files.TryGetValue(importId, out images))
-			images.TryDequeue(out image);
+			result = images.TryDequeue(out image);
+		
+		if (result) return image;
+		
+		// otherwise call a function that checks for another progressId, loads it into files, return an image from that
 		
 		return image;
 	}
