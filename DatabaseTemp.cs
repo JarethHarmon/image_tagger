@@ -20,14 +20,13 @@ public class DatabaseTemp : Node
 /*                                   Variables                                  */
 /*==============================================================================*/
     private int progressSectionSize = 128;
-    private bool useJournal = false;
     private string metadataPath;
     public void SetMetadataPath(string path) { metadataPath = path; }
 
     /* may eventually reduce and merge these (especially merging dbGroups with dbTags) */
     private LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
     private ILiteCollection<HashInfo> colHashes;
-    private ILiteCollection<ImportInfo> colImports;
+    private ILiteCollection<ImportInfoN> colImports;
     private ILiteCollection<ImportProgress> colProgress;
     private ILiteCollection<GroupInfo> colGroups;
     private ILiteCollection<TagInfo> colTags;
@@ -35,7 +34,7 @@ public class DatabaseTemp : Node
 
     /* for thread safety, it might be better to make all of these into concurrent dictionaries */
     private Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();
-    private ConcurrentDictionary<string, ImportInfo> dictImports = new ConcurrentDictionary<string, ImportInfo>();
+    private ConcurrentDictionary<string, ImportInfoN> dictImports = new ConcurrentDictionary<string, ImportInfoN>();
     private Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
     private Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
     private Dictionary<string, TabInfo> dictTabs = new Dictionary<string, TabInfo>();
@@ -57,17 +56,10 @@ public class DatabaseTemp : Node
     public int Create()
     {
         try {
-            if (useJournal) {
-                dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
-                dbImports = new LiteDatabase(metadataPath + "import_info.db");
-                dbGroups = new LiteDatabase(metadataPath + "group_info.db");
-                dbTags = new LiteDatabase(metadataPath + "tag_info.db");
-            } else {
-                dbHashes = new LiteDatabase(metadataPath + "hash_info.db; journal=false");
-                dbImports = new LiteDatabase(metadataPath + "import_info.db; journal=false");
-                dbGroups = new LiteDatabase(metadataPath + "group_info.db; journal=false");
-                dbTags = new LiteDatabase(metadataPath + "tag_info.db; journal=false");
-            }
+            dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
+            dbImports = new LiteDatabase(metadataPath + "import_info.db");
+            dbGroups = new LiteDatabase(metadataPath + "group_info.db");
+            dbTags = new LiteDatabase(metadataPath + "tag_info.db");
 
             BsonMapper.Global.Entity<HashInfo>().Id(x => x.imageHash);
             BsonMapper.Global.Entity<ImportInfo>().Id(x => x.importId);
@@ -108,6 +100,7 @@ public class DatabaseTemp : Node
 /*==============================================================================*/
 /*                                 Import Database                              */
 /*==============================================================================*/
+    /* inserts an import and its paths into database, calls AddImport */
     public void CreateImport(string _id, string _name, int _total, (string[], long[], long[], long[]) images)
     {
         try {
@@ -176,10 +169,9 @@ public class DatabaseTemp : Node
                 listProgress.Add(importProgress);
                 importInfo.progressIds.Add(_progressId);
             }
-            
+            AddImport(importInfo);
             dbImports.BeginTrans();
-            // uncomment once ImportInfo is fully replaced with current ImportInfoN
-            //colImports.Insert(importInfo);
+            colImports.Insert(importInfo);
             foreach (ImportProgress imp in listProgress)
                 colProgress.Insert(imp);
             dbImports.Commit();
@@ -187,5 +179,37 @@ public class DatabaseTemp : Node
         catch (Exception ex) { GD.Print("Database::CreateImport() : ", ex); return; }
     }
 
+    public void FinishImportSection(string importId, string progressId, )
+    {
+        // update counts in database
+        // upload processed HashInfos to database
+        // remove section from colProgress
+        // remove progressId from ImportInfo.progressIds
+    }
+
+    /* Scanner.GetImage() and similar functions will be replaced by calls to
+    the database, which will retrieve one section of the import for processing. 
+    All relevant code will need to be rewritten to facilitate this. Sections 
+    should only be removed from database after they have completely finished
+    processing. HashInfo should only be uploaded to the database once the section
+    has finished (in the meantime, add it to dictHashes and to a ConcurrentQueue
+    or similar that will be iterated once the section finishes for a Transaction
+    insert into the database). */
+
+/*==============================================================================*/
+/*                                Import Dictionary                             */
+/*==============================================================================*/
+    /* inserts an importinfo into dictImports */
+    public void AddImport(string importId, ImportInfoN importInfo)
+    {
+        bool result = dictImports.TryAdd(importId, importInfo);
+        if (!result) {
+            ImportInfo temp;
+            result = dictImports.TryGetValue(importId, out temp);
+            result = dictImports.TryUpdate(importId, importInfo, temp);
+        }
+    }
+
+    public void UpdateImport() {}
 
 }
