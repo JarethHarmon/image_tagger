@@ -181,6 +181,20 @@ public class Database : Node
 			tempCounts[progressId][result]++;
 		}
 	}
+	
+	public void IncrementFailedCount(string progressId, int result)
+	{
+		lock (tempHashInfo) {
+			if (!tempHashes.ContainsKey(progressId))
+				tempHashes[progressId] = new HashSet<string>();
+
+			if (!tempCounts.ContainsKey(progressId)) {
+				int[] temp = {0, 0, 0, 0};
+				tempCounts[progressId] = temp;
+			}	
+			tempCounts[progressId][result]++;
+		}
+	}
 
 	public HashInfo GetHashInfo(string imageHash)
 	{
@@ -505,7 +519,7 @@ public class Database : Node
 				ignored = 0,
 				duplicate = 0,
 				failed = 0,
-				importStart = 0,
+				importStart = DateTime.Now.Ticks,
 				importFinish = 0,
 				finished = false,
 				progressIds = new HashSet<string>(),
@@ -628,6 +642,7 @@ public class Database : Node
 			importInfo.processed += result[0] + result[1] + result[2] + result[3];
 			if (importInfo.processed == importInfo.total) {
 				importInfo.finished = true;
+				importInfo.importFinish = DateTime.Now.Ticks;
 				string[] tabs = GetTabIDs(importId);
 				signals.Call("emit_signal", "finish_import_buttons", tabs);
 			}

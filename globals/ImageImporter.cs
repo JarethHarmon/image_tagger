@@ -215,17 +215,12 @@ public class ImageImporter : Node
 	{
 		try {
 			if (importId.Equals("") || progressId.Equals("") || path.Equals("")) return;
-			bool safePathLength = path.Length() < MAX_PATH_LENGTH;
-			if ((safePathLength) ? !System.IO.File.Exists(path) : !Alphaleonis.Win32.Filesystem.File.Exists(path)) return;
-
+			
 			int imageCount = db.GetTotalCount(importId);
-
 			//var file = (safePathLength) ?
 			//	new System.IO.FileInfo(path) : 
 			//	new Alphaleonis.Win32.Filesystem.FileInfo(path);
-
 			var file = new System.IO.FileInfo(path);
-
 			var image = (path, file.Length, file.CreationTimeUtc.Ticks, file.LastWriteTimeUtc.Ticks);	
 		
 			int result = _ImportImage(image, importId, progressId, imageCount);
@@ -242,23 +237,19 @@ public class ImageImporter : Node
 		}
 	}
 	
-	/*public void FinishImport(string tabId)
-	{	
-		string importId = db.GetImportId(tabId);
-		if (importId.Equals("")) return;
-		
-		db.FinishImport(importId);
-		signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-		signals.Call("emit_signal", "update_import_button", tabId, true, db.GetSuccessOrDuplicateCount(importId), db.GetTotalCount(importId), db.GetName(tabId));
-		db.CheckpointHashDB();
-		db.CheckpointImportDB();
-	}*/
-	
 	private int _ImportImage((string,long,long,long) imageInfo, string importId, string progressId, int imageCount) 
 	{
 		try {
 			(string imagePath, long imageSize, long imageCreationUtc, long imageLastUpdateUtc) = imageInfo;
+			bool safePathLength = imagePath.Length() < MAX_PATH_LENGTH;
+			// checks if imagePath exists
+			if ((safePathLength) ? !System.IO.File.Exists(imagePath) : !Alphaleonis.Win32.Filesystem.File.Exists(imagePath)) {
+				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
+				return (int)ImportCode.FAILED; 
+			}
+
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCode.IGNORED if not)
+
 			string _imageHash = (string) globals.Call("get_sha256", imagePath); 
 			string _imageName = (string) globals.Call("get_file_name", imagePath);
 
@@ -276,10 +267,16 @@ public class ImageImporter : Node
 			if (__hashInfo != null) {
 				if (__hashInfo.paths == null) __hashInfo.paths = new HashSet<string>();
 				__hashInfo.paths.Add(imagePath);
+				__hashInfo.imports.Add(importId);
 				db.AddOrUpdateHashInfo(_imageHash, progressId, __hashInfo, (int)ImportCode.DUPLICATE);
 				return (int)ImportCode.DUPLICATE;
 			}
 			
+			if (IsImageCorrupt(imagePath)) {
+				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
+				return (int)ImportCode.FAILED; 
+			}
+
 			string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
 			(int _imageType, int _width, int _height) = GetImageInfo(imagePath);
 			
@@ -290,8 +287,8 @@ public class ImageImporter : Node
 				_thumbnailType = SaveThumbnail(imagePath, savePath, _imageHash, imageSize);
 
 			if (_thumbnailType == (int)ImageType.ERROR) { 
-				GD.Print("FAILED");
-				return (int)ImportCode.FAILED; // still need to write a version of AddOrUpdateHashInfo that can handle failed images (increment count without adding them)
+				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
+				return (int)ImportCode.FAILED; 
 			}
 			ulong _diffHash = DifferenceHash(savePath);
 			float[] _colorHash = ColorHash(savePath); 
@@ -322,6 +319,7 @@ public class ImageImporter : Node
 		} 
 		catch (Exception ex) { 
 			GD.Print("ImageImporter::_ImportImage() : ", ex); 
+			db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
 			return (int)ImportCode.FAILED; 
 		}
 	}

@@ -164,7 +164,7 @@ func _query_thread(args:Array) -> void:
 		var lqh:int = lqc.hash()
 		Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
-
+	
   # get the correct values for page variables
 	curr_page_image_count = image_hashes.size()
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
