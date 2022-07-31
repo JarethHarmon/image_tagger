@@ -19,6 +19,9 @@ public class Database : Node
 /*==============================================================================*/
 /*                                   Variables                                  */
 /*==============================================================================*/
+	// might be better to increase this to 32+ for very large imports
+	// previously an import of size 150k did not work, 50k did, no idea on the exact cutoff point
+	// previous array was 16 times larger + there was 3-4 of them so should be at least a 48x reduction
 	private int progressSectionSize = 16;
 	private string metadataPath;
 	public void SetMetadataPath(string path) { metadataPath = path; }

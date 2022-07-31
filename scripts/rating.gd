@@ -38,13 +38,14 @@ func _on_rating_gui_input(event:InputEvent) -> void:
 			else: children[(offset/2)-1].texture = star_fade
 		
 	elif event is InputEventMouseButton:
-		var percent:float = event.position.x / self.rect_size.x
-		var offset:int = (percent * 10) + 1
-		var children:Array = self.get_children()
-		for i in offset/2: children[i].texture = star
-		if offset % 2 == 1: children[(offset/2)].texture = star_half
-		rating = offset
-		Signals.emit_signal("rating_set", rating)
+		if event.pressed:
+			var percent:float = event.position.x / self.rect_size.x
+			var offset:int = (percent * 10) + 1
+			var children:Array = self.get_children()
+			for i in offset/2: children[i].texture = star
+			if offset % 2 == 1: children[(offset/2)].texture = star_half
+			rating = offset
+			Signals.emit_signal("rating_set", rating)
 				
 func _on_rating_mouse_exited() -> void:
 	var children:Array = self.get_children()

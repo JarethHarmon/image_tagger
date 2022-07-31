@@ -28,12 +28,16 @@ var current_path:String
 
 onready var manager_thread:Thread = Thread.new()
 onready var image_mutex:Mutex = Mutex.new()
+onready var rating_thread:Thread = Thread.new()
+onready var rating_queue_mutex:Mutex = Mutex.new()
+
 var max_threads:int = 3
 var active_threads:int = 0
 var stop_threads:bool = false
 var args_queue:Array = []
 var thread_pool:Array = []
 var thread_status:Array = []
+var rating_queue:Array = []
 var use_buffering_icon:bool = true
 
 var image_history:Dictionary = {}		# image_hash:ImageTexture :: stores last N loaded full images
@@ -51,6 +55,7 @@ func _ready() -> void:
 	Signals.connect("rating_set", self, "_rating_set")
 	
 	create_threads(max_threads)
+	rating_thread.start(self, "_rating_thread")
 	
 	# connect to settings_loaded signal here
 	_on_settings_loaded()
@@ -58,8 +63,32 @@ func _ready() -> void:
 func _rating_set(rating:int) -> void:
 	if not current_image.has_meta("image_hash"): return
 	var image_hash:String = current_image.get_meta("image_hash")
-	Database.AddRating(image_hash, "Default", rating)
+	append_rating([image_hash, "Default", rating])
 
+func append_rating(rating):
+	rating_queue_mutex.lock()
+	rating_queue.push_back(rating)
+	rating_queue_mutex.unlock()
+
+func get_rating():
+	rating_queue_mutex.lock()
+	var result = null
+	if not rating_queue.empty():
+		result = rating_queue.pop_front()
+	rating_queue_mutex.unlock()
+	return result
+
+func _rating_thread() -> void:
+	while not stop_threads:
+		var args = get_rating()
+		if args != null:
+			var image_hash:String = args[0]
+			var rating_name:String = args[1]
+			var rating_value:int = args[2]
+			Database.AddRating(image_hash, rating_name, rating_value)
+		OS.delay_msec(201)
+	rating_thread.call_deferred("wait_to_finish")
+	
 func _on_settings_loaded() -> void:
 	smooth_pixel_button.pressed = Globals.settings.use_smooth_pixel
 	smooth_pixel_button.disabled = Globals.settings.use_filter
