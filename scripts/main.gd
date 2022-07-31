@@ -19,7 +19,6 @@ func _notification(what) -> void:
 		importer.cancel_all()
 		importer.cancel_manager()
 		previewer.stop_threads()
-		#Database.SaveInProgressPaths()
 		Database.CheckpointGroupDB()
 		Database.CheckpointHashDB()
 		Database.CheckpointImportDB()
@@ -47,13 +46,8 @@ func _begin() -> void:
 	
   # create database
 	if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-	# load import groups from database (and other list metadata)
 	Database.CreateAllInfo()
 	Database.LoadImportDb()
-	#Database.LoadImportInfo()
-	#Database.LoadTabInfo()
-	#Database.LoadInProgressPaths()
-	
 	Signals.emit_signal("import_info_load_finished")	
 
 func create_thumbnail_folders() -> void:

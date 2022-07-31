@@ -332,19 +332,14 @@ public class Database : Node
 			dictHashes.Clear();
 			var results = new List<string>();
 			int tabType = GetTabType(tabId);
-			//Test(offset, count);
 			if (tabType == (int)Tab.IMPORT_GROUP) {
 				string importId = GetImportId(tabId);
-				var now = DateTime.Now;
 				var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, sort, order, countResults);
-				GD.Print("_Query : ", DateTime.Now-now);
 				if (hashInfos == null) return new string[0];
-				now = DateTime.Now;
 				foreach (HashInfo hashInfo in hashInfos) {
 					results.Add(hashInfo.imageHash);
 					dictHashes[hashInfo.imageHash] = hashInfo;
 				}
-				GD.Print("dictHashes : ", DateTime.Now-now);
 			}
 			// image group
 			// tag
@@ -364,162 +359,28 @@ public class Database : Node
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
 	}
 
-	private void Test(int offset, int limit)
-	{
-		try {
-			var now = DateTime.Now;
-			var query1 = colHashes.Query();
-			query1 = query1.OrderBy(x => x.ratings["Default"]);
-			var list1 = query1.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_ratings() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query3 = colHashes.Query();
-			query3 = query3.OrderBy(x => x.uploadTime);
-			var list3 = query3.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_upload() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query33 = colHashes.Query();
-			query33 = query33.OrderByDescending(x => x.uploadTime);
-			var list33 = query33.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_uploadD() : ", DateTime.Now-now);
-
-
-			now = DateTime.Now;
-			var query4 = colHashes.Query();
-			query4 = query4.OrderBy(x => x.size);
-			var list4 = query4.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_size() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query44 = colHashes.Query();
-			query44 = query44.OrderByDescending(x => x.size);
-			var list44 = query44.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_sizeD() : ", DateTime.Now-now);
-
-
-			now = DateTime.Now;
-			var query5 = colHashes.Query();
-			var list5 = query5.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_imageHash() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query55 = colHashes.Query();
-			query55.OrderByDescending(x => x.imageHash);
-			var list55 = query55.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_imageHashD() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query6 = colHashes.Query();
-			query6.OrderBy("_Id");
-			var list6 = query6.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_column_Id() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query66 = colHashes.Query();
-			query66.OrderBy("imageHash");
-			var list66 = query66.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_column_imageHash() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query7 = colHashes.Query();
-			query7.OrderBy("uploadTime");
-			var list7 = query7.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_column_upload() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query8 = colHashes.Query();
-			query8.OrderBy("size");
-			var list8 = query8.Offset(offset).Limit(limit).ToList();
-			GD.Print("Query_column_size() : ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var query2 = colHashes.Find(Query.All(), offset, limit);
-			var list2 = query2.ToList();
-			GD.Print("Find() : ", DateTime.Now-now);
-		}
-		catch {return;}
-	}
-
-	// consider simplifying further by removing All from this one and creating a dedicated function for it
-	// or could go the other direction and add groupId back to this (really only one line of difference as is)
 	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
 	{
 		try {
 			var now = DateTime.Now;
-			//bool sortByTagCount = false, sortByRandom = false, sortByDimensions = false, sortByDefaultRating = false, counted=false;
 			bool counted=false;
-			/*string columnName = "imageHash";
-
-			if (sort == (int)Sort.SIZE) columnName = "size";
-			else if (sort == (int)Sort.CREATION_TIME) columnName = "creationTime";
-			else if (sort == (int)Sort.UPLOAD_TIME) columnName = "uploadTime";
-			else if (sort == (int)Sort.DIMENSIONS) sortByDimensions = true;
-			else if (sort == (int)Sort.TAG_COUNT) sortByTagCount = true;
-			else if (sort == (int)Sort.RANDOM) sortByRandom = true;
-			else if (sort == (int)Sort.DEFAULT_RATING) sortByDefaultRating = true;
-			GD.Print("sort_type : ", DateTime.Now-now);*/
 
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
-				now = DateTime.Now;
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
-				GD.Print("counting_all : ", DateTime.Now-now);
-
-				/*now = DateTime.Now;
-				if (columnName == "Id" && !sortByTagCount && !sortByRandom) {
-					if (order == (int)Order.ASCENDING) return colHashes.Find(Query.All(Query.Ascending), offset, count).ToList();
-					else if (order == (int)Order.DESCENDING) return colHashes.Find(Query.All(Query.Descending), offset, count).ToList();
-					else return null; // default/placeholder, should not be called yet
-				}
-				GD.Print("ordering_all : ", DateTime.Now-now);*/
 			}
-			
 
 			// var rng = new Random(); // for SortBy.Random (if I can figure out how to do so)
-			now = DateTime.Now;
 			var query = colHashes.Query();
-			GD.Print("plain Query() : ", DateTime.Now-now);
 
-			now = DateTime.Now;
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
 			//if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
-			GD.Print("import_id : ", DateTime.Now-now);
 			
-			now = DateTime.Now;
 			if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
-			GD.Print("tags : ", DateTime.Now-now);
 			
-			now = DateTime.Now;
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
-			GD.Print("counting : ", DateTime.Now-now);
-
-			/*
-			now = DateTime.Now;
-			if (sortByTagCount) {
-				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.tags.Count);
-				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.tags.Count);
-				else return null; // default/placeholder, should not be called yet
-			} else if (sortByRandom) {
-				// not sure yet
-			} else if (sortByDimensions) {
-				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.width * x.height);
-				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.width * x.height);
-				else return null;
-			} else if (sortByDefaultRating) {
-				if (order == (int)Order.ASCENDING) query = query.OrderBy(x => x.ratings["Default"]);
-				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(x => x.ratings["Default"]);
-				else return null;
-			} else {
-				if (order == (int)Order.ASCENDING) query = query.OrderBy(columnName);
-				else if (order == (int)Order.DESCENDING) query = query.OrderByDescending(columnName);
-				else return null; // default/placeholder, should not be called yet
-			}
-			GD.Print("ordering : ", DateTime.Now-now);
-			*/
 
 			// I discovered that queries are slow because of (1) lack of EnsureIndex (2) using string column names
 			if (sort == (int)Sort.SIZE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.size) : query.OrderByDescending(x => x.size);
@@ -534,14 +395,13 @@ public class Database : Node
 					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
 				is PredicateBuilder (which is slower I believe) */
 			
-			now = DateTime.Now;
-			//var list = query.Skip(offset).Limit(count).ToList();
 			var list = query.Offset(offset).Limit(count).ToList();
-			GD.Print("listing : ", DateTime.Now-now);
-			//query = query.Offset(offset).Limit(count);
-			//var list = query.ToList();
 			return list;
-		} catch (Exception ex) { GD.Print("Database::_QueryDatabase() : ", ex); return null; }
+		} 
+		catch (Exception ex) { 
+			GD.Print("Database::_QueryDatabase() : ", ex); 
+			return null; 
+		}
 	}
 
 	// this method is much slower than query method above, use only for similarity (would like to find another way)
