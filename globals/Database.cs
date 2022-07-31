@@ -76,14 +76,22 @@ public class Database : Node
 			colTags = dbTags.GetCollection<TagInfo>("tags");
 			colTabs = dbImports.GetCollection<TabInfo>("tabs");
 
-			colHashes.EnsureIndex(x => x.ratings["Default"]);
 			colHashes.EnsureIndex(x => x.imageHash);
-			colHashes.EnsureIndex(x => x.height*x.width);
-			colHashes.EnsureIndex(x => x.creationTime);
-			colHashes.EnsureIndex(x => x.tags.Count);
-			colHashes.EnsureIndex(x => x.uploadTime);
+			colHashes.EnsureIndex(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			colHashes.EnsureIndex(x => x.size);
+			colHashes.EnsureIndex(x => x.width*x.height);
+			colHashes.EnsureIndex(x => x.tags.Count);
+
+			colHashes.EnsureIndex(x => x.creationTime);
+			colHashes.EnsureIndex(x => x.uploadTime);
+			colHashes.EnsureIndex(x => x.lastWriteTime);
+			
+			colHashes.EnsureIndex(x => x.imageName);
+			colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
 			colHashes.EnsureIndex(x => x.imports);
+			colHashes.EnsureIndex(x => x.groups);
+			colHashes.EnsureIndex(x => x.tags);
+			colHashes.EnsureIndex(x => x.ratings["Default"]);
 
 			return (int)ErrorCodes.OK;
 		} 
@@ -290,6 +298,17 @@ public class Database : Node
 		} catch (Exception ex) { return new string[0]; }
 	}
 	
+	public string GetImageName(string imageHash)
+	{
+		try {
+			if (dictHashes.ContainsKey(imageHash))
+				return (dictHashes[imageHash].imageName == null) ? "" : dictHashes[imageHash].imageName;
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return "";
+			return (result.imageName == null) ? "" : result.imageName;
+		} catch (Exception ex) { return ""; }
+	}
+
 	public string[] GetTags(string imageHash)
 	{
 		try {
@@ -370,7 +389,7 @@ public class Database : Node
 				counted = true;
 			}
 
-			// var rng = new Random(); // for SortBy.Random (if I can figure out how to do so)
+			var rng = new Random(); // for SortBy.Random (if I can figure out how to do so)
 			var query = colHashes.Query();
 
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
@@ -382,19 +401,24 @@ public class Database : Node
 			
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 
-			// I discovered that queries are slow because of (1) lack of EnsureIndex (2) using string column names
 			if (sort == (int)Sort.SIZE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.size) : query.OrderByDescending(x => x.size);
+			else if (sort == (int)Sort.PATH) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.paths.FirstOrDefault()) : query.OrderByDescending(x => x.paths.FirstOrDefault());
+			else if (sort == (int)Sort.NAME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageName) : query.OrderByDescending(x => x.imageName);
 			else if (sort == (int)Sort.CREATION_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.creationTime) : query.OrderByDescending(x => x.creationTime);
 			else if (sort == (int)Sort.UPLOAD_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.uploadTime) : query.OrderByDescending(x => x.uploadTime);
+			else if (sort == (int)Sort.EDIT_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.lastWriteTime) : query.OrderByDescending(x => x.lastWriteTime);
 			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width*x.height) : query.OrderByDescending(x => x.width*x.height);
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
 			else if (sort == (int)Sort.DEFAULT_RATING) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Default"]) : query.OrderByDescending(x => x.ratings["Default"]);
+			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
+			else if (sort == (int)Sort.RANDOM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
+			// can pass an int color argument into this function (0-15) to decide which color to sort by 
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 
 			/* only current hope for supporting tags formatted as
 					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
 				is PredicateBuilder (which is slower I believe) */
-			
+
 			var list = query.Offset(offset).Limit(count).ToList();
 			return list;
 		} 
@@ -408,9 +432,16 @@ public class Database : Node
 	// this method will not filter out tags at the current time, import tabs/all do work though
 	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Order.DESCENDING, int similarityMode=(int)Similarity.AVERAGE)
 	{
+		/*
+			var test = colHashes.Find(Query.All(), offset, 10).OrderBy(x => DifferenceSimilarity(x.differenceHash, (long)0));
+			var llist = test.ToList();
+			foreach (HashInfo hi in llist) GD.Print(hi.imageHash);
+		*/
 		_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 		if (order == (int)Order.DESCENDING)
-			return colHashes.Find(Query.All())
+			return colHashes.FindAll()
+			//return colHashes.Find(Query.All())
+			//return colHashes.Find(Query.All(), offset, count)
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderByDescending(x => 
 					(similarityMode == (int)Similarity.AVERAGE) ? 
@@ -422,7 +453,9 @@ public class Database : Node
 				.Take(count)
 				.ToList();
 		else
-			return colHashes.Find(Query.All())
+			return colHashes.FindAll()
+			//return colHashes.Find(Query.All())
+			//return colHashes.Find(Query.All(), offset, count)
 				.Where(x => importId == "All" || x.imports.Contains(importId))
 				.OrderBy(x => 
 					(similarityMode == (int)Similarity.AVERAGE) ? 

@@ -49,7 +49,6 @@ func show_import_menu() -> void:
 	import_panel.popup()
 
 func show_file_dialog(select_folders:bool=false) -> void:
-	#ImageScanner.OpenFileBrowser() # looks bad, does not allow selecting folders currently, bad ux
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.mode = FileDialog.MODE_OPEN_FILES if not select_folders else FileDialog.MODE_OPEN_DIR #MODE_OPEN_ANY
 	file_dialog.set_filters(PoolStringArray(["*.png, *.jpg, *.jpeg ; Image Files"]))

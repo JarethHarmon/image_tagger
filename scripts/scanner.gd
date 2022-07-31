@@ -41,9 +41,6 @@ func reset() -> void:
 	import_name.text = ""
 	import_id = ImageImporter.CreateImportID()
 
-# once the user starts importing, the settings are finalized and the importer closes
-# they can open the importer again, but it will start a new separate import
-# the previous import will continue in the background and the user can manually pause/stop it
 func _files_dropped(file_paths:Array, _screen:int) -> void:
 	# instead of how it works now:
 	# show the import menu as normal
@@ -58,16 +55,13 @@ func _files_dropped(file_paths:Array, _screen:int) -> void:
 	if file_paths.size() > 0: 
 		Signals.emit_signal("show_import_menu")
 
-# needs to take into accounr a blacklist of folders (can be stored on c# side though)
+# needs to take into account a blacklist of folders (can be stored on c# side though)
 func queue_append(scan_folder:String, recursive:bool=true) -> void:
 	if scan_folder == "": return
 	if not Directory.new().dir_exists(scan_folder): return
 	scan_queue.append([scan_folder, recursive])
 	if !scanner_active: start_scanner()
 
-# protecting scan_queue with a mutex is not necessary since the scanner will only be single threaded
-# (it finishes even relatively large folders in a few milliseconds)
-# (it runs on a separate -single- thread)
 func start_scanner() -> void:
 	if scanner_active: return
 	if scan_mutex.try_lock() != OK: return

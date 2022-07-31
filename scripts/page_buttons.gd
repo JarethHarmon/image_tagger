@@ -1,9 +1,5 @@
 extends HFlowContainer
 
-# consider using a spinbox page # entry instead of using numbered page buttons
-# ie [7]/83 where the user can change the number inside [ ] and press enter to go to that page
-# (have added example version now)
-
 onready var prev_button:Button = $prev_page
 onready var next_button:Button = $next_page
 onready var first_button:Button = $first_page
@@ -46,6 +42,7 @@ func change_page(page:int) -> void:
 func _change_page(page:int) -> void:
 	current_page = page
 	current_page_spinbox.get_line_edit().text = String(page)
+	current_page_spinbox.set_value(page)
 	
 func _max_pages_changed(page_count:int) -> void: 
 	max_pages = page_count

@@ -162,7 +162,8 @@ func _query_thread(args:Array) -> void:
 		queried_image_count = Database.GetLastQueriedCount()
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()
-		Storage.AddPage(lqh, image_hashes)
+		if current_sort != Globals.SortBy.TagCount and current_sort != Globals.SortBy.DefaultRating and current_sort != Globals.SortBy.Random:
+			Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
 	
   # get the correct values for page variables
@@ -377,7 +378,9 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 #-----------------------------------------------------------------------#
 func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	var tooltip:String = "index: " + String(index+1)
+	if dict.empty() or dict == null: return tooltip
 	tooltip += "\nsize: " + ("-1" if dict.size == "" else String.humanize_size(dict.size.to_int()))
+	tooltip += "\nname: " + dict.image_name
 	tooltip += "\ncreation time: " + dict.creation_time 
 	tooltip += "\nsha256 hash: " + image_hash
 	tooltip += "\ndifference hash: " + dict.diff_hash
@@ -386,6 +389,7 @@ func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 
 func _set_metadata(image_hash:String) -> void:
 	var size:String = Database.GetFileSize(image_hash)
+	var image_name:String = Database.GetImageName(image_hash)
 	var diff_hash:String = Database.GetDiffHash(image_hash)
 	var color_hash:Array = Database.GetColorHash(image_hash)
 	var creation_time:String = Database.GetCreationTime(image_hash)
@@ -395,6 +399,7 @@ func _set_metadata(image_hash:String) -> void:
 	var dict:Dictionary = {
 		"texture" : null,
 		"size" : size,
+		"image_name" : image_name,
 		"diff_hash" : diff_hash,
 		"color_hash" : color_hash,
 		"creation_time" : creation_time,
