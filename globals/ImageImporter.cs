@@ -211,27 +211,38 @@ public class ImageImporter : Node
 /*=========================================================================================
 									   Importing
 =========================================================================================*/
-	// replace ints with error codes
-	public int ImportImage(string tabId)
+	public void ImportImage(string[] tabs, string importId, string progressId, string path)
 	{
-		string importId = db.GetImportId(tabId);
-		if (importId.Equals("") || importId == null) return 1;
-		int imageCount = db.GetTotalCount(importId);
+		try {
+			if (importId.Equals("") || progressId.Equals("") || path.Equals("")) return;
+			bool safePathLength = path.Length() < MAX_PATH_LENGTH;
+			if ((safePathLength) ? !System.IO.File.Exists(path) : !Alphaleonis.Win32.Filesystem.File.Exists(path)) return;
+
+			int imageCount = db.GetTotalCount(importId);
+
+			//var file = (safePathLength) ?
+			//	new System.IO.FileInfo(path) : 
+			//	new Alphaleonis.Win32.Filesystem.FileInfo(path);
+
+			var file = new System.IO.FileInfo(path);
+
+			var image = (path, file.Length, file.CreationTimeUtc.Ticks, file.LastWriteTimeUtc.Ticks);	
 		
-		var image = iscan.GetImage(importId);
-		if (image.Item1 == null || image.Item1.Equals("")) return 1;
-	
-		int result = _ImportImage(image, importId, imageCount);
-		db.UpdateImportCount(importId, result);
-		
-		if (!db.ImportFinished(importId)) {
-			signals.Call("emit_signal", "update_import_button", "All", true, db.GetSuccessCount("All"), db.GetTotalCount("All"), db.GetName("All"));
-			signals.Call("emit_signal", "update_import_button", tabId, false, db.GetSuccessOrDuplicateCount(importId), imageCount, db.GetName(tabId));
+			int result = _ImportImage(image, importId, progressId, imageCount);
+			db.UpdateImportCount(importId, result);
+			
+			if (tabs.Length > 0) 
+				signals.Call("emit_signal", "increment_import_buttons", tabs);
+			if (result == (int)ImportCode.SUCCESS)
+				signals.Call("emit_signal", "increment_all_button");
 		}
-		return 0;	
+		catch (Exception ex) {
+			GD.Print("ImageImporter::ImportImage() : ", ex);
+			return;
+		}
 	}
 	
-	public void FinishImport(string tabId)
+	/*public void FinishImport(string tabId)
 	{	
 		string importId = db.GetImportId(tabId);
 		if (importId.Equals("")) return;
@@ -241,97 +252,78 @@ public class ImageImporter : Node
 		signals.Call("emit_signal", "update_import_button", tabId, true, db.GetSuccessOrDuplicateCount(importId), db.GetTotalCount(importId), db.GetName(tabId));
 		db.CheckpointHashDB();
 		db.CheckpointImportDB();
-		Remove(importId);
-
-	}
+	}*/
 	
-	public void AddToImportedHashes(string importId, string[] hashes)
+	private int _ImportImage((string,long,long,long) imageInfo, string importId, string progressId, int imageCount) 
 	{
-		lock (importedHashes) {
-			importedHashes[importId] = new HashSet<string>(hashes);
-		}
-	}
-	
-	public string[] GetImportedHashes(string importId)
-	{
-		lock (importedHashes) {
-			return (importedHashes.ContainsKey(importId)) ? importedHashes[importId].ToArray() : new string[0];
-		}
-	}
-	
-	// returns true if present already, returns false if added
-	private bool CheckOrAdd(string importId, string imageHash)
-	{
-		lock(importedHashes) {
-			if (importedHashes.ContainsKey(importId)) {
-				if (importedHashes[importId].Contains(imageHash)) return true;
-				importedHashes[importId].Add(imageHash);
-				return false;
-			}
-			importedHashes[importId] = new HashSet<string>{imageHash};
-			return false;
-		}
-	}
-	
-	private void Remove(string importId) 
-	{
-		lock(importedHashes) {
-			importedHashes.Remove(importId);
-		}
-	}
-	
-	// need to check whether creating a MagickImage or getting a komi64/sha256 hash is faster  (hashing is much faster, even the slowest (GDnative sha512) is ~ 10x faster)
-	private int _ImportImage((string,long,long) imageInfo, string importId, int imageCount) 
-	{
-		// I think duplicates should just add path/importid and load like successful images (incrementing duplicate count instead of success count though)
 		try {
-			(string imagePath, long imageCreationUtc, long imageSize) = imageInfo;
+			(string imagePath, long imageSize, long imageCreationUtc, long imageLastUpdateUtc) = imageInfo;
 			// check that the path/type/time/size meet the conditions specified by user (return ImportCode.IGNORED if not)
-			string imageHash = (string) globals.Call("get_sha256", imagePath); // get_komi_hash
-			
+			string _imageHash = (string) globals.Call("get_sha256", imagePath); 
+			string _imageName = (string) globals.Call("get_file_name", imagePath);
+
 			// checks if the current import has already processed this hash
-			if (CheckOrAdd(importId, imageHash)) {
-				db.AddPath(imageHash, imagePath);
-				return (int)ImportCode.IGNORED;
-			}
-			
-			// checks if the current import has already processed this hash by checking if the hash 
-			// is in the database AND the hashInfo imports list contains this importId (can probably replace above check with this)
-			//	which means that the importedHashes array of saved data is not needed anymore
-			if (db.HashDatabaseContainsImport(imageHash, importId)) {
-				db.AddPath(imageHash, imagePath);
+			if (db.HasHashInfoAndImport(_imageHash, importId)) {
+				var _hashInfo = db.GetHashInfo(_imageHash);
+				if (_hashInfo.paths == null) _hashInfo.paths = new HashSet<string>();
+				_hashInfo.paths.Add(imagePath);
+				db.AddOrUpdateHashInfo(_imageHash, progressId, _hashInfo, (int)ImportCode.IGNORED);
 				return (int)ImportCode.IGNORED;
 			}
 			
 			// checks if the hash has been imported before in another import
-			if (db.HashDatabaseContains(imageHash)) {
-				db.AddImportId(imageHash, importId);
-				db.AddPath(imageHash, imagePath);
+			var __hashInfo = db.GetHashInfo(_imageHash);
+			if (__hashInfo != null) {
+				if (__hashInfo.paths == null) __hashInfo.paths = new HashSet<string>();
+				__hashInfo.paths.Add(imagePath);
+				db.AddOrUpdateHashInfo(_imageHash, progressId, __hashInfo, (int)ImportCode.DUPLICATE);
 				return (int)ImportCode.DUPLICATE;
 			}
 			
+			string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
+			(int _imageType, int _width, int _height) = GetImageInfo(imagePath);
 			
-			string savePath = thumbnailPath + imageHash.Substring(0,2) + "/" + imageHash + ".thumb";
-			(int imageType, int width, int height) = GetImageInfo(imagePath);
-			int thumbnailType = SaveThumbnail(imagePath, savePath, imageHash, imageSize);
-			if (thumbnailType == (int)ImageType.ERROR) return (int)ImportCode.FAILED;
+			int _thumbnailType = (int)ImageType.ERROR;
+			if (System.IO.File.Exists(savePath))
+				_thumbnailType = GetActualFormat(savePath);
+			else
+				_thumbnailType = SaveThumbnail(imagePath, savePath, _imageHash, imageSize);
+
+			if (_thumbnailType == (int)ImageType.ERROR) { 
+				GD.Print("FAILED");
+				return (int)ImportCode.FAILED; // still need to write a version of AddOrUpdateHashInfo that can handle failed images (increment count without adding them)
+			}
+			ulong _diffHash = DifferenceHash(savePath);
+			float[] _colorHash = ColorHash(savePath); 
 			
-			ulong diffHash = DifferenceHash(savePath);
-			float[] colorHash = ColorHash(savePath); // 4 = int[64] (1 = int[256])
+			int _flags = 0;
 			
-			// include flags; will use default settings (for now will just pass 0 to signify no filter)
-			int flags = 0;
-			
-			// database insert time will be calculated by the insert function, so no need to pass it as an argument
-			// groups are irrelevant for initial insert (for now)
-			// tags need to be passed as an argument from GDScript to ImportImages (and will be applied based on the users settings)
-				// not going to worry about those for now, but eventually they will be a passed argument(s)
-			// ratings will also be irrelevant for initial insert
-			// this function will also add to the dictionary (if relevant (ie if the user is viewing the page for this import))
-			db.InsertHashInfo(imageHash, diffHash, colorHash, flags, thumbnailType, imageType, imageSize, imageCreationUtc, importId, imagePath, width, height);
-			
+			var hashInfo = new HashInfo {
+				imageHash = _imageHash, 
+				imageName = _imageName,
+				differenceHash = _diffHash,
+				colorHash = _colorHash,
+				width = _width,
+				height = _height,
+				flags = _flags,
+				thumbnailType = _thumbnailType,
+				imageType = _imageType,
+				size = imageSize,
+				creationTime = imageCreationUtc,
+				lastWriteTime = imageLastUpdateUtc,
+				uploadTime = DateTime.Now.Ticks,
+				lastEditTime = DateTime.Now.Ticks,
+				paths = new HashSet<string>{imagePath},
+				imports = new HashSet<string>{importId},
+			};
+
+			db.AddOrUpdateHashInfo(_imageHash, progressId, hashInfo, (int)ImportCode.SUCCESS);
 			return (int)ImportCode.SUCCESS;	
-		} catch (Exception ex) { GD.Print("ImageImporter::_ImportImage() : ", ex); return (int)ImportCode.FAILED; }
+		} 
+		catch (Exception ex) { 
+			GD.Print("ImageImporter::_ImportImage() : ", ex); 
+			return (int)ImportCode.FAILED; 
+		}
 	}
 	
 }

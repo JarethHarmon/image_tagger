@@ -28,8 +28,6 @@ var current_imports:Dictionary = {}		# the list of in-progress imports
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
 
-var time:int = 0
-
 var settings_path:String = "user://settings.tres"
 
 var last_settings:Array = []
@@ -51,8 +49,7 @@ var settings:Dictionary = {
   # Import
 	"use_recursion" : false,
 	"max_bytes_to_check_apng" : 256,
-	"max_import_threads" : 5,
-	"max_threads_per_import" : 3,
+	"max_import_threads" : 3,
 
   # Thumbnails
 	"images_per_page" : 400,
@@ -140,6 +137,10 @@ func get_sha512(path:String) -> String:
 	return sha512
 
 func get_sha256(path:String) -> String: return File.new().get_sha256(path)
+
+func get_file_name(path:String) -> String: 
+	var file:String = path.get_file()
+	return file.rstrip("." + file.get_extension())
 
 func is_apng(path:String) -> bool:
 	var f:File = File.new()

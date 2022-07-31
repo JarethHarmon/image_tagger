@@ -36,7 +36,7 @@ var thumb_queue:Array = []					# [ hashes_waiting_to_load ]
 var thumbnail_threads:Array = []			# [ threads_used_for_loading_thumbnails ]  
 var last_query_settings:Array = []			# the settings used for the last query (used to avoid counting query results multiple times)
 
-var stop_thumbnail_threads:bool = false		# whether the thumbnail threads should stop processing
+var stop_threads:bool = false				# whether the thumbnail threads should stop processing
 var called_already:bool = false
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
@@ -110,7 +110,6 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 	thread.call_deferred("start", self, "_query_thread", [thread, query])
 	#thread.start(self, "_query_thread", [thread, query])
 	first_time = true
-	print("_p_q :: ", OS.get_ticks_msec()-Globals.time)
 
 func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	if query == current_query: return false
@@ -118,7 +117,6 @@ func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	return true
 
 func _query_thread(args:Array) -> void:
-	var time:int = OS.get_ticks_msec()
 	buffer.rect_min_size = self.rect_size / 4
 	buffer.show()
 	var thread:Thread = args[0]
@@ -144,8 +142,6 @@ func _query_thread(args:Array) -> void:
 	last_query_settings = temp_query_settings
 	
   # query the database
-	print("_qt_1 :: ", OS.get_ticks_msec()-time)
-	time = OS.get_ticks_msec()	
 	var import_id:String = ""
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
 		var temp =  Database.GetImportId(tab_id)
@@ -159,8 +155,7 @@ func _query_thread(args:Array) -> void:
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
 			Database.PopulateDictHashes(image_hashes)
-	print("_qt_2 :: ", OS.get_ticks_msec()-time)	
-	time = OS.get_ticks_msec()
+
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
@@ -169,8 +164,7 @@ func _query_thread(args:Array) -> void:
 		var lqh:int = lqc.hash()
 		Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
-	print("_qt_3 :: ", OS.get_ticks_msec()-time)	
-	time = OS.get_ticks_msec()
+
   # get the correct values for page variables
 	curr_page_image_count = image_hashes.size()
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
@@ -183,10 +177,8 @@ func _query_thread(args:Array) -> void:
 	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
 	thread.call_deferred("wait_to_finish")
 	buffer.hide()
-	print("_qt_4 :: ", OS.get_ticks_msec()-time)	
 
 func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
-	var time:int = OS.get_ticks_msec()
 	sc.lock()
 	var scroll_mult:float = 0.0
 	if tab_history.has(query.tab_id):
@@ -205,7 +197,6 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 	sc.unlock()
 	if query != current_query: return
 	start_loading(query, image_hashes, image_count)
-	print("_t_c :: ", OS.get_ticks_msec()-time)
 
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
@@ -278,10 +269,10 @@ func create_thumbnail_threads(num_threads:int) -> void:
 		thumbnail_threads.push_back(Thread.new())
 
 func stop_thumbnail_threads() -> void:
-	stop_thumbnail_threads = true
+	stop_threads = true
 	for thread_id in thumbnail_threads.size():
 		stop_thumbnail_thread(thread_id)
-	stop_thumbnail_threads = false
+	stop_threads = false
 
 func stop_thumbnail_thread(thread_id:int) -> void:
 	if thumbnail_threads[thread_id].is_active() or thumbnail_threads[thread_id].is_alive():
@@ -301,7 +292,7 @@ func append_args(args):
 	tq.unlock()
 
 func _thread(thread_id:int) -> void:
-	while not stop_thumbnail_threads:
+	while not stop_threads:
 		var args = get_args()
 		if args == null: break
 		var index:int = args[0]
@@ -314,7 +305,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	if thumb_history.has(image_hash):
 		if thumb_history[image_hash].texture != null:
 			th.unlock()
-			if stop_thumbnail_threads: return
+			if stop_threads: return
 			_threadsafe_set_icon(image_hash, index)
 			return
 	th.unlock()
@@ -324,19 +315,19 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
 	var e:int = f.open(p, File.READ)
 	
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	if e != OK: 
 		_threadsafe_set_icon(image_hash, index, true)
 		return
 	
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	var file_type:int = Database.GetFileType(image_hash)
 	
 	if file_type == Globals.ImageType.FAIL:
 		_threadsafe_set_icon(image_hash, index, true)
 		return
 	
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	var i:Image = Image.new()
 	var b:PoolByteArray = f.get_buffer(f.get_len())
 	if file_type == Globals.ImageType.PNG: 
@@ -348,7 +339,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		return
 	if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
 	
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	var it:ImageTexture = ImageTexture.new()
 	it.create_from_image(i, 0) # FLAGS # 4
 	it.set_meta("image_hash", image_hash)
@@ -356,7 +347,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
 	lt.lock() ; loaded_thumbnails.push_back(image_hash) ; lt.unlock()
 	
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	_threadsafe_set_icon(image_hash, index)
 
 func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
@@ -368,7 +359,7 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		dict = thumb_history[image_hash]
 		im_tex = dict.texture
 		th.unlock()
-	if stop_thumbnail_threads: return
+	if stop_threads: return
 	sc.lock()
 	self.set_item_icon(index, im_tex)
 	if Globals.settings.show_thumbnail_tooltips:
@@ -398,7 +389,7 @@ func _set_metadata(image_hash:String) -> void:
 	var diff_hash:String = Database.GetDiffHash(image_hash)
 	var color_hash:Array = Database.GetColorHash(image_hash)
 	var creation_time:String = Database.GetCreationTime(image_hash)
-	var paths:Array = Database.GetPaths(image_hash)# (create paths section again)
+	var paths:Array = Database.GetHashPaths(image_hash)# (create paths section again)
 	th.lock()
 	# get dimensions too
 	var dict:Dictionary = {
@@ -441,7 +432,7 @@ func select_items() -> void:
 	#color_all()
 	
 	var image_hash:String = current_hashes[last_index]
-	var paths:Array = Database.GetPaths(image_hash)
+	var paths:Array = Database.GetHashPaths(image_hash)
 	if not paths.empty():
 		var f:File = File.new()
 		for path in paths:
@@ -470,25 +461,25 @@ func _unhandled_input(event:InputEvent) -> void:
 	
 	if event is InputEventKey:
 		if Input.is_action_just_pressed("arrow_left"): 
-			selected_item = max(0, selected_item-1) 
+			selected_item = int(max(0, selected_item-1)) 
 			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
 			else: self.select(selected_item)
 			_on_thumbnails_multi_selected(selected_item, false)
 			scroll(false)
 		elif Input.is_action_just_pressed("arrow_right"):
-			selected_item = min(get_item_count()-1, selected_item+1)
+			selected_item = int(min(get_item_count()-1, selected_item+1))
 			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
 			else: self.select(selected_item)
 			_on_thumbnails_multi_selected(selected_item, false)
 			scroll(true)
 		elif Input.is_action_just_pressed("arrow_up"):
-			selected_item = max(0, selected_item-get_num_columns())
+			selected_item = int(max(0, selected_item-get_num_columns()))
 			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
 			else: self.select(selected_item)
 			_on_thumbnails_multi_selected(selected_item, false)
 			scroll(false)
 		elif Input.is_action_just_pressed("arrow_down"):
-			selected_item = min(get_item_count()-1, selected_item+get_num_columns())
+			selected_item = int(min(get_item_count()-1, selected_item+get_num_columns()))
 			if ctrl_pressed or shift_pressed: self.select(selected_item, false)
 			else: self.select(selected_item)
 			_on_thumbnails_multi_selected(selected_item, false)
@@ -501,11 +492,11 @@ func scroll(down:bool=true) -> void:
 	if self.get_item_count() <= 1: return
 	var vscroll:VScrollBar = self.get_v_scroll()
 	var current_columns:int = self.get_num_columns()
-	var num_rows:int = ceil(self.get_item_count()/current_columns)
-	var current_row:int = selected_item/current_columns
-	var max_value:int = vscroll.max_value
+	var num_rows:int = int(ceil(float(self.get_item_count())/current_columns))
+	var current_row:int = int(floor(float(selected_item)/current_columns))
+	var max_value:float = vscroll.max_value
 	var has_text:bool = not self.get_item_text(0) == ""
-	var value:int = 0
+	var value:float = 0.0
 	
 	if down:
 		if current_row > 1: value = (current_row-1) * (ceil(max_value/num_rows) - (2 if has_text else 1))
@@ -526,21 +517,21 @@ func color_selection(index:int, selected:bool) -> void:
 		self.set_item_custom_bg_color(index, Color.transparent) # not sure what default is 
 
 func get_num_columns() -> int:
-	var fixed_x:int = self.fixed_icon_size.x
+	var fixed_x:int = int(self.fixed_icon_size.x)
 	var hsep:int = 3 # copy-paste from the last theme override affecting the itemlist (if changeable in your program then set it with that)
-	var sep_sides:int = hsep/2 # sides are half as large as in-between items, rounded down
+	var sep_sides:int = int(floor(float(hsep)/2)) # sides are half as large as in-between items, rounded down
 		# items = 3
 		# hsep = 1: total_sep = 1/2 + 1 + 1 + 1/2	 = 2
 		# hsep = 2: total_sep = 1 + 2 + 2 + 1		 = 6
 		# hsep = 3: total_sep = 3/2 + 3 + 3 + 3/2	 = 8
-	var size_x:int = self.rect_size.x
-	var scroll_x:int = self.get_v_scroll().rect_size.x
+	var size_x:int = int(self.rect_size.x)
+	var scroll_x:int = int(self.get_v_scroll().rect_size.x)
 	
 	var result:int = 1
 	for i in range(1, self.max_columns):
 		var a:int = size_x-scroll_x-sep_sides-hsep # extra hsep for the vscroll (I think)
 		var b:int = (i * fixed_x + (i-1)*hsep)-1 # -1 for the numbers where it fits perfectly (ie a/b perfectly returns 1)
-		if a / b == 0: return result
+		if int(floor(float(a)/b)) == 0: return result
 		result = i
 	return 1
 

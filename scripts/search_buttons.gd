@@ -27,11 +27,9 @@ func _on_include_any_text_changed(new_text:String) -> void: tags_any = new_text.
 func _on_exclude_all_text_changed(new_text:String) -> void: tags_none = new_text.split(",", false)
 
 func tab_button_pressed(tab_id:String) -> void:
-	var time:int = OS.get_ticks_msec()
 	Globals.current_tab_id = tab_id
 	Globals.current_tab_type = Database.GetTabType(tab_id)
 	search_pressed()
-	print("tbp :: ", OS.get_ticks_msec()-time)
 func search_pressed() -> void: 
 	Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, true)
 func page_changed(new_page:int=1) -> void: Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, false)

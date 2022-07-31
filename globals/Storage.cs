@@ -42,25 +42,6 @@ namespace Data
 	
 	public class ImportInfo
 	{
-		public string importId { get; set; }			// the ID of this import
-		public int successCount { get; set; }			// the number of successfully imported image in this import
-		public int ignoredCount { get; set; }			// the number of images that were scanned but got skipped because of the user's import settings
-		public int failedCount { get; set; }			// the number of images that were scanned but failed to import (corrupt/etc)
-		public int duplicateCount { get; set; }			// the number of images that were scanned but were already present in the database (basically auto-ignored)
-		public int canceledCount { get; set; }			// number of paths that were removed from files when this import was canceled
-		public int removedCount { get; set; }			// the number of paths that have been manually removed from this import by the user (may not keep)
-		public int totalCount { get; set; }				// the total original number of images included in this import (regardless of whether they successfully imported)
-		public bool finished { get; set; }
-		public string importName { get; set; }
-		public long importTime { get; set; }
-		public string[] importedHashes { get; set; }
-		public string[] inProgressPaths { get; set; }
-		public long[] inProgressTimes { get; set; }
-		public long[] inProgressSizes { get; set; }
-	}
-	
-	public class ImportInfoN
-	{
 		public string importId { get; set; }	// the generated ID I... of this import
 		public string importName { get; set; }	// the name assigned to this import ('Import' by default)
 
@@ -74,16 +55,13 @@ namespace Data
 		public long importFinish { get; set; }	// the UTC time that the import finished
 
 		public bool finished { get; set; }			// whether or not the import has finished
-		public List<string> progressIds { get; set; }	// the ids of the sectioned in-progress arrays of paths,etc for this import
+		public HashSet<string> progressIds { get; set; }	// the ids of the sectioned in-progress arrays of paths,etc for this import
 	}
 
 	public class ImportProgress
 	{
 		public string progressId { get; set; }	// the generated id P... of this section of the in-progress arrays
 		public string[] paths { get; set; }		// the paths for this section of the in-progress arrays
-		public long[] sizes { get; set; }		// the sizes for this section of the in-progress arrays
-		public long[] creationTimes { get; set; }		// the creation times for this section of the in-progress arrays
-		public long[] lastWriteTimes { get; set; }	// the last edit times for this section of the in-progress arrays
 	}
 
 	public class GroupInfo
