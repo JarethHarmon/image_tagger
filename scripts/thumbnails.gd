@@ -451,9 +451,8 @@ func select_items() -> void:
 func select_all_items() -> void: 
 	selected_items.clear()
 	var tab_id:String = Globals.current_tab_id
-	var hashes:Array = Database.GetHashes()
 	for i in curr_page_image_count: 
-		selected_items[i] = hashes[i]
+		selected_items[i] = current_hashes[i]
 		self.select(i, false)
 	Signals.emit_signal("all_selected_items", selected_items)
 	
