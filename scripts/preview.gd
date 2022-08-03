@@ -60,10 +60,10 @@ func _ready() -> void:
 	# connect to settings_loaded signal here
 	_on_settings_loaded()
 
-func _rating_set(rating:int) -> void:
+func _rating_set(rating_name:String, rating_value:int) -> void:
 	if not current_image.has_meta("image_hash"): return
 	var image_hash:String = current_image.get_meta("image_hash")
-	append_rating([image_hash, "Default", rating])
+	append_rating([image_hash, rating_name, rating_value])
 
 func append_rating(rating):
 	rating_queue_mutex.lock()
@@ -137,7 +137,11 @@ func _load_full_image(image_hash:String, path:String) -> void:
 		var it:ImageTexture = image_history[image_hash]
 		preview.set_texture(it)
 		current_image = it
-		Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
+		# need to call a function that gets a list of ratings instead
+		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
+		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
 		image_mutex.unlock()
 		return
 	
@@ -280,7 +284,11 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		#	return
 		pass
 	current_image = it
-	Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
+	# need to call a function that gets a list of ratings instead
+	#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
+	Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
+	Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
+	Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
 
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return

@@ -162,7 +162,8 @@ func _query_thread(args:Array) -> void:
 		queried_image_count = Database.GetLastQueriedCount()
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()
-		if current_sort != Globals.SortBy.TagCount and current_sort != Globals.SortBy.DefaultRating and current_sort != Globals.SortBy.Random:
+		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
+		if current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor and current_sort != Globals.SortBy.Random:
 			Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
 	

@@ -1,0 +1,16 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://scenes/rating.tscn" type="PackedScene" id=1]
+[ext_resource path="res://assets/star-half-fade.png" type="Texture" id=2]
+[ext_resource path="res://assets/star.png" type="Texture" id=3]
+[ext_resource path="res://assets/star-fade.png" type="Texture" id=4]
+[ext_resource path="res://assets/star-empty.png" type="Texture" id=5]
+[ext_resource path="res://assets/star-half.png" type="Texture" id=6]
+
+[node name="rating_quality" instance=ExtResource( 1 )]
+icon = ExtResource( 3 )
+icon_half = ExtResource( 6 )
+icon_empty = ExtResource( 5 )
+icon_fade = ExtResource( 4 )
+icon_half_fade = ExtResource( 2 )
+rating_name = "Quality"

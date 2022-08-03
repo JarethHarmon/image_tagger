@@ -94,7 +94,12 @@ public class Database : Node
 			colHashes.EnsureIndex(x => x.imports);
 			colHashes.EnsureIndex(x => x.groups);
 			colHashes.EnsureIndex(x => x.tags);
-			colHashes.EnsureIndex(x => x.ratings["Default"]);
+
+			colHashes.EnsureIndex(x => x.ratings["Quality"]);
+			colHashes.EnsureIndex(x => x.ratings["Appeal"]);
+			colHashes.EnsureIndex(x => x.ratings["Art"]);
+			colHashes.EnsureIndex(x => x.ratings["Sum"]);
+			colHashes.EnsureIndex(x => x.ratings["Average"]);			
 
 			return (int)ErrorCodes.OK;
 		} 
@@ -252,6 +257,15 @@ public class Database : Node
 			if (hashInfo.ratings == null) 
 				hashInfo.ratings =	new Dictionary<string, int>();
 			hashInfo.ratings[ratingName] = ratingValue;
+			int sum = 0, count = 0;
+			foreach (string _name in hashInfo.ratings.Keys) {
+				if (!_name.Equals("Sum") && !_name.Equals("Average")) {
+					sum += hashInfo.ratings[_name];
+					count++;
+				}
+			}
+			hashInfo.ratings["Sum"] = sum;
+			hashInfo.ratings["Average"] = (int)Math.Round((double)sum/count);
 			colHashes.Update(hashInfo);
 		} catch (Exception ex) { GD.Print("Database::AddRating() : ", ex); return; }		
 	}
@@ -412,10 +426,14 @@ public class Database : Node
 			else if (sort == (int)Sort.EDIT_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.lastWriteTime) : query.OrderByDescending(x => x.lastWriteTime);
 			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width*x.height) : query.OrderByDescending(x => x.width*x.height);
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
-			else if (sort == (int)Sort.DEFAULT_RATING) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Default"]) : query.OrderByDescending(x => x.ratings["Default"]);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			else if (sort == (int)Sort.RANDOM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
-			// can pass an int color argument into this function (0-15) to decide which color to sort by 
+			// need a way to handle this that allows custom user ratings
+			else if (sort == (int)Sort.RATING_QUALITY) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Quality"]) : query.OrderByDescending(x => x.ratings["Quality"]);
+			else if (sort == (int)Sort.RATING_APPEAL) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Appeal"]) : query.OrderByDescending(x => x.ratings["Appeal"]);
+			else if (sort == (int)Sort.RATING_ART_STYLE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Art"]) : query.OrderByDescending(x => x.ratings["Art"]);
+			else if (sort == (int)Sort.RATING_SUM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Sum"]) : query.OrderByDescending(x => x.ratings["Sum"]);
+			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 
 			/* only current hope for supporting tags formatted as

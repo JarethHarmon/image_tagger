@@ -53,6 +53,6 @@ signal add_folders
 signal tab_button_pressed(tab_id)
 signal clear_pressed
 
-signal set_rating(rating)
-signal rating_set(rating)
+signal set_rating(rating_name, rating_value)
+signal rating_set(rating_name, rating_value)
 

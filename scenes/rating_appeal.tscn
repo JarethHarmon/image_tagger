@@ -1,0 +1,31 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://scenes/rating.tscn" type="PackedScene" id=1]
+[ext_resource path="res://assets/heart-empty.png" type="Texture" id=2]
+[ext_resource path="res://assets/heart-half-fade.png" type="Texture" id=3]
+[ext_resource path="res://assets/heart-half.png" type="Texture" id=4]
+[ext_resource path="res://assets/heart.png" type="Texture" id=5]
+[ext_resource path="res://assets/heart-fade.png" type="Texture" id=6]
+
+[node name="rating_appeal" instance=ExtResource( 1 )]
+icon = ExtResource( 5 )
+icon_half = ExtResource( 4 )
+icon_empty = ExtResource( 2 )
+icon_fade = ExtResource( 6 )
+icon_half_fade = ExtResource( 3 )
+rating_name = "Appeal"
+
+[node name="icon1" parent="." index="0"]
+texture = ExtResource( 2 )
+
+[node name="icon2" parent="." index="1"]
+texture = ExtResource( 2 )
+
+[node name="icon3" parent="." index="2"]
+texture = ExtResource( 2 )
+
+[node name="icon4" parent="." index="3"]
+texture = ExtResource( 2 )
+
+[node name="icon5" parent="." index="4"]
+texture = ExtResource( 2 )
