@@ -278,17 +278,17 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 			image_history[image_hash] = it
 			image_queue.push_back(image_hash)
 		image_mutex.unlock()
-	
+		# need to call a function that gets a list of ratings instead
+		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
+		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+		
 	if thread_id > 0 and path != "":
 		# if check_stop_thread(thread_id):
 		#	return
 		pass
-	current_image = it
-	# need to call a function that gets a list of ratings instead
-	#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
-	Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
-	Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
-	Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+	current_image = it	
 
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return

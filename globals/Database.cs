@@ -103,7 +103,8 @@ public class Database : Node
 
 			return (int)ErrorCodes.OK;
 		} 
-		catch { 
+		catch (Exception ex) {
+			GD.Print("Database::Create() : ", ex); 
 			return (int)ErrorCodes.ERROR; 
 		}
 	} 
