@@ -60,6 +60,10 @@ func _ready() -> void:
 	# connect to settings_loaded signal here
 	_on_settings_loaded()
 
+	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
+
+func _toggle_preview_section(_visible:bool) -> void: self.visible = _visible
+
 func _rating_set(rating_name:String, rating_value:int) -> void:
 	if not current_image.has_meta("image_hash"): return
 	var image_hash:String = current_image.get_meta("image_hash")

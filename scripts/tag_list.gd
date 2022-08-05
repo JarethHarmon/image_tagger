@@ -23,7 +23,11 @@ func _ready() -> void:
 	delimiter_entry.connect("text_changed", self, "delimiter_changed")
 	Signals.connect("load_image_tags", self, "_load_tags")
 	Signals.connect("all_selected_items", self, "set_selection")
-	
+
+	Signals.connect("toggle_tag_section", self, "_toggle_tag_section")
+
+func _toggle_tag_section(_visible:bool) -> void: self.visible = _visible
+
 func set_selection(selection:Dictionary) -> void:
 	selected_thumbnails = selection
 

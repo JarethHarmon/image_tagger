@@ -10,3 +10,8 @@ func _on_file_button_pressed() -> void:
 func _on_view_button_button_up() -> void:
 	var position:Vector2 = Vector2(view_button.rect_position.x + 20, view_button.rect_position.y + view_button.rect_size.y + 10)
 	Signals.emit_signal("view_button_pressed", position)
+
+func _ready() -> void:
+	Signals.connect("toggle_file_section", self, "_toggle_file_section")
+
+func _toggle_file_section(_visible:bool) -> void: self.visible = _visible

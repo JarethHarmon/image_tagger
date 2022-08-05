@@ -42,6 +42,10 @@ func _ready() -> void:
 	
 	create_threads(Globals.settings.max_import_threads)
 
+	Signals.connect("toggle_tab_section", self, "_toggle_tab_section")
+
+func _toggle_tab_section(_visible:bool) -> void: self.visible = _visible
+
 func _on_all_button_button_up() -> void: 
 	Signals.emit_signal("tab_button_pressed", "All")
 	indicate_selected_button("All")

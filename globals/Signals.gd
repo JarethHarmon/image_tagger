@@ -39,6 +39,13 @@ signal disable_sort_buttons(disabled) # bool
 
 signal show_import_menu
 
+signal toggle_file_section(visible)
+signal toggle_tab_section(visible)
+signal toggle_search_section(visible)
+signal toggle_thumbnail_section(visible)
+signal toggle_preview_section(visible)
+signal toggle_tag_section(visible)
+
 # core_buttons
 signal file_button_pressed(position)
 signal edit_button_pressed(position)
