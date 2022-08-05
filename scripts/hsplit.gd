@@ -1,6 +1,6 @@
 extends HSplitContainer
 
-onready var left:VSplitContainer = $left
+onready var left:VBoxContainer = $left
 onready var right:HSplitContainer = $right
 var old_offset:int = 0
 

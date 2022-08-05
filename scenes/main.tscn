@@ -104,14 +104,12 @@ size_flags_vertical = 3
 split_offset = -200
 script = ExtResource( 8 )
 
-[node name="left" type="VSplitContainer" parent="margin/vbox/hsplit"]
+[node name="left" type="VBoxContainer" parent="margin/vbox/hsplit"]
 margin_right = 751.0
 margin_bottom = 982.0
 rect_clip_content = true
 size_flags_horizontal = 3
 size_flags_vertical = 3
-split_offset = -381
-dragger_visibility = 1
 
 [node name="organization" parent="margin/vbox/hsplit/left" instance=ExtResource( 9 )]
 anchor_right = 0.0
@@ -120,7 +118,7 @@ margin_right = 751.0
 margin_bottom = 106.0
 
 [node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/left"]
-margin_top = 114.0
+margin_top = 110.0
 margin_right = 751.0
 margin_bottom = 982.0
 size_flags_horizontal = 3
@@ -131,14 +129,14 @@ split_offset = -360
 visible = false
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 711.0
+margin_right = 751.0
 margin_bottom = 70.0
 
 [node name="thumbnail_list" parent="margin/vbox/hsplit/left/vsplit" instance=ExtResource( 7 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 751.0
-margin_bottom = 868.0
+margin_bottom = 872.0
 
 [node name="right" type="HSplitContainer" parent="margin/vbox/hsplit"]
 margin_left = 759.0
