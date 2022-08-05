@@ -266,7 +266,7 @@ allow_search = true
 [node name="pmenu_view" type="PopupMenu" parent="popups/context_menu"]
 margin_right = 1820.0
 margin_bottom = 980.0
-items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Sections:", null, 0, false, false, 3, 0, null, "", false, "[1] File Buttons", null, 1, true, false, 4, 0, null, "", false, "[2] Tab Buttons", null, 1, true, false, 5, 0, null, "", false, "[3] Search Buttons", null, 1, true, false, 6, 0, null, "", false, "[4] Thumbnail List", null, 1, true, false, 7, 0, null, "", false, "[5] Preview Section", null, 1, true, false, 8, 0, null, "", false, "[6] Tag List", null, 1, true, false, 9, 0, null, "", false ]
+items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Sections", null, 0, false, false, 3, 0, null, "", false, "", null, 0, false, false, 4, 0, null, "", true, "[1] File Buttons", null, 1, true, false, 5, 0, null, "", false, "[2] Tab Buttons", null, 1, true, false, 6, 0, null, "", false, "[3] Search Buttons", null, 1, true, false, 7, 0, null, "", false, "[4] Thumbnail List", null, 1, true, false, 8, 0, null, "", false, "[5] Preview Section", null, 1, true, false, 9, 0, null, "", false, "[6] Tag List", null, 1, true, false, 10, 0, null, "", false ]
 
 [node name="FileDialog" type="FileDialog" parent="popups"]
 margin_left = 50.0

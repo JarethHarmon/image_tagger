@@ -1,7 +1,7 @@
 extends MarginContainer
 
 enum file_context_menu { ImportImages, }
-enum view_context_menu { FullScreen, ShowThumbnailTooltips, FileButtons=4, TabButtons, 
+enum view_context_menu { FullScreen, ShowThumbnailTooltips, FileButtons=5, TabButtons, 
 						 SearchButtons, ThumbnailList, PreviewSection, TagList }
 
 onready var import_panel:PopupPanel = $ppanel_import
