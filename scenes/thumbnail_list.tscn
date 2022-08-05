@@ -51,37 +51,37 @@ size_flags_horizontal = 3
 script = ExtResource( 4 )
 
 [node name="sort_label" type="Label" parent="margin/vbox/sort_buttons"]
+visible = false
 margin_top = 5.0
 margin_right = 53.0
 margin_bottom = 19.0
 text = "Sort By: "
 
 [node name="sort_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
-margin_left = 57.0
-margin_right = 145.0
+margin_right = 88.0
 margin_bottom = 24.0
 text = "File Hash"
 items = [ "File Hash", null, false, 0, null, "File Path", null, false, 1, null, "File Name", null, false, 2, null, "File Size", null, false, 3, null, "File Upload Time", null, false, 4, null, "File Creation Time", null, false, 5, null, "File Edit Time", null, false, 6, null, "Dimensions", null, false, 7, null, "Tag Count", null, false, 8, null, "Random", null, false, 9, null, "Image Color", null, false, 11, null, "Rating-Quality", null, false, 11, null, "Rating-Appeal", null, false, 12, null, "Rating-Art Style", null, false, 13, null, "Rating-Sum", null, false, 15, null, "Rating-Average", null, false, 15, null ]
 selected = 0
 
 [node name="order_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
-margin_left = 149.0
-margin_right = 244.0
+margin_left = 92.0
+margin_right = 187.0
 margin_bottom = 24.0
 text = "Ascending"
 items = [ "Ascending", null, false, 0, null, "Descending", null, false, 1, null ]
 selected = 0
 
 [node name="space1" type="Control" parent="margin/vbox/sort_buttons"]
-margin_left = 248.0
-margin_right = 280.0
+margin_left = 191.0
+margin_right = 223.0
 margin_bottom = 24.0
 rect_min_size = Vector2( 32, 0 )
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="thumbnail_size" type="HSlider" parent="margin/vbox/sort_buttons"]
-margin_left = 284.0
+margin_left = 227.0
 margin_right = 1704.0
 margin_bottom = 16.0
 size_flags_horizontal = 3
@@ -192,15 +192,6 @@ margin_right = 116.0
 margin_bottom = 24.0
 text = "  First  "
 
-[node name="space1" type="Control" parent="margin/vbox/page_buttons"]
-visible = false
-margin_left = 60.0
-margin_right = 641.0
-margin_bottom = 44.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
 [node name="hbox" type="HBoxContainer" parent="margin/vbox/page_buttons"]
 margin_left = 120.0
 margin_right = 1790.0
@@ -211,37 +202,33 @@ size_flags_horizontal = 3
 custom_constants/separation = 0
 alignment = 1
 
-[node name="page_1" type="Button" parent="margin/vbox/page_buttons/hbox"]
-visible = false
-margin_left = 757.0
-margin_right = 793.0
-margin_bottom = 20.0
-text = "  1  "
+[node name="space1" type="Control" parent="margin/vbox/page_buttons/hbox"]
+margin_right = 373.0
+margin_bottom = 24.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="page_2" type="Button" parent="margin/vbox/page_buttons/hbox"]
-visible = false
-margin_left = 817.0
-margin_right = 853.0
-margin_bottom = 20.0
-text = "  2  "
+[node name="image_count" type="Label" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 373.0
+margin_top = 5.0
+margin_right = 454.0
+margin_bottom = 19.0
+grow_horizontal = 2
+text = "714 / 25,765"
+align = 1
 
-[node name="page_3" type="Button" parent="margin/vbox/page_buttons/hbox"]
-visible = false
-margin_left = 837.0
-margin_right = 873.0
-margin_bottom = 20.0
-text = "  3  "
-
-[node name="page_4" type="Button" parent="margin/vbox/page_buttons/hbox"]
-visible = false
-margin_left = 857.0
-margin_right = 893.0
-margin_bottom = 20.0
-text = "  4  "
+[node name="space2" type="Control" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 454.0
+margin_right = 828.0
+margin_bottom = 24.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="current_page" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 787.0
-margin_right = 861.0
+margin_left = 828.0
+margin_right = 902.0
 margin_bottom = 24.0
 grow_horizontal = 0
 min_value = 1.0
@@ -251,29 +238,24 @@ rounded = true
 align = 1
 
 [node name="total_pages" type="Label" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 861.0
+margin_left = 902.0
 margin_top = 5.0
-margin_right = 882.0
+margin_right = 923.0
 margin_bottom = 19.0
 text = " / 1"
 
-[node name="vbox" type="VBoxContainer" parent="margin/vbox/page_buttons"]
-visible = false
-margin_left = 1848.0
-margin_right = 1848.0
-margin_bottom = 20.0
+[node name="space3" type="Control" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 923.0
+margin_right = 1296.0
+margin_bottom = 24.0
 mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="page_label" type="Label" parent="margin/vbox/page_buttons/vbox"]
-visible = false
-margin_bottom = 14.0
-align = 1
-
-[node name="space2" type="Control" parent="margin/vbox/page_buttons"]
-visible = false
-margin_left = 974.0
-margin_right = 1848.0
-margin_bottom = 44.0
+[node name="space4" type="Control" parent="margin/vbox/page_buttons/hbox"]
+margin_left = 1296.0
+margin_right = 1670.0
+margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

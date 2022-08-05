@@ -4,9 +4,8 @@ onready var prev_button:Button = $prev_page
 onready var next_button:Button = $next_page
 onready var first_button:Button = $first_page
 onready var last_button:Button = $last_page
-onready var page_label:Label = $vbox/page_label
 onready var page_buttons:HBoxContainer = $hbox
-
+onready var image_count_label:Label = $hbox/image_count
 onready var current_page_spinbox:SpinBox = $hbox/current_page
 onready var total_pages_label:Label = $hbox/total_pages
 
@@ -17,6 +16,7 @@ var use_arrows:bool = false
 var last_tab_id:String = ""
 
 func _ready() -> void: 
+	Signals.connect("image_count_changed", self, "_image_count_changed")
 	Signals.connect("max_pages_changed", self, "_max_pages_changed")
 	Signals.connect("change_page", self, "_change_page")
 	change_page(1) # keep for now
@@ -26,7 +26,10 @@ func _ready() -> void:
 		next_button.text = "  >  "
 		last_button.text = "  >>  "
 		first_button.text = "  <<  "
-	
+
+func _image_count_changed(total:int) -> void:
+	image_count_label.text = Globals.humanize(total)
+
 # call with relevant page when refreshing or changing to a different import tab (ie load relevant page even if same one)
 func change_page(page:int) -> void: 
 	if (page < 1): return

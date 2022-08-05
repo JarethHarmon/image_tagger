@@ -151,6 +151,18 @@ func is_apng(path:String) -> bool:
 	if "6163544c" in p.hex_encode(): return true
 	return false
 
+func humanize(number:int) -> String:
+	var num:String = String(number)
+	var result:String = num[len(num)-1]
+	var counter:int = 1
+	for i in range(len(num)-2, -1, -1):
+		if counter == 3: 
+			result = result.insert(0, ",")
+			counter = 0
+		result = result.insert(0, num[i])
+		counter += 1
+	return result
+
 func make_color() -> Color:
 	return Color(clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0), clamp(randf(), 0.25, 1.0))
 

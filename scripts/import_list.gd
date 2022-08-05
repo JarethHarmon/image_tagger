@@ -11,6 +11,10 @@ onready var argument_mutex:Mutex = Mutex.new()
 onready var count_mutex:Mutex = Mutex.new()
 onready var status_mutex:Mutex = Mutex.new()
 
+onready var similarity_stylebox:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 0.85, 0.2, 3)
+onready var similarity_stylebox_selected:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 2.9, 0.2, 3)
+onready var similarity_stylebox_hover:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 1.6, 0.2, 3)
+
 var thread_count:Dictionary = {} 	# { import_id:num_thread_in_use }
 var buttons:Dictionary = {}
 
@@ -57,15 +61,26 @@ func _on_tab_button_pressed(tab_id:String) -> void:
 func indicate_selected_button(tab_id:String) -> void:
 	if last_selected_tab != "": 
 		if buttons.has(last_selected_tab):
-			buttons[last_selected_tab].remove_stylebox_override("normal")
-			buttons[last_selected_tab].remove_stylebox_override("focus")
+			if Database.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
+				buttons[last_selected_tab].add_stylebox_override("normal", similarity_stylebox)
+				buttons[last_selected_tab].add_stylebox_override("focus", similarity_stylebox)
+			else:
+				buttons[last_selected_tab].remove_stylebox_override("normal")
+				buttons[last_selected_tab].remove_stylebox_override("focus")
 			buttons[last_selected_tab].remove_color_override("font_color")
 			buttons[last_selected_tab].remove_color_override("font_color_focus")
 	
-	var color:Color = Color.white
-	var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
-	buttons[tab_id].add_stylebox_override("normal", sbf)
-	buttons[tab_id].add_stylebox_override("focus", sbf)
+	if Database.GetTabType(tab_id) == Globals.Tab.SIMILARITY:
+		buttons[tab_id].add_stylebox_override("normal", similarity_stylebox_selected)
+		var color:Color = Color.white
+		var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
+		buttons[tab_id].add_stylebox_override("focus", sbf)
+		#buttons[tab_id].add_stylebox_override("focus", similarity_stylebox_selected)
+	else:
+		var color:Color = Color.white
+		var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
+		buttons[tab_id].add_stylebox_override("normal", sbf)
+		buttons[tab_id].add_stylebox_override("focus", sbf)
 	buttons[tab_id].add_color_override("font_color", Color.black)
 	buttons[tab_id].add_color_override("font_color_focus", Color.black)
 	last_selected_tab = tab_id
@@ -137,7 +152,6 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	Database.CommitImport(import_id, tab_name)
 
 	var progress_ids:Array = Database.GetProgressIds(import_id)
-	#print("start: ", progress_ids)
 	for progress_id in progress_ids:
 		append_arg([import_id, progress_id])
 
@@ -147,9 +161,14 @@ func create_similarity_tab(tab_id:String, image_hash:String) -> void:
 	if tab_id == "": return
 	if image_hash == "": return
 	var b:Button = Button.new()
-	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
+	b.text = "  " + image_hash.substr(0, 16) + "  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
+	
+	b.add_stylebox_override("normal", similarity_stylebox)
+	b.add_stylebox_override("hover", similarity_stylebox_hover)
+	b.add_stylebox_override("focus", similarity_stylebox)
+
 	button_list.add_child(b)
 	buttons[tab_id] = b
 
@@ -158,9 +177,14 @@ func create_new_similarity_tab(image_hash:String) -> void:
 	var tab_id:String = ImageImporter.CreateTabID()
 	
 	var b:Button = Button.new()
-	b.text = "  Simi: " + image_hash.substr(0, 10) + "  "
+	b.text = "  " + image_hash.substr(0, 16) + "  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
+	
+	b.add_stylebox_override("normal", similarity_stylebox)
+	b.add_stylebox_override("hover", similarity_stylebox_hover)
+	b.add_stylebox_override("focus", similarity_stylebox)
+	
 	button_list.add_child(b)
 	buttons[tab_id] = b
 	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash)

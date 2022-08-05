@@ -158,7 +158,7 @@ func _query_thread(args:Array) -> void:
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()
 		
-		print(tab_id, ": ", Storage.HasPage(lqh))
+		# print(tab_id, ": ", Storage.HasPage(lqh))
 		if Storage.HasPage(lqh):
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
@@ -181,6 +181,7 @@ func _query_thread(args:Array) -> void:
 	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
 	if _is_invalid_query(thread, query): return
 	Signals.emit_signal("max_pages_changed", queried_page_count)
+	Signals.emit_signal("image_count_changed", queried_image_count)
 	
 	create_thumbnail_threads(num_threads)
 	if _is_invalid_query(thread, query): return

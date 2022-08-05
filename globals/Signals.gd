@@ -46,6 +46,8 @@ signal toggle_thumbnail_section(visible)
 signal toggle_preview_section(visible)
 signal toggle_tag_section(visible)
 
+signal image_count_changed(total)
+
 # core_buttons
 signal file_button_pressed(position)
 signal edit_button_pressed(position)
