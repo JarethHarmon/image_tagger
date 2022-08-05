@@ -29,75 +29,65 @@ custom_constants/margin_top = 5
 custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="vbox" type="VBoxContainer" parent="margin"]
+[node name="hbox" type="HBoxContainer" parent="margin"]
 margin_left = 5.0
 margin_top = 5.0
 margin_right = 1915.0
 margin_bottom = 1075.0
+rect_clip_content = true
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/vbox"]
-margin_right = 1910.0
+[node name="vbox1" type="VBoxContainer" parent="margin/hbox"]
+margin_right = 1767.0
+margin_bottom = 1070.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hbox" type="HBoxContainer" parent="margin/hbox/vbox1"]
+margin_right = 1767.0
 margin_bottom = 26.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="vbox" type="VBoxContainer" parent="margin/vbox/hbox"]
+[node name="vbox" type="VBoxContainer" parent="margin/hbox/vbox1/hbox"]
 margin_right = 58.0
 margin_bottom = 26.0
 mouse_filter = 2
 size_flags_vertical = 3
 
-[node name="label" type="Label" parent="margin/vbox/hbox/vbox"]
+[node name="label" type="Label" parent="margin/hbox/vbox1/hbox/vbox"]
 visible = false
 margin_right = 65.0
 margin_bottom = 14.0
 text = "Delimiter:"
 
-[node name="delimiter_entry" type="LineEdit" parent="margin/vbox/hbox/vbox"]
+[node name="delimiter_entry" type="LineEdit" parent="margin/hbox/vbox1/hbox/vbox"]
 margin_right = 58.0
 margin_bottom = 24.0
 grow_horizontal = 0
 text = ","
 align = 1
 
-[node name="tag_entry" type="LineEdit" parent="margin/vbox/hbox"]
+[node name="tag_entry" type="LineEdit" parent="margin/hbox/vbox1/hbox"]
 margin_left = 62.0
-margin_right = 1553.0
+margin_right = 1767.0
 margin_bottom = 26.0
 size_flags_horizontal = 3
 clear_button_enabled = true
 placeholder_text = "Type delimiter-separated tags..."
 
-[node name="remove_tags" type="Button" parent="margin/vbox/hbox"]
-margin_left = 1557.0
-margin_right = 1696.0
-margin_bottom = 26.0
-text = "  Remove Selected  "
-
-[node name="copy_selected" type="Button" parent="margin/vbox/hbox"]
-margin_left = 1700.0
-margin_right = 1818.0
-margin_bottom = 26.0
-text = "  Copy Selected  "
-
-[node name="select_all" type="Button" parent="margin/vbox/hbox"]
-margin_left = 1822.0
-margin_right = 1910.0
-margin_bottom = 26.0
-text = "  Select All  "
-
-[node name="hsep" type="HSeparator" parent="margin/vbox"]
+[node name="hsep" type="HSeparator" parent="margin/hbox/vbox1"]
 margin_top = 30.0
-margin_right = 1910.0
+margin_right = 1767.0
 margin_bottom = 34.0
 mouse_filter = 2
 
-[node name="margin" type="MarginContainer" parent="margin/vbox"]
+[node name="margin" type="MarginContainer" parent="margin/hbox/vbox1"]
 margin_top = 38.0
-margin_right = 1910.0
+margin_right = 1767.0
 margin_bottom = 1070.0
 mouse_filter = 2
 size_flags_horizontal = 3
@@ -107,31 +97,75 @@ custom_constants/margin_top = 5
 custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="scroll" type="ScrollContainer" parent="margin/vbox/margin"]
+[node name="scroll" type="ScrollContainer" parent="margin/hbox/vbox1/margin"]
 margin_left = 5.0
 margin_top = 5.0
-margin_right = 1905.0
+margin_right = 1762.0
 margin_bottom = 1027.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 follow_focus = true
 scroll_horizontal_enabled = false
 
-[node name="bg" type="ColorRect" parent="margin/vbox/margin/scroll"]
-margin_right = 1900.0
+[node name="bg" type="ColorRect" parent="margin/hbox/vbox1/margin/scroll"]
+margin_right = 1757.0
 margin_bottom = 1022.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 color = Color( 0, 0, 0, 0 )
 
-[node name="flow" type="HFlowContainer" parent="margin/vbox/margin/scroll/bg"]
+[node name="flow" type="HFlowContainer" parent="margin/hbox/vbox1/margin/scroll/bg"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[connection signal="button_up" from="margin/vbox/hbox/remove_tags" to="." method="_on_remove_tags_button_up"]
-[connection signal="button_up" from="margin/vbox/hbox/copy_selected" to="." method="_on_copy_selected_button_up"]
-[connection signal="button_up" from="margin/vbox/hbox/select_all" to="." method="_on_select_all_button_up"]
-[connection signal="gui_input" from="margin/vbox/margin/scroll/bg" to="." method="_on_bg_gui_input"]
+[node name="vbox2" type="VBoxContainer" parent="margin/hbox"]
+margin_left = 1771.0
+margin_right = 1910.0
+margin_bottom = 1070.0
+rect_clip_content = true
+mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="select_all" type="Button" parent="margin/hbox/vbox2"]
+margin_right = 139.0
+margin_bottom = 210.0
+size_flags_vertical = 3
+text = "  Select All  "
+
+[node name="copy_selected" type="Button" parent="margin/hbox/vbox2"]
+margin_top = 214.0
+margin_right = 139.0
+margin_bottom = 425.0
+size_flags_vertical = 3
+text = "  Copy Selected  "
+
+[node name="paste_selected" type="Button" parent="margin/hbox/vbox2"]
+margin_top = 429.0
+margin_right = 139.0
+margin_bottom = 640.0
+size_flags_vertical = 3
+text = "  Paste Selected  "
+
+[node name="SPACE" type="Control" parent="margin/hbox/vbox2"]
+margin_top = 644.0
+margin_right = 139.0
+margin_bottom = 855.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="remove_tags" type="Button" parent="margin/hbox/vbox2"]
+margin_top = 859.0
+margin_right = 139.0
+margin_bottom = 1070.0
+size_flags_vertical = 3
+text = "  Remove Selected  "
+
+[connection signal="gui_input" from="margin/hbox/vbox1/margin/scroll/bg" to="." method="_on_bg_gui_input"]
+[connection signal="button_up" from="margin/hbox/vbox2/select_all" to="." method="_on_select_all_button_up"]
+[connection signal="button_up" from="margin/hbox/vbox2/copy_selected" to="." method="_on_copy_selected_button_up"]
+[connection signal="button_up" from="margin/hbox/vbox2/paste_selected" to="." method="_on_paste_selected_button_up"]
+[connection signal="button_up" from="margin/hbox/vbox2/remove_tags" to="." method="_on_remove_tags_button_up"]

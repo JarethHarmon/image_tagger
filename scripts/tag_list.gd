@@ -2,10 +2,10 @@ extends Control
 
 # maybe have an option button with a list of default delimiter options (comma, dot, ::, etc)
 
-onready var tag_flow:HFlowContainer = $margin/vbox/margin/scroll/bg/flow
-onready var tag_entry:LineEdit = $margin/vbox/hbox/tag_entry
-onready var delimiter_entry:LineEdit = $margin/vbox/hbox/vbox/delimiter_entry
-onready var scroll:ScrollContainer = $margin/vbox/margin/scroll
+onready var tag_flow:HFlowContainer = $margin/hbox/vbox1/margin/scroll/bg/flow
+onready var tag_entry:LineEdit = $margin/hbox/vbox1/hbox/tag_entry
+onready var delimiter_entry:LineEdit = $margin/hbox/vbox1/hbox/vbox/delimiter_entry
+onready var scroll:ScrollContainer = $margin/hbox/vbox1/margin/scroll
 
 var current_tags:Dictionary = {}		# tag : [index, button, color]
 var tags_array:Array = []
@@ -192,3 +192,8 @@ func _on_copy_selected_button_up() -> void:
 func _on_select_all_button_up() -> void:
 	for tag in current_tags: 
 		select(tag)
+
+func _on_paste_selected_button_up() -> void:
+	var tags:String = OS.get_clipboard()
+	if tags == "": return
+	tag_entered(tags)
