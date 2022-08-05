@@ -56,5 +56,5 @@ func create_thumbnail_folders() -> void:
 	var thumb_path = Globals.settings.thumbnail_path
 	for hex1 in arr:
 		for hex2 in arr:
-			dir.make_dir_recursive(thumb_path + hex1 + hex2 + "/")
+			dir.make_dir_recursive(thumb_path.plus_file(hex1 + hex2 + "/"))
 	

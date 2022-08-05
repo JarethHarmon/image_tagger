@@ -14,7 +14,14 @@ func _input(event:InputEvent) -> void:
 		deselect = false
 		select_all.text = "  Select All  "
 	
-func _ready() -> void: Signals.connect("settings_loaded", self, "_apply_settings")
+func _ready() -> void: 
+	Signals.connect("settings_loaded", self, "_apply_settings")
+	Signals.connect("disable_sort_buttons", self, "_disable_sort_buttons")
+
+func _disable_sort_buttons(disabled:bool) -> void:
+	sortby_options.disabled = disabled
+	orderby_options.disabled = disabled
+	
 func _apply_settings() -> void: 
 	sortby_options.selected = Globals.settings.current_sort
 	orderby_options.selected = Globals.settings.current_order

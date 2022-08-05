@@ -35,6 +35,8 @@ signal new_import_canceled
 
 signal create_similarity_tab(image_hash)
 
+signal disable_sort_buttons(disabled) # bool
+
 signal show_import_menu
 
 # core_buttons

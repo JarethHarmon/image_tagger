@@ -107,6 +107,10 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 	yield(get_tree(), "idle_frame") 
 	var thread:Thread = Thread.new()
 	
+	# disable sort buttons for similarity tabs
+	if Globals.current_tab_type == Globals.Tab.SIMILARITY: Signals.emit_signal("disable_sort_buttons", true)
+	else: Signals.emit_signal("disable_sort_buttons", false)
+	
 	thread.call_deferred("start", self, "_query_thread", [thread, query])
 	#thread.start(self, "_query_thread", [thread, query])
 	first_time = true
@@ -130,9 +134,11 @@ func _query_thread(args:Array) -> void:
 	
   # set temp variables	
 	var image_hashes:Array = []
+	var tab_type:int = Globals.current_tab_type
 	var images_per_page:int = Globals.settings.images_per_page
 	var current_sort:int = Globals.settings.current_sort
-	var current_order:int = Globals.settings.current_order
+   # order by descending if Similarity Tab
+	var current_order:int = Globals.settings.current_order if tab_type < Globals.Tab.SIMILARITY else Globals.OrderBy.Descending
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none]
 	var num_threads:int = Globals.settings.load_threads
 	
@@ -142,15 +148,17 @@ func _query_thread(args:Array) -> void:
 	last_query_settings = temp_query_settings
 	
   # query the database
-	var import_id:String = ""
 	if tags_all.empty() and tags_any.empty() and tags_none.empty():
+		var import_id:String = ""
 		var temp =  Database.GetImportId(tab_id)
 		if temp == null or temp == "": temp = "All"
 		import_id = temp
-		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
 		
+		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()
+		
+		print(tab_id, ": ", Storage.HasPage(lqh))
 		if Storage.HasPage(lqh):
 			image_hashes = Storage.GetPage(lqh)
 			Storage.UpdatePageQueuePosition(lqh)
@@ -163,7 +171,8 @@ func _query_thread(args:Array) -> void:
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()
 		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
-		if current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor and current_sort != Globals.SortBy.Random:
+		# similarity tabs do not support sort currently, so they do not need this check
+		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
 			Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
 	

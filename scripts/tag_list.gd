@@ -108,7 +108,6 @@ func clear_tag_list() -> void:
 var selected_tags:Dictionary = {}
 var last_clicked_index:int = -1
 
-# update current_tags to include index,button.color ; use it instead of selected tags for that information (do not pass it to these functions
 func tag_clicked(tag:String) -> void:
 	var button:Button = current_tags[tag].button
 	var index:int = button.get_index()
@@ -163,8 +162,6 @@ func deselect_all() -> void:
 			current_tags[tag].button.remove_color_override("font_color")
 	selected_tags.clear()
 
-# need to keep a selected data structure and allow multi select
-# need to override their stylebox to indicate selection (see tabs in import_list for reference)
 func _on_remove_tags_button_up() -> void:
 	var tags:Array = selected_tags.keys()
 	for tag in tags:
@@ -176,7 +173,6 @@ func _on_remove_tags_button_up() -> void:
 	for idx in selected_thumbnails: 
 		hashes.push_back(selected_thumbnails[idx])
 	Database.BulkRemoveTags(hashes, tags)
-	# remove from database & dictionary
 
 func _on_bg_gui_input(event:InputEvent) -> void:
 	if event is InputEventMouseButton:
