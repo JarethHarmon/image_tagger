@@ -381,16 +381,29 @@ public class Database : Node
 			// image group
 			// tag
 			else if (tabType == (int)Tab.SIMILARITY) {
-				//string importId = GetImportId(tabId);
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
-				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, order, (int)Similarity.AVERAGE); 
-				if (hashInfos == null) return new string[0];
-				foreach (HashInfo hashInfo in hashInfos) {
-					results.Add(hashInfo.imageHash);
-					dictHashes[hashInfo.imageHash] = hashInfo;
-				}
+				/*if (tagsAll.Length > 0 || tagsAny.Length > 0 || tagsNone.Length > 0) {
+					var hashInfos = _QueryImport("All", 0, Int32.MaxValue, tagsAll, tagsAny, tagsNone, (int)Sort.SHA256, (int)Order.DESCENDING, countResults);
+					var list1 = new List<string>();
+					foreach (HashInfo hashInfo in hashInfos)
+						list1.Add(hashInfo.imageHash);
+					var list2 = _QueryBySimilarityAndFilters(list1, temp.colorHash, temp.differenceHash, offset, count, (int)Similarity.AVERAGE);
+					foreach (HashInfo hashInfo in list2) {
+						results.Add(hashInfo.imageHash);
+						dictHashes[hashInfo.imageHash] = hashInfo;
+					}
+				}*/
+				//else {
+					//var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, order, (int)Similarity.AVERAGE); 
+					var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, (int)Similarity.AVERAGE); 
+					if (hashInfos == null) return new string[0];
+					foreach (HashInfo hashInfo in hashInfos) {
+						results.Add(hashInfo.imageHash);
+						dictHashes[hashInfo.imageHash] = hashInfo;
+					}
+				//}
 			}
 			return results.ToArray();
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
@@ -450,21 +463,38 @@ public class Database : Node
 		}
 	}
 
+	private int _GetQueryCount(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone)
+	{
+		try {
+			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0)
+				_lastQueriedCount = GetSuccessOrDuplicateCount(importId);
+			else {
+				var query = colHashes.Query();
+				if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
+				if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
+				if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
+				if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
+				_lastQueriedCount = query.Count();
+			}	
+			return _lastQueriedCount;
+		}
+		catch (Exception ex) {
+			GD.Print("Database::_GetQueryCount() : ", ex);
+			return 0;
+		}
+	}
+
 	// this method is much slower than query method above, use only for similarity (would like to find another way)
 	// this method will not filter out tags at the current time, import tabs/all do work though
-	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, int order=(int)Order.DESCENDING, int similarityMode=(int)Similarity.AVERAGE)
+	private List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong diffHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
-		/*
-			var test = colHashes.Find(Query.All(), offset, 10).OrderBy(x => DifferenceSimilarity(x.differenceHash, (long)0));
-			var llist = test.ToList();
-			foreach (HashInfo hi in llist) GD.Print(hi.imageHash);
-		*/
-		_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
-		if (order == (int)Order.DESCENDING)
-			return colHashes.FindAll()
-			//return colHashes.Find(Query.All())
-			//return colHashes.Find(Query.All(), offset, count)
+		try {
+			int total = _GetQueryCount(importId, tagsAll, tagsAny, tagsNone);
+			return colHashes.Find(Query.All())
 				.Where(x => importId == "All" || x.imports.Contains(importId))
+				.Where(x => (tagsAll.Length == 0) || x.tags != null && tagsAll.All(x.tags.Contains))
+				.Where(x => (tagsAny.Length == 0) || x.tags != null && tagsAny.Any(x.tags.Contains))
+				.Where(x => (tagsNone.Length == 0) || x.tags != null && !tagsNone.All(x.tags.Contains))
 				.OrderByDescending(x => 
 					(similarityMode == (int)Similarity.AVERAGE) ? 
 						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.differenceHash, diffHash))/2.0 : 
@@ -474,28 +504,35 @@ public class Database : Node
 				.Skip(offset)
 				.Take(count)
 				.ToList();
-		else
-			return colHashes.FindAll()
-			//return colHashes.Find(Query.All())
-			//return colHashes.Find(Query.All(), offset, count)
-				.Where(x => importId == "All" || x.imports.Contains(importId))
-				.OrderBy(x => 
-					(similarityMode == (int)Similarity.AVERAGE) ? 
-						(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.differenceHash, diffHash))/2.0 : 
-						(similarityMode == (int)Similarity.DIFFERENCE) ?
-							DifferenceSimilarity(x.differenceHash, diffHash) :
-							ColorSimilarity(x.colorHash, colorHash))
-				.Skip(offset)
-				.Take(count)
-				.ToList();
+		}
+		catch (Exception ex) {
+			GD.Print("Database::_QueryBySimilarity() : ", ex);
+			return null;
+		}
 	}
 	
+	// need to rewrite; I think the concept for this one will instead be:
+	//		0. count the results of the query (do not return list) : _QueryImport("All", 0, Int32.MaxValue, tagsAll, tagsAny, tagsNone, (int)Sort.SHA256, (int)Order.DESCENDING, countResults);
+	//		1. if count < 5k or so, get the list of hashes from the query : _QueryImport("All", 0, Int32.MaxValue, tagsAll, tagsAny, tagsNone, (int)Sort.SHA256, (int)Order.DESCENDING, countResults);
+	//		2. iterate and sort the list myself (by similarity), return the relevant section for offset and count and add it to dictHashes
+	private List<HashInfo> _QueryBySimilarityAndFilters(List<string> imageHashes, float[] colorHash, ulong diffHash, int offset, int count, int similarityMode=(int)Similarity.AVERAGE)
+	{
+		var hashes = imageHashes.Select(x => new BsonValue(x)).ToList();
+		return colHashes.Find(Query.In("_Id", hashes))
+			.OrderByDescending(x => 
+				(similarityMode == (int)Similarity.AVERAGE) ? 
+					(ColorSimilarity(x.colorHash, colorHash)+DifferenceSimilarity(x.differenceHash, diffHash))/2.0 : 
+					(similarityMode == (int)Similarity.DIFFERENCE) ?
+						DifferenceSimilarity(x.differenceHash, diffHash) :
+						ColorSimilarity(x.colorHash, colorHash))
+			.Skip(offset)
+			.Take(count)
+			.ToList();
+	}
+
 	public void BulkAddTags(string[] imageHashes, string[] tags)
 	{
 		try {
-			// this would be an OR query, which is difficult without predicate builder
-			//var query = colHashes.Query()
-			//query = query.Where() // imageHashes.Any(x => x.imageHash) idek
 			var list = new List<HashInfo>();
 			foreach (string imageHash in imageHashes) {
 				var tmp = colHashes.FindById(imageHash);

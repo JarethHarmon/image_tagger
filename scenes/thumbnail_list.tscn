@@ -133,6 +133,7 @@ max_columns = 200
 same_column_width = true
 fixed_column_width = 240
 icon_mode = 0
+icon_scale = 0.8
 fixed_icon_size = Vector2( 240, 240 )
 script = ExtResource( 3 )
 
@@ -203,32 +204,31 @@ custom_constants/separation = 0
 alignment = 1
 
 [node name="space1" type="Control" parent="margin/vbox/page_buttons/hbox"]
-margin_right = 373.0
+margin_right = 393.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="image_count" type="Label" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 373.0
+margin_left = 393.0
 margin_top = 5.0
-margin_right = 454.0
+margin_right = 393.0
 margin_bottom = 19.0
 grow_horizontal = 2
-text = "714 / 25,765"
 align = 1
 
 [node name="space2" type="Control" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 454.0
-margin_right = 828.0
+margin_left = 393.0
+margin_right = 787.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="current_page" type="SpinBox" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 828.0
-margin_right = 902.0
+margin_left = 787.0
+margin_right = 861.0
 margin_bottom = 24.0
 grow_horizontal = 0
 min_value = 1.0
@@ -238,22 +238,22 @@ rounded = true
 align = 1
 
 [node name="total_pages" type="Label" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 902.0
+margin_left = 861.0
 margin_top = 5.0
-margin_right = 923.0
+margin_right = 882.0
 margin_bottom = 19.0
 text = " / 1"
 
 [node name="space3" type="Control" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 923.0
-margin_right = 1296.0
+margin_left = 882.0
+margin_right = 1276.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="space4" type="Control" parent="margin/vbox/page_buttons/hbox"]
-margin_left = 1296.0
+margin_left = 1276.0
 margin_right = 1670.0
 margin_bottom = 24.0
 mouse_filter = 2

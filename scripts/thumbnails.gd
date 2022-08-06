@@ -522,7 +522,7 @@ func scroll(down:bool=true) -> void:
 
 func _scrolling(value:float=0.0) -> void:
 	tab_history[Globals.current_tab_id].scroll = value / self.get_v_scroll().max_value
-	
+	 
 func color_selection(index:int, selected:bool) -> void:
 	if self.get_item_count()-1 < index: return
 	if selected:
@@ -534,7 +534,8 @@ func color_selection(index:int, selected:bool) -> void:
 func get_num_columns() -> int:
 	var fixed_x:int = int(self.fixed_icon_size.x)
 	var hsep:int = 3 # copy-paste from the last theme override affecting the itemlist (if changeable in your program then set it with that)
-	var sep_sides:int = int(floor(float(hsep)/2)) # sides are half as large as in-between items, rounded down
+	#var hsep:int = self.get_constant("hseparation")
+	var sep_sides:int = int(floor(float(hsep)/2)) # sides are half as large as in-between items, rounded down (this might actually be a constant 1)
 		# items = 3
 		# hsep = 1: total_sep = 1/2 + 1 + 1 + 1/2	 = 2
 		# hsep = 2: total_sep = 1 + 2 + 2 + 1		 = 6
