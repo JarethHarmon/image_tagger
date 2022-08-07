@@ -108,8 +108,8 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], n
 	var thread:Thread = Thread.new()
 	
 	# disable sort buttons for similarity tabs
-	if Globals.current_tab_type == Globals.Tab.SIMILARITY: Signals.emit_signal("disable_sort_buttons", true)
-	else: Signals.emit_signal("disable_sort_buttons", false)
+	if Globals.current_tab_type == Globals.Tab.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
+	else: Signals.emit_signal("switch_sort_buttons", false)
 	
 	thread.call_deferred("start", self, "_query_thread", [thread, query])
 	#thread.start(self, "_query_thread", [thread, query])
@@ -141,6 +141,7 @@ func _query_thread(args:Array) -> void:
 	var current_order:int = Globals.settings.current_order if tab_type < Globals.Tab.SIMILARITY else Globals.OrderBy.Descending
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none]
 	var num_threads:int = Globals.settings.load_threads
+	var similarity:int = Globals.current_similarity
 	
   # calculate the offset and whether it should count the query
 	database_offset = (curr_page_number-1) * images_per_page
@@ -166,7 +167,7 @@ func _query_thread(args:Array) -> void:
 
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
-		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results)
+		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, similarity)
 		queried_image_count = Database.GetLastQueriedCount()
 		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 		var lqh:int = lqc.hash()

@@ -16,11 +16,13 @@ enum SortBy { FileHash, FilePath, FileName, FileSize, FileUploadUtc, FileCreatio
 enum OrderBy { Ascending=0, Descending=1 }
 enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
 enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
+enum Similarity { AVERAGE, COLOR, DIFFERENCE }
 
 var current_importing_ids:Dictionary = {}
 var current_importing_id:String = "" 	# stores import_id of the in-progress import (if there is one) 
 var current_tab_type:int = Tab.IMPORT_GROUP
 var current_tab_id:String = "All"
+var current_similarity:int = Similarity.AVERAGE
 
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports

@@ -2,6 +2,7 @@ extends HFlowContainer
 
 onready var sortby_options:OptionButton = $sort_by
 onready var orderby_options:OptionButton = $order_by
+onready var similarity:OptionButton = $similarity
 onready var select_all:Button = $select_all
 
 var deselect:bool = false
@@ -16,11 +17,12 @@ func _input(event:InputEvent) -> void:
 	
 func _ready() -> void: 
 	Signals.connect("settings_loaded", self, "_apply_settings")
-	Signals.connect("disable_sort_buttons", self, "_disable_sort_buttons")
+	Signals.connect("switch_sort_buttons", self, "_switch_sort_buttons")
 
-func _disable_sort_buttons(disabled:bool) -> void:
-	sortby_options.disabled = disabled
-	orderby_options.disabled = disabled
+func _switch_sort_buttons(swap:bool) -> void:
+	sortby_options.visible = not swap
+	orderby_options.visible = not swap
+	similarity.visible = swap
 	
 func _apply_settings() -> void: 
 	sortby_options.selected = Globals.settings.current_sort
@@ -37,3 +39,7 @@ func _on_order_by_item_selected(index:int) -> void:
 func _on_select_all_button_up() -> void:
 	if deselect: Signals.emit_signal("deselect_all_pressed")
 	else: Signals.emit_signal("select_all_pressed")
+
+func _on_similarity_item_selected(index:int) -> void:
+	Globals.current_similarity = index
+	Signals.emit_signal("similarity_changed")

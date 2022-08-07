@@ -9,8 +9,10 @@ signal page_changed(current_page)
 signal max_pages_changed(count)
 signal search_pressed(tags_all, tags_any, tags_none, new_query)
 signal image_import_finished(tab_id)
+
 signal sort_changed
 signal order_changed
+signal similarity_changed
 
 signal load_full_image(image_hash, path)
 signal load_image_tags(image_hash, selected_items)
@@ -35,7 +37,7 @@ signal new_import_canceled
 
 signal create_similarity_tab(image_hash)
 
-signal disable_sort_buttons(disabled) # bool
+signal switch_sort_buttons(swap) # bool
 
 signal show_import_menu
 

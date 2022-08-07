@@ -72,6 +72,15 @@ text = "Ascending"
 items = [ "Ascending", null, false, 0, null, "Descending", null, false, 1, null ]
 selected = 0
 
+[node name="similarity" type="OptionButton" parent="margin/vbox/sort_buttons"]
+visible = false
+margin_left = 191.0
+margin_right = 271.0
+margin_bottom = 24.0
+text = "Average"
+items = [ "Average", null, false, 0, null, "Color", null, false, 1, null, "Difference", null, false, 2, null ]
+selected = 0
+
 [node name="space1" type="Control" parent="margin/vbox/sort_buttons"]
 margin_left = 191.0
 margin_right = 223.0
@@ -274,6 +283,7 @@ text = "  Next  "
 
 [connection signal="item_selected" from="margin/vbox/sort_buttons/sort_by" to="margin/vbox/sort_buttons" method="_on_sort_by_item_selected"]
 [connection signal="item_selected" from="margin/vbox/sort_buttons/order_by" to="margin/vbox/sort_buttons" method="_on_order_by_item_selected"]
+[connection signal="item_selected" from="margin/vbox/sort_buttons/similarity" to="margin/vbox/sort_buttons" method="_on_similarity_item_selected"]
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size" to="margin/vbox/thumbnails" method="_on_thumbnail_size_value_changed"]
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size_entry" to="margin/vbox/thumbnails" method="_on_thumbnail_size_entry_value_changed"]
 [connection signal="button_up" from="margin/vbox/sort_buttons/select_all" to="margin/vbox/sort_buttons" method="_on_select_all_button_up"]

@@ -363,7 +363,7 @@ public class Database : Node
 		} catch { return ""; }
 	}
 
-	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
+	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
 		try {			
 			dictHashes.Clear();
@@ -385,7 +385,7 @@ public class Database : Node
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
 				
-				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, (int)Similarity.AVERAGE); 
+				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
 				if (hashInfos == null) return new string[0];
 
 				foreach (HashInfo hashInfo in hashInfos) {
@@ -461,10 +461,15 @@ public class Database : Node
 
 	public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
-		// only calculates Average Similarity right now, easy to add others; will need to adjust _QueryFilteredSimilarity accordingly though (only return relevant pieces)
-		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone);
-		foreach (SimilarityQueryResult result in result1) 
-			result.similarity = (ColorSimilarity(result.colorHash, colorHash) + (float)DifferenceSimilarity(result.differenceHash, differenceHash)) / 2f;
+		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
+		foreach (SimilarityQueryResult result in result1) {
+			if (similarityMode == (int)Similarity.AVERAGE)
+				result.similarity = (ColorSimilarity(result.colorHash, colorHash) + (float)DifferenceSimilarity(result.differenceHash, differenceHash)) / 2f;
+			else if (similarityMode == (int)Similarity.COLOR)
+				result.similarity = ColorSimilarity(result.colorHash, colorHash);
+			else
+				result.similarity = (float)DifferenceSimilarity(result.differenceHash, differenceHash);
+		}
 		
 		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
 		result1 = null;
@@ -477,8 +482,7 @@ public class Database : Node
 		return result3.ToList();
 	}
 
-	//private ILiteQueryableResult<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone)
-	private List<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone)
+	private List<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode)
 	{
 		var query = colHashes.Query();
 
@@ -487,12 +491,22 @@ public class Database : Node
 		if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 
-		return query.Select(x => new SimilarityQueryResult { 
-			imageHash = x.imageHash, 
-			colorHash = x.colorHash,
-			differenceHash = x.differenceHash,
-			similarity = 0f,
-		}).ToList(); 
+		if (similarityMode == (int)Similarity.AVERAGE)
+			return query.Select(x => new SimilarityQueryResult { 
+				imageHash = x.imageHash, 
+				colorHash = x.colorHash,
+				differenceHash = x.differenceHash,
+			}).ToList();
+		else if (similarityMode == (int)Similarity.COLOR)
+			return query.Select(x => new SimilarityQueryResult { 
+				imageHash = x.imageHash, 
+				colorHash = x.colorHash,
+			}).ToList();
+		else
+			return query.Select(x => new SimilarityQueryResult { 
+				imageHash = x.imageHash, 
+				differenceHash = x.differenceHash,
+			}).ToList();
 	}
 
 	public void BulkAddTags(string[] imageHashes, string[] tags)
