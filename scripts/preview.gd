@@ -43,6 +43,7 @@ var rating_queue:Array = []
 var use_buffering_icon:bool = true
 
 var use_animation_fps_override:bool = false
+var animation_mode:bool = false
 var animation_fps_override:int = 0
 var animation_total_frames:int = 0
 var animation_fps:int = 1
@@ -237,6 +238,7 @@ func _thread(args:Array) -> void:
 	if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 		call_deferred("_done", thread_id, path)
 		return
+	animation_mode = false
 	if actual_format == Globals.ImageType.JPG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
@@ -268,8 +270,10 @@ func _thread(args:Array) -> void:
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
+		animation_mode = true
 		ImageImporter.LoadAPng(path)
 	elif actual_format == Globals.ImageType.GIF: 
+		animation_mode = true
 		ImageImporter.LoadGif(path)
 	elif actual_format == Globals.ImageType.OTHER:
 		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
@@ -296,9 +300,12 @@ func _stop(thread_id:int) -> void:
 
 func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image_hash:String="") -> void:
 	if im == null:
-		var tex:Texture = preview.get_texture()
-		if tex == null: return
-		im = tex.get_data()
+		if animation_mode:
+			im = animation_images[animation_index]
+		else:
+			var tex:Texture = preview.get_texture()
+			if tex == null: return
+			im = tex.get_data()
 	
 	var it:ImageTexture = ImageTexture.new()
 	it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
@@ -332,7 +339,8 @@ func resize_current_image(path:String="") -> void:
 	if path != "" and path != current_path: pass#return
 	
 	preview.set_texture(null)
-	current_image.set_size_override(calc_size(current_image))
+	animation_size = calc_size(current_image)
+	current_image.set_size_override(animation_size)
 	yield(get_tree(), "idle_frame")
 	preview.set_texture(current_image)
 	buffering.hide()
