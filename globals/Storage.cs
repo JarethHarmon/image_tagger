@@ -6,11 +6,12 @@ namespace Data
 {
 	public enum ErrorCodes { OK, ERROR }
 	public enum ImportCode { SUCCESS, DUPLICATE, IGNORED, FAILED }
-	public enum ImageType { JPG, PNG, APNG, OTHER=7, ERROR=-1 }  
+	public enum ImageType { JPG, PNG, APNG, GIF, OTHER=7, ERROR=-1 }  
 	public enum Sort { SHA256, PATH, NAME, SIZE, UPLOAD_TIME, CREATION_TIME, EDIT_TIME, DIMENSIONS, TAG_COUNT, RANDOM, IMAGE_COLOR, RATING_QUALITY, RATING_APPEAL, RATING_ART_STYLE, RATING_SUM, RATING_AVERAGE }
 	public enum Order { ASCENDING, DESCENDING }
 	public enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
 	public enum Similarity { AVERAGE, COLOR, DIFFERENCE }
+	public enum AnimationStatus { PLAYING, LOADING, STOPPING }
 
 	public class HashInfo 
 	{

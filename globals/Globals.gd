@@ -14,7 +14,7 @@ extends Node
 
 enum SortBy { FileHash, FilePath, FileName, FileSize, FileUploadUtc, FileCreationUtc, FileEditTime, Dimensions, TagCount, Random, ImageColor, RatingQuality, RatingAppeal, RatingArtStyle, RatingSum, RatingAverage }
 enum OrderBy { Ascending=0, Descending=1 }
-enum ImageType { JPG=0, PNG, APNG, OTHER=7, FAIL=-1}
+enum ImageType { JPG=0, PNG, APNG, GIF, OTHER=7, FAIL=-1}
 enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
 enum Similarity { AVERAGE, COLOR, DIFFERENCE }
 

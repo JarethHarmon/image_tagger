@@ -11,7 +11,7 @@ using Alphaleonis.Win32.Filesystem;
 
 public class ImageScanner : Node
 {
-	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG"};
+	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG", ".APNG", ".GIF", ".BMP", ".WEBP"};
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
 	private string lastImportId = "";

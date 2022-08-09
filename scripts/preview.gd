@@ -22,6 +22,7 @@ onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
 onready var buffering:HBoxContainer = $margin/hbox
 
 enum status { INACTIVE = 0, ACTIVE, PAUSED, CANCELED }
+enum a_status { PLAYING, LOADING, STOPPING }
 
 var current_image:Texture
 var current_path:String
@@ -30,15 +31,27 @@ onready var manager_thread:Thread = Thread.new()
 onready var image_mutex:Mutex = Mutex.new()
 onready var rating_thread:Thread = Thread.new()
 onready var rating_queue_mutex:Mutex = Mutex.new()
+onready var animation_mutex:Mutex = Mutex.new()
 
 var max_threads:int = 3
 var active_threads:int = 0
-var stop_threads:bool = false
+var _stop_threads:bool = false
 var args_queue:Array = []
 var thread_pool:Array = []
 var thread_status:Array = []
 var rating_queue:Array = []
 var use_buffering_icon:bool = true
+
+var use_animation_fps_override:bool = false
+var animation_fps_override:int = 0
+var animation_total_frames:int = 0
+var animation_fps:int = 1
+var animation_index:int = 0
+var animation_min_delay:float = 0.0
+var animation_size:Vector2 = Vector2.ZERO
+var animation_delays:Array = []
+var animation_images:Array = []
+var animation_status:Dictionary = {} # playing, loading, stopping (if stop, call function that removes it from dict after quitting load in c#)
 
 var image_history:Dictionary = {}		# image_hash:ImageTexture :: stores last N loaded full images
 var image_queue:Array = []				# fifo queue of image_hash, determines contents
@@ -53,7 +66,9 @@ func _ready() -> void:
 	Signals.connect("resize_preview_image", self, "resize_current_image")
 	Signals.connect("load_full_image", self, "_load_full_image")
 	Signals.connect("rating_set", self, "_rating_set")
-	
+	Signals.connect("set_animation_info", self, "set_frames")
+	Signals.connect("add_animation_texture", self, "add_animation_texture")
+
 	create_threads(max_threads)
 	rating_thread.start(self, "_rating_thread")
 	
@@ -83,7 +98,7 @@ func get_rating():
 	return result
 
 func _rating_thread() -> void:
-	while not stop_threads:
+	while not _stop_threads:
 		var args = get_rating()
 		if args != null:
 			var image_hash:String = args[0]
@@ -113,12 +128,12 @@ func clear_image_preview() -> void:
 	current_image = null
 
 func stop_threads() -> void:
-	stop_threads = true
+	_stop_threads = true
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 
 func create_threads(num_threads:int) -> void:
-	stop_threads = true
+	_stop_threads = true
 	for t in thread_pool.size(): 
 		if thread_pool[t].is_active() or thread_pool[t].is_alive():
 			thread_pool[t].wait_to_finish()
@@ -128,10 +143,11 @@ func create_threads(num_threads:int) -> void:
 	for t in num_threads:
 		thread_pool.append(Thread.new())
 		thread_status.append(status.INACTIVE)
-	stop_threads = false
+		_stop_threads = false
 
 func _load_full_image(image_hash:String, path:String) -> void:	
 	image_mutex.lock()
+	current_path = path
 
 	if image_history.has(image_hash): 
 		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
@@ -152,6 +168,9 @@ func _load_full_image(image_hash:String, path:String) -> void:
 	for i in thread_status.size():
 		if thread_status[i] == status.ACTIVE:
 			thread_status[i] = status.CANCELED
+	for path in animation_status:
+		animation_status[path] = a_status.STOPPING
+		ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
 	image_mutex.unlock()
 	
 	if use_buffering_icon: 
@@ -177,22 +196,24 @@ func start_manager() -> void:
 	if not manager_thread.is_active(): 
 		manager_thread.start(self, "_manager_thread")
 
-func start_one(current_hash:String, current_path:String, thread_id:int) -> void:
+func start_one(current_hash:String, _current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	thread_pool[thread_id].start(self, "_thread", [current_hash, current_path, thread_id])
+	animation_status[_current_path] = a_status.LOADING
+	ImageImporter.AddOrUpdateAnimationStatus(_current_path, a_status.LOADING)
+	thread_pool[thread_id].start(self, "_thread", [current_hash, _current_path, thread_id])
 	active_threads += 1
 
 func _manager_thread() -> void:
 	var args:Array = _get_args()
 	var current_hash:String = args[0]
-	var current_path:String = args[1]
+	var _current_path:String = args[1]
 	var path_used:bool = false
-	while not stop_threads:
-		if current_path == "": break
+	while not _stop_threads:
+		if _current_path == "": break
 		for thread_id in thread_pool.size():
-			if current_path == "": break
+			if _current_path == "": break
 			if thread_status[thread_id] == status.INACTIVE:
-				start_one(current_hash, current_path, thread_id)
+				start_one(current_hash, _current_path, thread_id)
 				path_used = true
 				break
 		if path_used: break
@@ -203,52 +224,64 @@ func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 
-enum formats { FAIL=-1, JPG=0, PNG, APNG, OTHER=7}
-
 # not consistent at calling FinishImport (I think)
 func _thread(args:Array) -> void:
 	var image_hash:String = args[0]
 	var path:String = args[1]
 	var thread_id:int = args[2]
 
-	if stop_threads or thread_status[thread_id] == status.CANCELED:
+	if _stop_threads or thread_status[thread_id] == status.CANCELED:
 		call_deferred("_done", thread_id, path)
 		return
 	var actual_format:int = ImageImporter.GetActualFormat(path)
-	if stop_threads or thread_status[thread_id] == status.CANCELED: 
+	if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 		call_deferred("_done", thread_id, path)
 		return
-	if actual_format == formats.JPG:
+	if actual_format == Globals.ImageType.JPG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if stop_threads or thread_status[thread_id] == status.CANCELED: 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 		if e != OK: print_debug(e, " :: ", path)
-		if stop_threads or thread_status[thread_id] == status.CANCELED: 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		create_current_image(thread_id, i, path, image_hash)
-	elif actual_format == formats.PNG:
+	elif actual_format == Globals.ImageType.PNG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if stop_threads or thread_status[thread_id] == status.CANCELED: 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: print_debug(e, " :: ", path)
-		if stop_threads or thread_status[thread_id] == status.CANCELED: 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
 		create_current_image(thread_id, i, path, image_hash)
+	elif actual_format == Globals.ImageType.APNG: 
+		ImageImporter.LoadAPng(path)
+	elif actual_format == Globals.ImageType.GIF: 
+		ImageImporter.LoadGif(path)
+	elif actual_format == Globals.ImageType.OTHER:
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return 
+		var i = ImageImporter.LoadUnsupportedImage(path)
+		if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return
+		create_current_image(thread_id, i, path, image_hash)	
 	else: pass
+
 	call_deferred("_done", thread_id, path)
 
 func _done(thread_id:int, path:String) -> void:
@@ -382,3 +415,63 @@ func _on_fullscreen_pressed(escape:bool=false) -> void:
 		fullscreen_parent.add_child(self)
 		darker_background.show()
 		fullscreen = true
+
+# need to add spinbox for fps override (and connect the signals for value changed, and the signal for toggle button
+
+# consider moving all "new" code to this function since it is only called at the start anyways
+func set_frames(total_frames:int, fps:int=0) -> void:
+	if fps > 0:
+		animation_fps = fps
+		if use_animation_fps_override: animation_min_delay = 1.0 / max(1, animation_fps_override)
+		else: animation_min_delay = 1.0 / max(1, fps)
+	animation_total_frames = total_frames
+	# set max frames label text
+
+func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, new_image:bool=false) -> void:
+	if path == current_path:
+		animation_mutex.lock()
+		if new_image:
+			animation_delays.clear()
+			animation_images.clear()
+		animation_images.append(texture)
+		if delay > 0.0: animation_delays.append(delay)
+		if new_image:
+			animation_mutex.unlock()
+			update_animation(path, new_image)
+		else: animation_mutex.unlock()
+	else: 
+		if animation_status.has(path): 
+			animation_status[path] = a_status.STOPPING
+			ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
+
+func update_animation(path:String, new_image:bool=false) -> void:
+	if not animation_status.has(path): return
+	if animation_status[path] == a_status.STOPPING: return
+	animation_mutex.lock()
+	# set frame counter label text
+	if new_image:
+		animation_index = 0
+		animation_size = calc_size(animation_images[animation_index])
+		animation_images[animation_index].set_size_override(animation_size)
+		current_image = animation_images[animation_index]
+		preview.set_texture(animation_images[animation_index])
+		animation_index = 1
+	else:
+		if animation_index >= animation_total_frames: animation_index = 0
+		if animation_images.size() > animation_index:
+			animation_images[animation_index].set_size_override(animation_size)
+			preview.set_texture(animation_images[animation_index])
+			animation_index += 1
+	animation_mutex.unlock()
+	get_tree().create_timer(animation_min_delay).connect("timeout", self, "update_animation", [path])
+
+# emit signal to call this once an image gets canceled in c#
+func remove_status(path:String) -> void:
+	animation_mutex.lock()
+	animation_status.erase(path)
+	animation_mutex.unlock()
+
+
+
+
+		

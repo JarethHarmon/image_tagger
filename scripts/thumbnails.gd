@@ -332,14 +332,14 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	if e != OK: 
 		_threadsafe_set_icon(image_hash, index, true)
 		return
-	
+
 	if stop_threads: return
 	var file_type:int = Database.GetFileType(image_hash)
 	
 	if file_type == Globals.ImageType.FAIL:
 		_threadsafe_set_icon(image_hash, index, true)
 		return
-	
+
 	if stop_threads: return
 	var i:Image = Image.new()
 	var b:PoolByteArray = f.get_buffer(f.get_len())
@@ -350,8 +350,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	else:
 		_threadsafe_set_icon(image_hash, index, true)
 		return
-	if e != OK: print_debug(e, " :: ", image_hash + ".thumb")
-	
+
 	if stop_threads: return
 	var it:ImageTexture = ImageTexture.new()
 	it.create_from_image(i, 0) # FLAGS # 4

@@ -3,11 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;	
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using Alphaleonis.Win32.Filesystem;
+using AnimatedImages;
 using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
@@ -40,6 +43,7 @@ public class ImageImporter : Node
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
+		LoadUnsupportedImage(@"W:/test/17.jpg");
 	}
 	
 /*=========================================================================================
@@ -47,8 +51,11 @@ public class ImageImporter : Node
 =========================================================================================*/
 	public static byte[] LoadFile(string path)
 	{
-		if (!FileExists(path)) return new byte[0];
-		return (path.Length() < MAX_PATH_LENGTH) ? System.IO.File.ReadAllBytes(path) : Alphaleonis.Win32.Filesystem.File.ReadAllBytes(path);
+		try {
+			if (!FileExists(path)) return new byte[0];
+			return (path.Length() < MAX_PATH_LENGTH) ? System.IO.File.ReadAllBytes(path) : Alphaleonis.Win32.Filesystem.File.ReadAllBytes(path);
+		}
+		catch { return new byte[0]; }
 	} 
 	public static bool FileExists(string path)
 	{
@@ -91,6 +98,8 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)ImageType.ERROR; }
 	}
 	
+	// create a version of this that can call is_apng with a string of bytes
+	// should take into account path length
 	public int GetActualFormat(string imagePath)
 	{
 		(string sformat, int width, int height) = _GetImageInfo(imagePath);
@@ -98,6 +107,7 @@ public class ImageImporter : Node
 		if ((bool) globals.Call("is_apng", imagePath)) format = (int)ImageType.APNG;
 		else if (sformat == "JPG") format = (int)ImageType.JPG;
 		else if (sformat == "PNG") format = (int)ImageType.PNG;
+		else if (sformat == "GIF") format = (int)ImageType.GIF;
 		return format;
 	}
 	
@@ -108,7 +118,8 @@ public class ImageImporter : Node
 		if ((bool) globals.Call("is_apng", imagePath)) format = (int)ImageType.APNG;
 		else if (sformat == "JPG") format = (int)ImageType.JPG;
 		else if (sformat == "PNG") format = (int)ImageType.PNG;
-		
+		else if (sformat == "GIF") format = (int)ImageType.GIF;
+
 		return (format, width, height);
 	}
 	private static (string, int, int) _GetImageInfo(string imagePath)
@@ -120,27 +131,140 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::_GetImageInfo() : ", ex); return ("", 0, 0); }
 	}
 	// for loading images besides bmp/jpg/png (or bmp/jpg/png that have some sort of issue)
-	public static Godot.Image LoadUnsupportedImage(string imagePath, long imageSize)
+	private static Godot.Image _LoadUnsupportedImage(MagickImage magickImage, long imageSize)
 	{
 		try {
-			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
-				im.Format = MagickFormat.Jpg;
-				im.Quality = 95;
-				byte[] data = im.ToByteArray();
+				magickImage.Format = MagickFormat.Jpg;
+				magickImage.Quality = 95;
+				byte[] data = magickImage.ToByteArray();
 				var image = new Godot.Image();
 				image.LoadJpgFromBuffer(data);
 				return image;
 			} else {
-				im.Format = MagickFormat.Png;
-				im.Quality = 95;
-				byte[] data = im.ToByteArray();
+				magickImage.Format = MagickFormat.Png;
+				magickImage.Quality = 95;
+				byte[] data = magickImage.ToByteArray();
 				var image = new Godot.Image();
 				image.LoadPngFromBuffer(data);
 				return image;
 			}
-		} catch (Exception ex) { GD.Print("ImageImporter::LoadUnsupportedImage() : ", ex); return null; }		
+		} catch (Exception ex) { GD.Print("ImageImporter::_LoadUnsupportedImage() : ", ex); return null; }		
 	}
+	public static Godot.Image LoadUnsupportedImage(string imagePath)
+	{
+		try {
+			byte[] imageData = LoadFile(imagePath);
+			if (imageData.Length == 0) return null;	
+			return _LoadUnsupportedImage(new MagickImage(imageData), imageData.Length);
+		}
+		catch (Exception ex) {
+			GD.Print("ImageImporter::LoadUnsupportedImage() : ", ex);
+			return null;
+		}
+	}
+
+	public Dictionary<string, int> animationStatus = new Dictionary<string, int>();
+	public void AddOrUpdateAnimationStatus(string path, int status) 
+	{
+		lock (animationStatus)
+			animationStatus[path] = status;
+	}
+	public bool GetAnimationStatus(string path)
+	{
+		lock (animationStatus) {
+			if (animationStatus[path] == (int)AnimationStatus.STOPPING) return true;
+			return false;
+		}
+	}
+
+	// this is code from my last attempt; currently uncertain if there is a better way
+	// the basic concept behind this is :
+	//	1. Godot AnimatedTexture has a frame limit of 256
+	//	2. I want to return each frame as it loads (rather than doing nothing for potentially minutes)
+	//	3. So instead, append each frame to an array as soon as it loads, code elsewhere will control iterating the array
+	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
+	public void LoadGif(string imagePath)
+	{
+		try {
+			var frames = new MagickImageCollection(imagePath);
+			int frameCount = frames.Count;
+			if (frameCount <= 0) return;
+			GD.Print("frames: ", frameCount);
+			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
+
+			signals.Call("emit_signal", "set_animation_info", frameCount, 12); // need to actually calculate framerate
+			frames.Coalesce();
+			foreach (MagickImage frame in frames) {
+				if (GetAnimationStatus(imagePath)) break;
+				frame.Format = MagickFormat.Jpg;
+				frame.Quality = 95;
+				byte[] data = frame.ToByteArray();
+				var image = new Godot.Image();
+				image.LoadJpgFromBuffer(data);
+				var texture = new ImageTexture();
+				texture.CreateFromImage(image, animatedFlags);
+				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, 0f, (firstFrame) ? true : false); // need to actually calculate delay
+				firstFrame = false;
+			}
+			frames.Clear();
+			frames = null;
+		}
+		catch (Exception ex) {
+			GD.Print("ImageImporter::LoadGif() : ", ex);
+			return;
+		}
+	}
+
+	public void LoadAPng(string imagePath)
+	{	
+		try {
+			var apng = APNG.FromFile(imagePath);
+			var frames = apng.Frames;
+			int frameCount = apng.FrameCount;
+			if (frameCount <= 0) return;
+			GD.Print("frames: ", frameCount);
+			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
+
+			signals.Call("emit_signal", "set_animation_info", frameCount, 12); // need to actually calculate framerate
+
+			Bitmap prevFrame = null;
+			for (int i = 0; i < frameCount; i++) {
+				if (GetAnimationStatus(imagePath)) break;
+				var image = new Godot.Image();
+				var info = frames[i].GetAPngInfo();
+
+				var newFrame = (i == 0) ? apng.DefaultImage.ToBitmap() : prevFrame;
+				var graphics = Graphics.FromImage(newFrame);
+				graphics.CompositingMode = CompositingMode.SourceOver;
+				graphics.DrawImage(frames[i].ToBitmap(), info.xOffset, info.yOffset);
+				prevFrame = newFrame;
+
+				var converter = new ImageConverter();
+				byte[] data = (byte[]) converter.ConvertTo(newFrame, typeof(byte[]));
+
+				image.LoadPngFromBuffer(data);
+				Array.Clear(data, 0, data.Length);
+				var texture = new ImageTexture();
+				texture.CreateFromImage(image, animatedFlags);
+				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, 0f, (firstFrame) ? true : false); // need to actually calculate delay
+				firstFrame = false;
+			}
+			apng.ClearFrames();
+			Array.Clear(frames, 0, frames.Length);
+			if (prevFrame != null) {
+				prevFrame.Dispose();
+				prevFrame = null;
+			}
+			apng = null;
+			frames = null;
+		}
+		catch (Exception ex) {
+			GD.Print("ImageImporter::LoadAPng() : ", ex);
+			return;
+		}
+	}
+
 
 /*=========================================================================================
 									   Hashing

@@ -69,3 +69,6 @@ signal clear_pressed
 signal set_rating(rating_name, rating_value)
 signal rating_set(rating_name, rating_value)
 
+# animation
+signal set_animation_info(total_frames, fps)
+signal add_animation_texture(texture, path, delay, new_image)
