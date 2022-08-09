@@ -3,6 +3,13 @@
 ---
 ### Information
 ---
+##### Supported Formats
+- Currently supports PNG/JPG/JPEG.
+- Support for most static image formats should only take a few lines of code.
+- Support for animated image formats (gif/apng) is something I have implemented before. I need to find the relevant code again.
+- Support for video formats will likely not happen anytime soon as I believe Godot does not support streaming video at all. 
+      IE the entire file has to be loaded into memory in advance.
+
 ##### Multithreading
 - Most tasks are multi-threaded, including: importing images, loading thumbnails, loading full images, querying the database(s).
 - I have not encountered any significant threading issues recently, program might freeze when closing though.
