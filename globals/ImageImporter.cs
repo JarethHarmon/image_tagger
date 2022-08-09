@@ -189,7 +189,10 @@ public class ImageImporter : Node
 		try {
 			var frames = new MagickImageCollection(imagePath);
 			int frameCount = frames.Count;
-			if (frameCount <= 0) return;
+			if (frameCount <= 0) {
+				signals.Call("emit_signal", "finish_animation", imagePath);
+				return;
+			}
 			GD.Print("frames: ", frameCount);
 			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
 
@@ -209,9 +212,11 @@ public class ImageImporter : Node
 			}
 			frames.Clear();
 			frames = null;
+			signals.Call("emit_signal", "finish_animation", imagePath);
 		}
 		catch (Exception ex) {
 			GD.Print("ImageImporter::LoadGif() : ", ex);
+			signals.Call("emit_signal", "finish_animation", imagePath);
 			return;
 		}
 	}
@@ -222,7 +227,10 @@ public class ImageImporter : Node
 			var apng = APNG.FromFile(imagePath);
 			var frames = apng.Frames;
 			int frameCount = apng.FrameCount;
-			if (frameCount <= 0) return;
+			if (frameCount <= 0) {
+				signals.Call("emit_signal", "finish_animation", imagePath);
+				return;
+			}
 			GD.Print("frames: ", frameCount);
 			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
 
@@ -258,9 +266,11 @@ public class ImageImporter : Node
 			}
 			apng = null;
 			frames = null;
+			signals.Call("emit_signal", "finish_animation", imagePath);
 		}
 		catch (Exception ex) {
 			GD.Print("ImageImporter::LoadAPng() : ", ex);
+			signals.Call("emit_signal", "finish_animation", imagePath);
 			return;
 		}
 	}

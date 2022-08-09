@@ -69,6 +69,7 @@ func _ready() -> void:
 	Signals.connect("rating_set", self, "_rating_set")
 	Signals.connect("set_animation_info", self, "set_frames")
 	Signals.connect("add_animation_texture", self, "add_animation_texture")
+	Signals.connect("finish_animation", self, "remove_status")
 
 	create_threads(max_threads)
 	rating_thread.start(self, "_rating_thread")
@@ -172,6 +173,9 @@ func _load_full_image(image_hash:String, path:String) -> void:
 	for path in animation_status:
 		animation_status[path] = a_status.STOPPING
 		ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
+
+	remove_animations()
+
 	image_mutex.unlock()
 	
 	if use_buffering_icon: 
@@ -435,6 +439,10 @@ func set_frames(total_frames:int, fps:int=0) -> void:
 	animation_total_frames = total_frames
 	# set max frames label text
 
+func remove_animations() -> void:
+	animation_delays.clear()
+	animation_images.clear()
+
 func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, new_image:bool=false) -> void:
 	if path == current_path:
 		animation_mutex.lock()
@@ -453,6 +461,7 @@ func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, n
 			ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
 
 func update_animation(path:String, new_image:bool=false) -> void:
+	if current_path != path: return
 	if not animation_status.has(path): return
 	if animation_status[path] == a_status.STOPPING: return
 	animation_mutex.lock()
@@ -473,10 +482,9 @@ func update_animation(path:String, new_image:bool=false) -> void:
 	animation_mutex.unlock()
 	get_tree().create_timer(animation_min_delay).connect("timeout", self, "update_animation", [path])
 
-# emit signal to call this once an image gets canceled in c#
 func remove_status(path:String) -> void:
 	animation_mutex.lock()
-	animation_status.erase(path)
+	animation_status[path] = a_status.PLAYING
 	animation_mutex.unlock()
 
 
