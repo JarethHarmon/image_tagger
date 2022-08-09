@@ -462,14 +462,16 @@ public class Database : Node
 	public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
-		foreach (SimilarityQueryResult result in result1) {
-			if (similarityMode == (int)Similarity.AVERAGE)
+		
+		if (similarityMode == (int)Similarity.AVERAGE)
+			foreach (SimilarityQueryResult result in result1)
 				result.similarity = (ColorSimilarity(result.colorHash, colorHash) + (float)DifferenceSimilarity(result.differenceHash, differenceHash)) / 2f;
-			else if (similarityMode == (int)Similarity.COLOR)
+		else if (similarityMode == (int)Similarity.COLOR)
+			foreach (SimilarityQueryResult result in result1)
 				result.similarity = ColorSimilarity(result.colorHash, colorHash);
-			else
+		else
+			foreach (SimilarityQueryResult result in result1)
 				result.similarity = (float)DifferenceSimilarity(result.differenceHash, differenceHash);
-		}
 		
 		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
 		result1 = null;
@@ -477,6 +479,7 @@ public class Database : Node
 		var result3 = new List<HashInfo>();
 		foreach (SimilarityQueryResult result in result2)
 			result3.Add(colHashes.FindById(result.imageHash));
+	
 		result2 = null;
 
 		return result3.ToList();
@@ -896,6 +899,20 @@ public class Database : Node
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
 		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
 		return (color+(float)difference)/2f;
+	}
+
+	public float GetColorSimilarityTo(string compareHash, string imageHash)
+	{
+		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
+		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
+		return ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
+	}
+
+	public float GetDifferenceSimilarityTo(string compareHash, string imageHash)
+	{
+		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
+		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
+		return (float) DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
 	}
 
 

@@ -380,7 +380,13 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		set_item_tooltip(index, tooltip)
 	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
 		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
-		var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+		var similarity:float = 0.0
+		if Globals.current_similarity == Globals.Similarity.AVERAGE:
+			similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+		elif Globals.current_similarity == Globals.Similarity.COLOR:
+			similarity = Database.GetColorSimilarityTo(compare_hash, image_hash)
+		else:
+			similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
 	sc.unlock()
 
