@@ -4,9 +4,10 @@
 ### Information
 ---
 ##### Supported Formats
-- Currently supports PNG/JPG/JPEG.
+- Currently supports PNG/JPG/JPEG/BMP/WEBP*/GIF**/APNG**.
 - Support for most static image formats should only take a few lines of code.
-- Support for animated image formats (gif/apng) is something I have implemented before. I need to find the relevant code again.
+- * untested, but BMP worked fine (animated webp not supported currently)
+- ** many issues to fix still
 - Support for video formats will likely not happen anytime soon as I believe Godot does not support streaming video at all. 
       IE the entire file has to be loaded into memory in advance.
 
