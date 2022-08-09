@@ -671,23 +671,24 @@ public class Database : Node
 		}
 	}
 
+	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
-		lock (tempHashInfo) {
+		lock (locker) {
 			if (!tempHashes.ContainsKey(progressId)) return;
 			string[] hashes = tempHashes[progressId].ToArray();
-			dbHashes.BeginTrans();
+
 			foreach (string hash in hashes) {
-				if (tempHashInfo.ContainsKey(hash)) {
-					if (colHashes.FindById(hash) == null)
-						colHashes.Insert(tempHashInfo[hash]);
-					else
-						colHashes.Update(tempHashInfo[hash]);
-					tempHashInfo.Remove(hash);
-				}
-				tempHashInfo.Remove(hash);
+				HashInfo hashInfo = null;
+				lock (tempHashInfo) { if (tempHashInfo.ContainsKey(hash)) hashInfo = tempHashInfo[hash]; }
+				if (hashInfo == null) continue;
+
+				if (colHashes.FindById(hash) == null) colHashes.Insert(hashInfo);
+				else colHashes.Update(hashInfo);
+
+				lock (tempHashInfo) { tempHashInfo.Remove(hash); }	
 			}
-			dbHashes.Commit();
+
 			dbImports.BeginTrans();
 			var importInfo = colImports.FindById(importId);
 			var allInfo = colImports.FindById("All");
@@ -709,6 +710,7 @@ public class Database : Node
 			colImports.Update(allInfo);
 			colProgress.Delete(progressId);
 			dbImports.Commit();
+
 			tempHashes.Remove(progressId);
 			tempCounts.Remove(progressId);
 		}
