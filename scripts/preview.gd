@@ -305,7 +305,7 @@ func _stop(thread_id:int) -> void:
 func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image_hash:String="") -> void:
 	if im == null:
 		if animation_mode:
-			im = animation_images[animation_index]
+			im = animation_images[animation_index].get_data()
 		else:
 			var tex:Texture = preview.get_texture()
 			if tex == null: return

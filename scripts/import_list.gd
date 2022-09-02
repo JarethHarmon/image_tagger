@@ -395,6 +395,7 @@ func _thread(thread_id:int) -> void:
 		if get_thread_status(thread_id) != Status.PAUSED and section != null:
 			var import_id:String = section[0]
 			var progress_id:String = section[1]
+			#print_debug(progress_id)
 			if tabs == null: tabs = Database.GetTabIDs(import_id) as Array
 			if paths == null: paths = Database.GetPaths(progress_id) as Array
 			if not paths.empty():

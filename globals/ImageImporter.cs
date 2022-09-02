@@ -401,7 +401,7 @@ public class ImageImporter : Node
 			if (__hashInfo != null) {
 				if (__hashInfo.paths == null) __hashInfo.paths = new HashSet<string>();
 				__hashInfo.paths.Add(imagePath);
-				__hashInfo.imports.Add(importId);
+				//__hashInfo.imports.Add(importId); // shouldn't be needed?
 				db.AddOrUpdateHashInfo(_imageHash, progressId, __hashInfo, (int)ImportCode.DUPLICATE);
 				return (int)ImportCode.DUPLICATE;
 			}
@@ -445,7 +445,7 @@ public class ImageImporter : Node
 				uploadTime = DateTime.Now.Ticks,
 				lastEditTime = DateTime.Now.Ticks,
 				paths = new HashSet<string>{imagePath},
-				imports = new HashSet<string>{importId},
+				//imports = new HashSet<string>{importId}, // only add imports after importCount correctly updated
 			};
 
 			db.AddOrUpdateHashInfo(_imageHash, progressId, hashInfo, (int)ImportCode.SUCCESS);

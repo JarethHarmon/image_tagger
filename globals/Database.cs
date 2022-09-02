@@ -674,24 +674,53 @@ public class Database : Node
 		}
 	}
 
+	private HashInfo MergeHashInfo(HashInfo hashInfo1, HashInfo hashInfo2)
+	{
+		var hashInfo3 = hashInfo1;
+		if (hashInfo1.paths != null) {
+			// neither set of paths is null; add all paths from hashInfo2 to hashInfo3 (HashSet so no need to check duplicates)
+			if (hashInfo2.paths != null) {
+				foreach (string path in hashInfo2.paths)
+					hashInfo3.paths.Add(path);
+			}
+			// if hashInfo2 paths is null, nothing to add
+		}
+		// hashInfo1 paths is null and hashInfo2.paths is not
+		else if (hashInfo2.paths != null)
+			hashInfo3.paths = hashInfo2.paths;
+
+		// same as above but for imports (should really create a generic function for HashSets and just call that on each one (especially for when tags,groups,etc need to be supported))
+		if (hashInfo1.imports != null) {
+			if (hashInfo2.imports != null) {
+				foreach (string import in hashInfo2.imports)
+					hashInfo3.imports.Add(import);
+			}
+		}
+		else if (hashInfo2.imports != null)
+			hashInfo3.imports = hashInfo2.imports;
+		
+		return hashInfo3;
+	}
+
 	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
+		if (!tempHashes.ContainsKey(progressId)) return;
+		string[] hashes = tempHashes[progressId].ToArray();
+
+		var hashInfoList = new List<HashInfo>();
+		foreach (string hash in hashes) {
+			HashInfo hashInfo = null;
+			lock (tempHashInfo) { if (tempHashInfo.ContainsKey(hash)) hashInfo = tempHashInfo[hash]; }
+			if (hashInfo == null) continue;
+
+			var dbHashInfo = colHashes.FindById(hash);
+			if (dbHashInfo != null) hashInfo = MergeHashInfo(hashInfo, dbHashInfo);
+			hashInfoList.Add(hashInfo);
+		}
+		colHashes.Upsert(hashInfoList);
+
 		lock (locker) {
-			if (!tempHashes.ContainsKey(progressId)) return;
-			string[] hashes = tempHashes[progressId].ToArray();
-
-			foreach (string hash in hashes) {
-				HashInfo hashInfo = null;
-				lock (tempHashInfo) { if (tempHashInfo.ContainsKey(hash)) hashInfo = tempHashInfo[hash]; }
-				if (hashInfo == null) continue;
-
-				if (colHashes.FindById(hash) == null) colHashes.Insert(hashInfo);
-				else colHashes.Update(hashInfo);
-
-				lock (tempHashInfo) { tempHashInfo.Remove(hash); }	
-			}
-
 			dbImports.BeginTrans();
 			var importInfo = colImports.FindById(importId);
 			var allInfo = colImports.FindById("All");
@@ -713,6 +742,13 @@ public class Database : Node
 			colImports.Update(allInfo);
 			colProgress.Delete(progressId);
 			dbImports.Commit();
+
+			// only add importId to hashInfo once the counts are correctly updated
+			foreach (HashInfo hashInfo in hashInfoList) {
+				if (hashInfo.imports == null) hashInfo.imports = new HashSet<string>();
+				hashInfo.imports.Add(importId);
+			}
+			colHashes.Upsert(hashInfoList);
 
 			tempHashes.Remove(progressId);
 			tempCounts.Remove(progressId);
