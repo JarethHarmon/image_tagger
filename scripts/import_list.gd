@@ -6,6 +6,8 @@ enum Results { CONTINUE = 0, EMPTY }
 onready var button_list:HBoxContainer = $margin/hbox/scroll/button_list
 onready var all_button:Button = $margin/hbox/all_button
 
+onready var import_section_thread:Thread = Thread.new()
+onready var section_mutex:Mutex = Mutex.new()
 onready var manager_thread:Thread = Thread.new()
 onready var argument_mutex:Mutex = Mutex.new()
 onready var count_mutex:Mutex = Mutex.new()
@@ -22,12 +24,14 @@ var argument_queue:Array = []		# fifo queue of arguments to be processed by thre
 var thread_pool:Array = []			# the threads to use for processing
 var thread_status:Array = []		# the status of each thread (see status dict)
 var thread_args:Array = []			# the arguments associated with a specific thread  (import_id for importing)
+var finished_sections:Array = []
 
 var last_arg = null					# import_id for this script
 
 var delay_time:int = 50				# how long to wait in the thread loop before checking argument_queue again
 var active_threads:int = 0			# the current number of active (hose currently processing) threads
 
+var stop_import_section:bool = false
 var stop_manager:bool = false
 var pause_manager:bool = false
 var manager_done:bool = false
@@ -231,6 +235,8 @@ func finish_import_buttons(tab_ids:Array) -> void:
 
 
 func create_threads(num_threads:int) -> void:
+	import_section_thread.start(self, "_import_section_thread")
+	
 	if num_threads == thread_pool.size(): return
 	Globals.settings.max_import_threads = num_threads
 	
@@ -293,6 +299,12 @@ func cancel_manager() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 	stop_manager = false	
+
+func cancel_IS_thread() -> void:
+	stop_import_section = true
+	if import_section_thread.is_active() or import_section_thread.is_alive():
+		import_section_thread.wait_to_finish()
+	stop_import_section = false
 
 func cancel(thread_id:int) -> void:
 	if thread_id >= Globals.settings.max_import_threads: return
@@ -395,7 +407,7 @@ func _thread(thread_id:int) -> void:
 		if get_thread_status(thread_id) != Status.PAUSED and section != null:
 			var import_id:String = section[0]
 			var progress_id:String = section[1]
-			#print_debug(progress_id)
+			#print(thread_id, " :: ", progress_id)
 			if tabs == null: tabs = Database.GetTabIDs(import_id) as Array
 			if paths == null: paths = Database.GetPaths(progress_id) as Array
 			if not paths.empty():
@@ -403,7 +415,8 @@ func _thread(thread_id:int) -> void:
 				ImageImporter.ImportImage(tabs, import_id, progress_id, path)
 			else: 
 				set_thread_args(thread_id, null)
-				Database.FinishImportSection(import_id, progress_id)
+				_add_finished_section([import_id, progress_id])
+				#Database.FinishImportSection(import_id, progress_id)
 				tabs = null
 				paths = null
 		else: OS.delay_msec(delay_time)
@@ -411,7 +424,29 @@ func _thread(thread_id:int) -> void:
 
 func _done(thread_id:int) -> void:
 	_stop(thread_id)
-	
+
+func _add_finished_section(arr:Array) -> void:
+	section_mutex.lock()
+	finished_sections.append(arr)
+	section_mutex.unlock()
+
+func _get_finished_section():
+	var result = null
+	section_mutex.lock()
+	if not finished_sections.empty():
+		result = finished_sections.pop_front()
+	section_mutex.unlock()
+	return result
+
+func _import_section_thread() -> void:
+	while not stop_import_section:
+		var temp = _get_finished_section()
+		if temp != null:
+			var section:Array = temp
+			var import_id:String = section[0]
+			var progress_id:String = section[1]
+			Database.FinishImportSection(import_id, progress_id)
+		OS.delay_msec(200)
 
 #var frame:int = 0
 #func _physics_process(delta) -> void:

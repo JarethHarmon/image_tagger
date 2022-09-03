@@ -18,6 +18,7 @@ func _notification(what) -> void:
 		thumbnails.stop_thumbnail_threads()
 		importer.cancel_all()
 		importer.cancel_manager()
+		importer.cancel_IS_thread()
 		previewer.stop_threads()
 		Database.CheckpointGroupDB()
 		Database.CheckpointHashDB()

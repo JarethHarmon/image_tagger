@@ -59,6 +59,7 @@ public class Database : Node
 
 	public int Create()
 	{
+		//Test();
 		try {
 			dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
 			dbImports = new LiteDatabase(metadataPath + "import_info.db");
@@ -109,6 +110,37 @@ public class Database : Node
 		}
 	} 
 	
+	private class Foo {
+		[BsonId]
+    	public int Id { get; set; }
+	}
+	private void Test()
+	{
+		var path = metadataPath + "test" + DateTime.UtcNow.Ticks + ".lite";
+        var data = Enumerable
+            .Range (1, 10000)
+            .Select (i => new Foo () { Id = i })
+            .ToArray ();
+        var sw = System.Diagnostics.Stopwatch.StartNew ();
+        using (var db = new LiteDatabase(path)) {
+        	var col = db.GetCollection<Foo>("table");
+            col.Insert(data);
+        }
+        sw.Stop();
+        GD.Print("Bulk: Inserted ", data.Length, " ints in ", sw.Elapsed);
+
+		sw = System.Diagnostics.Stopwatch.StartNew ();
+		using (var db = new LiteDatabase(path)) {
+        	var col = db.GetCollection<Foo>("table");
+			foreach (Foo f in data) {
+				f.Id += 10000;
+				col.Insert(f);
+			}
+		}
+		sw.Stop();
+        GD.Print("Slow: Inserted ", data.Length, " ints in ", sw.Elapsed);
+	}
+
 	public void CreateAllInfo() 
 	{
 		try {
@@ -702,9 +734,11 @@ public class Database : Node
 		return hashInfo3;
 	}
 
+	// have decided to change this to be purely single-threaded
 	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
+		
 		if (!tempHashes.ContainsKey(progressId)) return;
 		string[] hashes = tempHashes[progressId].ToArray();
 
@@ -743,16 +777,16 @@ public class Database : Node
 			colProgress.Delete(progressId);
 			dbImports.Commit();
 
-			// only add importId to hashInfo once the counts are correctly updated
-			foreach (HashInfo hashInfo in hashInfoList) {
-				if (hashInfo.imports == null) hashInfo.imports = new HashSet<string>();
-				hashInfo.imports.Add(importId);
-			}
-			colHashes.Upsert(hashInfoList);
-
 			tempHashes.Remove(progressId);
 			tempCounts.Remove(progressId);
 		}
+		// only add importId to hashInfo once the counts are correctly updated
+		foreach (HashInfo hashInfo in hashInfoList) {
+			if (hashInfo.imports == null) hashInfo.imports = new HashSet<string>();
+			hashInfo.imports.Add(importId);
+		}
+		colHashes.Upsert(hashInfoList);
+		GD.Print("finished: ", progressId);
 	}
 
 /*==============================================================================*/
