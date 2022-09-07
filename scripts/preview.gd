@@ -344,6 +344,7 @@ func resize_current_image(path:String="") -> void:
 	
 	preview.set_texture(null)
 	animation_size = calc_size(current_image)
+
 	current_image.set_size_override(animation_size)
 	yield(get_tree(), "idle_frame")
 	preview.set_texture(current_image)
@@ -488,6 +489,6 @@ func remove_status(path:String) -> void:
 	animation_mutex.unlock()
 
 
+func _on_flip_h_button_up() -> void: preview.flip_h = not preview.flip_h
+func _on_flip_v_button_up() -> void: preview.flip_v = not preview.flip_v
 
-
-		

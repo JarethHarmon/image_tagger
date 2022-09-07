@@ -41,6 +41,10 @@ previewer = NodePath("margin/vbox/hsplit/right/vsplit/preview")
 margin_left = 3840.0
 margin_right = 3840.0
 
+[node name="image_0" parent="preview_container/ViewportContainer/Viewport/preview_viewport/image_grid" index="0"]
+margin_right = 3840.0
+margin_bottom = 2160.0
+
 [node name="background_color" type="TextureRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0

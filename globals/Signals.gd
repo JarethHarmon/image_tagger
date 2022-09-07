@@ -50,6 +50,8 @@ signal toggle_tag_section(visible)
 
 signal image_count_changed(total)
 
+signal update_default_camera_position(new_position)
+
 # core_buttons
 signal file_button_pressed(position)
 signal edit_button_pressed(position)

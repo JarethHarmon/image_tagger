@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://assets/icon.png" type="Texture" id=1]
 [ext_resource path="res://shaders/EdgeMix.tres" type="Material" id=2]
 [ext_resource path="res://shaders/ColorGrading.tres" type="Material" id=3]
 [ext_resource path="res://shaders/FXAA.tres" type="Material" id=4]
 [ext_resource path="res://shaders/Halftone.tres" type="Material" id=5]
+[ext_resource path="res://shaders/Vector.tres" type="Material" id=6]
 
 [node name="preview_viewport" type="Control"]
 anchor_right = 1.0
@@ -23,6 +24,7 @@ custom_constants/vseparation = 0
 custom_constants/hseparation = 0
 
 [node name="image_0" type="TextureRect" parent="image_grid"]
+material = ExtResource( 6 )
 margin_right = 1920.0
 margin_bottom = 1080.0
 mouse_filter = 2
@@ -88,6 +90,10 @@ rect = Rect2( 0, 0, 0, 0 )
 material = ExtResource( 4 )
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_left = -27.0
+margin_top = -13.0
+margin_right = -27.0
+margin_bottom = -13.0
 mouse_filter = 2
 
 [node name="Control4" type="Control" parent="."]
@@ -103,6 +109,7 @@ copy_mode = 2
 rect = Rect2( 0, 0, 0, 0 )
 
 [node name="Shader" type="ColorRect" parent="Control4"]
+visible = false
 material = ExtResource( 5 )
 anchor_right = 1.0
 anchor_bottom = 1.0
