@@ -11,6 +11,8 @@ onready var file_dialog:FileDialog = $FileDialog
 onready var file_context:PopupMenu = $context_menu/pmenu_file
 onready var view_context:PopupMenu = $context_menu/pmenu_view
 
+var side_offset_for_popups:int = 100 		# move to Globals.settings
+
 func _ready() -> void:
 	Signals.connect("file_button_pressed", self, "_file_pressed")
 	Signals.connect("view_button_pressed", self, "_view_pressed")
@@ -47,14 +49,16 @@ func _on_pmenu_file_context_index_pressed(index:int) -> void:
 
 func show_import_menu() -> void:
 	darkened_background.show()
-	import_panel.popup()
+	var parent_size:Vector2 = self.get_parent().rect_size
+	import_panel.popup(Rect2(side_offset_for_popups, side_offset_for_popups, parent_size.x-side_offset_for_popups*2, parent_size.y-side_offset_for_popups*2))
 
 func show_file_dialog(select_folders:bool=false) -> void:
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	file_dialog.mode = FileDialog.MODE_OPEN_FILES if not select_folders else FileDialog.MODE_OPEN_DIR #MODE_OPEN_ANY
 	file_dialog.set_filters(PoolStringArray(["*.png, *.jpg, *.jpeg ; Image Files"]))
 	
-	file_dialog.popup()
+	var parent_size:Vector2 = self.get_parent().rect_size
+	file_dialog.popup(Rect2(side_offset_for_popups, side_offset_for_popups, parent_size.x-side_offset_for_popups*2, parent_size.y-side_offset_for_popups*2))
 
 func _on_FileDialog_files_selected(paths:Array) -> void: Signals.emit_signal("files_selected", paths)
 func _on_FileDialog_dir_selected(dir:String) -> void: Signals.emit_signal("folder_selected", dir)
