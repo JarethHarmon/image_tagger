@@ -128,13 +128,19 @@ func tag_clicked(tag:String) -> void:
 		else:
 			var range_low:int = min(last_clicked_index, index)
 			var range_high:int = max(last_clicked_index, index)
-			for i in range(range_low, range_high+1): 
-				# deselect range
-				if selected_tags.has(tag): 
-					deselect(tags_array[i])
-				# select range
-				else: 
-					select(tags_array[i])
+			var selecting:bool = not selected_tags.has(tags_array[index])
+			
+			for i in range(range_low, range_high+1):
+				var curr_tag:String = tags_array[i]
+				if selecting:
+					if selected_tags.has(curr_tag) and i != last_clicked_index: deselect(curr_tag)
+					else: select(curr_tag)
+				else: # deselecting
+					if selected_tags.has(curr_tag): deselect(curr_tag)
+					else: select(curr_tag)
+					# need to find a way to merge this with above logic
+					if i == last_clicked_index: deselect(curr_tag)
+					if i == index: select(curr_tag)
 	else:
 		deselect_all()
 		selected_tags[tag] = button
@@ -142,7 +148,6 @@ func tag_clicked(tag:String) -> void:
 		current_tags[tag].button.add_color_override("font_color", Color.black)
 	last_clicked_index = index
 	button.release_focus()
-	#print(selected_tags.keys())
 
 func invert_tag_selection(tag:String) -> void:
 	if selected_tags.has(tag): deselect(tag)

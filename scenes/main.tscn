@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://themes/dark_sharp (arial).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
@@ -13,6 +13,7 @@
 [ext_resource path="res://scenes/scanner.tscn" type="PackedScene" id=11]
 [ext_resource path="res://scripts/popups.gd" type="Script" id=12]
 [ext_resource path="res://scenes/import_info.tscn" type="PackedScene" id=13]
+[ext_resource path="res://assets/icon.png" type="Texture" id=14]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
@@ -61,6 +62,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+texture = ExtResource( 14 )
 expand = true
 stretch_mode = 6
 flip_h = true

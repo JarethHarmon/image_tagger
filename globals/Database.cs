@@ -777,8 +777,6 @@ public class Database : Node
 			tempHashes.Remove(progressId);
 			tempCounts.Remove(progressId);
 
-			// need to track the number of total and completed sections instead; this code should not be working at all after separating sections and importing
-			//if (importInfo.processed == importInfo.total) {
 			if (importInfo.progressIds.Count == 0) {
 				string[] tabs = GetTabIDs(importId);
 				FinishImport(importId);
