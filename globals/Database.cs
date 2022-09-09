@@ -556,10 +556,11 @@ public class Database : Node
 				if (dictHashes.ContainsKey(imageHash)) dictHashes[imageHash] = tmp;
 				list.Add(tmp);
 			}
-			dbHashes.BeginTrans();
-			foreach (HashInfo hashInfo in list) 
-				colHashes.Update(hashInfo);
-			dbHashes.Commit();
+			colHashes.Update(list);
+			//dbHashes.BeginTrans();
+			//foreach (HashInfo hashInfo in list) 
+			//	colHashes.Update(hashInfo);
+			//dbHashes.Commit();
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::BulkAddTags() : ", ex); 
@@ -580,10 +581,11 @@ public class Database : Node
 				if (dictHashes.ContainsKey(imageHash)) dictHashes[imageHash] = tmp;
 				list.Add(tmp);
 			}
-			dbHashes.BeginTrans();
-			foreach (HashInfo hashInfo in list)
-				colHashes.Update(hashInfo);
-			dbHashes.Commit();
+			colHashes.Update(list);
+			//dbHashes.BeginTrans();
+			//foreach (HashInfo hashInfo in list)
+			//	colHashes.Update(hashInfo);
+			//dbHashes.Commit();
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::BulkRemoveTags() : ", ex); 
