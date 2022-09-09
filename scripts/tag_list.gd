@@ -206,3 +206,8 @@ func _on_paste_selected_button_up() -> void:
 	var tags:String = OS.get_clipboard()
 	if tags == "": return
 	tag_entered(tags)
+
+func _on_invert_selection_button_up() -> void:
+	for tag in tags_array:
+		if selected_tags.has(tag): deselect(tag)
+		else: select(tag)

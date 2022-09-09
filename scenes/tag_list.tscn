@@ -131,34 +131,41 @@ size_flags_vertical = 3
 
 [node name="select_all" type="Button" parent="margin/hbox/vbox2"]
 margin_right = 139.0
-margin_bottom = 210.0
+margin_bottom = 175.0
 size_flags_vertical = 3
 text = "  Select All  "
 
 [node name="copy_selected" type="Button" parent="margin/hbox/vbox2"]
-margin_top = 214.0
+margin_top = 179.0
 margin_right = 139.0
-margin_bottom = 425.0
+margin_bottom = 354.0
 size_flags_vertical = 3
 text = "  Copy Selected  "
 
 [node name="paste_selected" type="Button" parent="margin/hbox/vbox2"]
-margin_top = 429.0
+margin_top = 358.0
 margin_right = 139.0
-margin_bottom = 640.0
+margin_bottom = 533.0
 size_flags_vertical = 3
 text = "  Paste Selected  "
 
-[node name="SPACE" type="Control" parent="margin/hbox/vbox2"]
-margin_top = 644.0
+[node name="invert_selection" type="Button" parent="margin/hbox/vbox2"]
+margin_top = 537.0
 margin_right = 139.0
-margin_bottom = 855.0
+margin_bottom = 712.0
+size_flags_vertical = 3
+text = "  Invert Selection  "
+
+[node name="SPACE" type="Control" parent="margin/hbox/vbox2"]
+margin_top = 716.0
+margin_right = 139.0
+margin_bottom = 891.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="remove_tags" type="Button" parent="margin/hbox/vbox2"]
-margin_top = 859.0
+margin_top = 895.0
 margin_right = 139.0
 margin_bottom = 1070.0
 size_flags_vertical = 3
@@ -168,4 +175,5 @@ text = "  Remove Selected  "
 [connection signal="button_up" from="margin/hbox/vbox2/select_all" to="." method="_on_select_all_button_up"]
 [connection signal="button_up" from="margin/hbox/vbox2/copy_selected" to="." method="_on_copy_selected_button_up"]
 [connection signal="button_up" from="margin/hbox/vbox2/paste_selected" to="." method="_on_paste_selected_button_up"]
+[connection signal="button_up" from="margin/hbox/vbox2/invert_selection" to="." method="_on_invert_selection_button_up"]
 [connection signal="button_up" from="margin/hbox/vbox2/remove_tags" to="." method="_on_remove_tags_button_up"]
