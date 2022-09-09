@@ -82,13 +82,18 @@ public class ImageImporter : Node
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			im.Strip();
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
-				im.Format = MagickFormat.Jpg;
-				im.Quality = 50;
-				im.Resize(256, 256);
+				// need to test if resizing to 4,4 is actually relevant for monoColor images (especially if I also convert it to png)
+				if (im.IsOpaque) im.Format = MagickFormat.Jpg;
+				else {
+					result = (int)ImageType.PNG;
+					im.Format = MagickFormat.Png; // if image has transparency convert it to png
+				}
+				if (im.TotalColors == 1) im.Resize(4,4); // if mono-color image, save space
+				else im.Resize(256, 256);
+				im.Quality = 70; // was 50, increasing results in ~+20% file size & about ~+40% thumbnail quality
 				im.Write(thumbPath);
 				new ImageOptimizer().Compress(thumbPath);
-			}
-			else {
+			} else {
 				im.Format = MagickFormat.Png;
 				result = (int)ImageType.PNG;
 				im.Write(thumbPath);

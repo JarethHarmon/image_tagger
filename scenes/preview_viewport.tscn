@@ -5,7 +5,7 @@
 [ext_resource path="res://shaders/ColorGrading.tres" type="Material" id=3]
 [ext_resource path="res://shaders/FXAA.tres" type="Material" id=4]
 [ext_resource path="res://shaders/Halftone.tres" type="Material" id=5]
-[ext_resource path="res://shaders/Vector.tres" type="Material" id=6]
+[ext_resource path="res://shaders/SmoothPixel.tres" type="Material" id=6]
 
 [node name="preview_viewport" type="Control"]
 anchor_right = 1.0
@@ -96,7 +96,7 @@ margin_right = -27.0
 margin_bottom = -13.0
 mouse_filter = 2
 
-[node name="Control4" type="Control" parent="."]
+[node name="HalfTone" type="Control" parent="."]
 visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -104,12 +104,11 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="BackBufferCopy" type="BackBufferCopy" parent="Control4"]
+[node name="BackBufferCopy" type="BackBufferCopy" parent="HalfTone"]
 copy_mode = 2
 rect = Rect2( 0, 0, 0, 0 )
 
-[node name="Shader" type="ColorRect" parent="Control4"]
-visible = false
+[node name="Shader" type="ColorRect" parent="HalfTone"]
 material = ExtResource( 5 )
 anchor_right = 1.0
 anchor_bottom = 1.0

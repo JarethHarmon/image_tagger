@@ -95,7 +95,7 @@ margin_right = 1704.0
 margin_bottom = 16.0
 size_flags_horizontal = 3
 min_value = 10.0
-max_value = 480.0
+max_value = 960.0
 step = 10.0
 value = 240.0
 tick_count = 16
@@ -105,7 +105,7 @@ margin_left = 1708.0
 margin_right = 1782.0
 margin_bottom = 24.0
 min_value = 10.0
-max_value = 480.0
+max_value = 960.0
 step = 10.0
 value = 240.0
 
@@ -220,6 +220,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="image_count" type="Label" parent="margin/vbox/page_buttons/hbox"]
+visible = false
 margin_left = 393.0
 margin_top = 5.0
 margin_right = 393.0
