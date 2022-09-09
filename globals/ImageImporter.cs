@@ -103,6 +103,15 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)ImageType.ERROR; }
 	}
 	
+	public int GetNumColors(string imagePath)
+	{
+		try {
+			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
+			return im.TotalColors;
+		}
+		catch (Exception ex) { GD.Print("ImageImporter::GetNumColors() : ", ex); return 0; }
+	}
+
 	// create a version of this that can call is_apng with a string of bytes
 	// should take into account path length
 	public int GetActualFormat(string imagePath)
@@ -305,6 +314,15 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("Database::DifferenceHash() : ", ex); return 0; }
 	}
 
+	public string GetPerceptualHash(string path)
+	{
+		try {
+			var im = (path.Length() < MAX_PATH_LENGTH) ? new MagickImage(path) : new MagickImage(LoadFile(path));
+			return im.PerceptualHash().ToString();
+		}
+		catch (Exception ex) { GD.Print("Database::GetPerceptualHash() : ", ex); return ""; }
+	}
+
 	private string GetRandomID(int num_bytes)
 	{
 		try{
@@ -358,9 +376,9 @@ public class ImageImporter : Node
 			if (importId.Equals("") || progressId.Equals("") || path.Equals("")) return;
 			
 			int imageCount = db.GetTotalCount(importId);
-			//var file = (safePathLength) ?
+			//var file = ((path.Length() < MAX_PATH_LENGTH) ?
 			//	new System.IO.FileInfo(path) : 
-			//	new Alphaleonis.Win32.Filesystem.FileInfo(path);
+			//	new Alphaleonis.Win32.Filesystem.FileInfo(path));
 			var file = new System.IO.FileInfo(path);
 			var image = (path, file.Length, file.CreationTimeUtc.Ticks, file.LastWriteTimeUtc.Ticks);	
 		
@@ -431,9 +449,18 @@ public class ImageImporter : Node
 				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
 				return (int)ImportCode.FAILED; 
 			}
+			var now = DateTime.Now;
 			ulong _diffHash = DifferenceHash(savePath);
-			float[] _colorHash = ColorHash(savePath); 
-			
+			var dTime = DateTime.Now-now;
+			now = DateTime.Now;
+			float[] _colorHash = ColorHash(savePath);
+			var cTime = DateTime.Now-now;
+			now = DateTime.Now;
+			string _percHash = GetPerceptualHash(savePath);
+			var pTime = DateTime.Now-now;
+
+			GD.Print("\npath: ", imagePath, "\ndiff: ", dTime, "\nperc: ", pTime, "\ncolo: ", cTime);
+
 			int _flags = 0;
 			
 			var hashInfo = new HashInfo {
@@ -441,6 +468,8 @@ public class ImageImporter : Node
 				imageName = _imageName,
 				differenceHash = _diffHash,
 				colorHash = _colorHash,
+				perceptualHash = _percHash,
+				//numColors = GetNumColors(imagePath),
 				width = _width,
 				height = _height,
 				flags = _flags,

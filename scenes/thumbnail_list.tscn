@@ -78,7 +78,7 @@ margin_left = 191.0
 margin_right = 271.0
 margin_bottom = 24.0
 text = "Average"
-items = [ "Average", null, false, 0, null, "Color", null, false, 1, null, "Difference", null, false, 2, null ]
+items = [ "Average", null, false, 0, null, "Color", null, false, 1, null, "Difference", null, false, 2, null, "Perceptual", null, false, 3, null ]
 selected = 0
 
 [node name="space1" type="Control" parent="margin/vbox/sort_buttons"]

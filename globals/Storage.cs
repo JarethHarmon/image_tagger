@@ -10,7 +10,7 @@ namespace Data
 	public enum Sort { SHA256, PATH, NAME, SIZE, UPLOAD_TIME, CREATION_TIME, EDIT_TIME, DIMENSIONS, TAG_COUNT, RANDOM, IMAGE_COLOR, RATING_QUALITY, RATING_APPEAL, RATING_ART_STYLE, RATING_SUM, RATING_AVERAGE }
 	public enum Order { ASCENDING, DESCENDING }
 	public enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
-	public enum Similarity { AVERAGE, COLOR, DIFFERENCE }
+	public enum Similarity { AVERAGE, COLOR, DIFFERENCE, PERCEPTUAL }
 	public enum AnimationStatus { PLAYING, LOADING, STOPPING }
 
 	public class HashInfo 
@@ -21,6 +21,8 @@ namespace Data
 
 		public ulong differenceHash { get; set; }             // the CoenM difference hash of the image
 		public float[] colorHash { get; set; }                // the 'color hash' I made
+		public string perceptualHash { get; set; }
+		//public int numColors { get; set; }
 
 		public int width { get; set; }                        // the width of the image in pixels
 		public int height { get; set; }                       // the height of the image in pixels

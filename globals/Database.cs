@@ -13,6 +13,7 @@ using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using LiteDB;
 using Data;
+using ImageMagick;
 
 public class Database : Node
 {
@@ -82,6 +83,8 @@ public class Database : Node
 
 			colHashes.EnsureIndex(x => x.imageHash);
 			colHashes.EnsureIndex(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
+			//colHashes.EnsureIndex(x => x.numColors);
+
 			colHashes.EnsureIndex(x => x.size);
 			colHashes.EnsureIndex(x => x.width*x.height);
 			colHashes.EnsureIndex(x => x.tags.Count);
@@ -416,7 +419,8 @@ public class Database : Node
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
-				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
+				//var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
+				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, temp.perceptualHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
 
 				if (hashInfos == null) return new string[0];
 
@@ -461,6 +465,8 @@ public class Database : Node
 			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width*x.height) : query.OrderByDescending(x => x.width*x.height);
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
+			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
+
 			else if (sort == (int)Sort.RANDOM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
 			// need a way to handle this that allows custom user ratings
 			else if (sort == (int)Sort.RATING_QUALITY) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Quality"]) : query.OrderByDescending(x => x.ratings["Quality"]);
@@ -489,9 +495,10 @@ public class Database : Node
 		public float[] colorHash { get; set; }
 		public ulong differenceHash { get; set; }
 		public float similarity { get; set; }
+		public string perceptualHash { get; set; }
 	}
 
-	public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
+	/*public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
 		
@@ -501,6 +508,37 @@ public class Database : Node
 		else if (similarityMode == (int)Similarity.COLOR)
 			foreach (SimilarityQueryResult result in result1)
 				result.similarity = ColorSimilarity(result.colorHash, colorHash);
+		else
+			foreach (SimilarityQueryResult result in result1)
+				result.similarity = (float)DifferenceSimilarity(result.differenceHash, differenceHash);
+		
+		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
+		result1 = null;
+		
+		var result3 = new List<HashInfo>();
+		foreach (SimilarityQueryResult result in result2)
+			result3.Add(colHashes.FindById(result.imageHash));
+	
+		result2 = null;
+
+		return result3.ToList();
+	}*/
+	
+	public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, string perceptualHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
+	{
+		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
+		
+		if (similarityMode == (int)Similarity.AVERAGE)
+			foreach (SimilarityQueryResult result in result1)
+				result.similarity = (ColorSimilarity(result.colorHash, colorHash) + 
+					(float)PerceptualSimilarity(result.perceptualHash, perceptualHash) + 
+					(float)DifferenceSimilarity(result.differenceHash, differenceHash)) / 3f;
+		else if (similarityMode == (int)Similarity.COLOR)
+			foreach (SimilarityQueryResult result in result1)
+				result.similarity = ColorSimilarity(result.colorHash, colorHash);
+		else if (similarityMode == (int)Similarity.PERCEPTUAL)
+			foreach (SimilarityQueryResult result in result1)
+				result.similarity = (float)PerceptualSimilarity(result.perceptualHash, perceptualHash);
 		else
 			foreach (SimilarityQueryResult result in result1)
 				result.similarity = (float)DifferenceSimilarity(result.differenceHash, differenceHash);
@@ -531,12 +569,18 @@ public class Database : Node
 				imageHash = x.imageHash, 
 				colorHash = x.colorHash,
 				differenceHash = x.differenceHash,
+				perceptualHash = x.perceptualHash,
 			}).ToList();
 		else if (similarityMode == (int)Similarity.COLOR)
 			return query.Select(x => new SimilarityQueryResult { 
 				imageHash = x.imageHash, 
 				colorHash = x.colorHash,
 			}).ToList();
+		else if (similarityMode == (int)Similarity.PERCEPTUAL)
+			return query.Select(x => new SimilarityQueryResult { 
+				imageHash = x.imageHash, 
+				perceptualHash = x.perceptualHash,
+			}).ToList(); 
 		else
 			return query.Select(x => new SimilarityQueryResult { 
 				imageHash = x.imageHash, 
@@ -557,10 +601,6 @@ public class Database : Node
 				list.Add(tmp);
 			}
 			colHashes.Update(list);
-			//dbHashes.BeginTrans();
-			//foreach (HashInfo hashInfo in list) 
-			//	colHashes.Update(hashInfo);
-			//dbHashes.Commit();
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::BulkAddTags() : ", ex); 
@@ -582,10 +622,6 @@ public class Database : Node
 				list.Add(tmp);
 			}
 			colHashes.Update(list);
-			//dbHashes.BeginTrans();
-			//foreach (HashInfo hashInfo in list)
-			//	colHashes.Update(hashInfo);
-			//dbHashes.Commit();
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::BulkRemoveTags() : ", ex); 
@@ -958,7 +994,7 @@ public class Database : Node
 		
 		float p1 = 100f * (float)same/numColors;
 		float p2 = 100f-(difference/2f);
-		
+
 		return 0.5f * (p1+p2);
 	}
 
@@ -967,13 +1003,21 @@ public class Database : Node
 		return CompareHash.Similarity(h1, h2);
 	}
 	
+	public double PerceptualSimilarity(string h1, string h2)
+	{
+		var phash1 = new ImageMagick.PerceptualHash(h1);
+		var phash2 = new ImageMagick.PerceptualHash(h2);
+		return (1000.0 - phash1.SumSquaredDistance(phash2)) / 10;
+	}
+
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)
 	{
 		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
 		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
 		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
-		return (color+(float)difference)/2f;
+		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);
+		return (color+(float)perceptual+(float)difference)/3f;
 	}
 
 	public float GetColorSimilarityTo(string compareHash, string imageHash)
@@ -987,7 +1031,16 @@ public class Database : Node
 	{
 		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
 		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
-		return (float) DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
+		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
+		return (float)difference;
+	}
+
+	public float GetPerceptualSimilarityTo(string compareHash, string imageHash)
+	{
+		var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
+		var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
+		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);
+		return (float) perceptual;
 	}
 
 

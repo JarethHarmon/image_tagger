@@ -384,6 +384,8 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 			similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
 		elif Globals.current_similarity == Globals.Similarity.COLOR:
 			similarity = Database.GetColorSimilarityTo(compare_hash, image_hash)
+		elif Globals.current_similarity == Globals.Similarity.PERCEPTUAL:
+			similarity = Database.GetPerceptualSimilarityTo(compare_hash, image_hash)
 		else:
 			similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
