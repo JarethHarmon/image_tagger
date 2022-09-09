@@ -416,8 +416,8 @@ public class Database : Node
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
-				
 				var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
+
 				if (hashInfos == null) return new string[0];
 
 				foreach (HashInfo hashInfo in hashInfos) {
@@ -699,6 +699,7 @@ public class Database : Node
 			importInfo.finished = true;
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
+			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
 		}
 		catch (Exception ex) {
 			GD.Print("Database::FinishImport() : ", ex);

@@ -149,32 +149,32 @@ func _query_thread(args:Array) -> void:
 	last_query_settings = temp_query_settings
 	
   # query the database
-	if tags_all.empty() and tags_any.empty() and tags_none.empty():
-		var import_id:String = ""
-		var temp =  Database.GetImportId(tab_id)
-		if temp == null or temp == "": temp = "All"
-		import_id = temp
-		
-		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
-		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-		var lqh:int = lqc.hash()
-		
-		# print(tab_id, ": ", Storage.HasPage(lqh))
-		if Storage.HasPage(lqh):
-			image_hashes = Storage.GetPage(lqh)
-			Storage.UpdatePageQueuePosition(lqh)
-			Database.PopulateDictHashes(image_hashes)
+#	if tags_all.empty() and tags_any.empty() and tags_none.empty():
+#		var import_id:String = ""
+#		var temp =  Database.GetImportId(tab_id)
+#		if temp == null or temp == "": temp = "All"
+#		import_id = temp
+#
+#		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
+#		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+#		var lqh:int = lqc.hash()
+#
+#		# print(tab_id, ": ", Storage.HasPage(lqh))
+#		if Storage.HasPage(lqh):
+#			image_hashes = Storage.GetPage(lqh)
+#			Storage.UpdatePageQueuePosition(lqh)
+#			Database.PopulateDictHashes(image_hashes)
 
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, similarity)
 		queried_image_count = Database.GetLastQueriedCount()
-		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-		var lqh:int = lqc.hash()
+#		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+#		var lqh:int = lqc.hash()
 		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
 		# similarity tabs do not support sort currently, so they do not need this check
-		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
-			Storage.AddPage(lqh, image_hashes)
+#		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
+#			Storage.AddPage(lqh, image_hashes)
 		if _is_invalid_query(thread, query): return
 	
   # get the correct values for page variables

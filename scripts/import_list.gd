@@ -16,6 +16,9 @@ onready var status_mutex:Mutex = Mutex.new()
 onready var similarity_stylebox:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 0.85, 0.2, 3)
 onready var similarity_stylebox_selected:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 2.9, 0.2, 3)
 onready var similarity_stylebox_hover:StyleBoxFlat = Globals.make_stylebox(Color(0.375, 0.125, 0.375), 1.6, 0.2, 3)
+onready var importing_stylebox:StyleBoxFlat = Globals.make_stylebox(Color("#e0d040"), 0.85, 0.2, 3)
+onready var importing_stylebox_selected:StyleBoxFlat = Globals.make_stylebox(Color("#e0d040"), 2.0, 0.2, 3)
+onready var importing_stylebox_hover:StyleBoxFlat = Globals.make_stylebox(Color("#e0d040"), 1.5, 0.2, 3)
 
 var thread_count:Dictionary = {} 	# { import_id:num_thread_in_use }
 var buttons:Dictionary = {}
@@ -64,15 +67,24 @@ func _on_tab_button_pressed(tab_id:String) -> void:
 
 func indicate_selected_button(tab_id:String) -> void:
 	if last_selected_tab != "": 
+		var import_id = Database.GetImportId(last_selected_tab)
+		var finished:bool = true if import_id == null else Database.GetFinished(import_id)
 		if buttons.has(last_selected_tab):
 			if Database.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
 				buttons[last_selected_tab].add_stylebox_override("normal", similarity_stylebox)
 				buttons[last_selected_tab].add_stylebox_override("focus", similarity_stylebox)
+				buttons[last_selected_tab].remove_color_override("font_color")
+				buttons[last_selected_tab].remove_color_override("font_color_focus")
+			elif not finished:
+				buttons[last_selected_tab].add_stylebox_override("normal", importing_stylebox)
+				buttons[last_selected_tab].add_stylebox_override("focus", importing_stylebox)
+				buttons[last_selected_tab].add_color_override("font_color", Color.black)
+				buttons[last_selected_tab].add_color_override("font_color_focus", Color.black)
 			else:
 				buttons[last_selected_tab].remove_stylebox_override("normal")
 				buttons[last_selected_tab].remove_stylebox_override("focus")
-			buttons[last_selected_tab].remove_color_override("font_color")
-			buttons[last_selected_tab].remove_color_override("font_color_focus")
+				buttons[last_selected_tab].remove_color_override("font_color")
+				buttons[last_selected_tab].remove_color_override("font_color_focus")
 	
 	if Database.GetTabType(tab_id) == Globals.Tab.SIMILARITY:
 		buttons[tab_id].add_stylebox_override("normal", similarity_stylebox_selected)
@@ -129,6 +141,10 @@ func create_tab_button(tab_id:String, finished:bool, total_count:int, success_co
 	else:
 		thread_count[tab_id] = processed_count 
 		b.text = "  %s (%d/%d)  " % [tab_name, processed_count, total_count]
+		b.add_stylebox_override("normal", importing_stylebox)
+		b.add_stylebox_override("focus", importing_stylebox)
+		b.add_color_override("font_color", Color.black)
+		b.add_color_override("font_color_focus", Color.black)
 	#b.text = "  " + tab_name + " (" + String(success_count) + (")  " if finished else (", " + String(success_count) + "/" + String(total_count) + ")  "))
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
@@ -146,6 +162,10 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	b.text = "  " + tab_name + " (0/" + String(count) + ")  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
 	b.connect("gui_input", self, "_on_tab_button_gui_input", [tab_id])
+	b.add_stylebox_override("normal", importing_stylebox)
+	b.add_stylebox_override("focus", importing_stylebox)
+	b.add_color_override("font_color", Color.black)
+	b.add_color_override("font_color_focus", Color.black)
 	button_list.add_child(b)
 	buttons[tab_id] = b
 	
@@ -230,6 +250,11 @@ func increment_import_buttons(tab_ids:Array) -> void:
 func finish_import_buttons(tab_ids:Array) -> void:
 	for tab_id in tab_ids:
 		buttons[tab_id].text = "  %s (%d)  " % [Database.GetName(tab_id), Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))]
+		if not last_selected_tab == tab_id:
+			buttons[tab_id].remove_stylebox_override("normal")
+			buttons[tab_id].remove_stylebox_override("focus")
+			buttons[tab_id].remove_color_override("font_color")
+			buttons[tab_id].remove_color_override("font_color_focus")
 	if Globals.current_tab_id in tab_ids:
 		Signals.emit_signal("image_import_finished", Globals.current_tab_id)
 

@@ -302,8 +302,9 @@ public class ImageImporter : Node
 			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(path);
 			var algo = new DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
 			return algo.Hash(stream);
-		} catch (Exception ex) { GD.Print("Database::GetDifferenceHash() : ", ex); return 0; }
+		} catch (Exception ex) { GD.Print("Database::DifferenceHash() : ", ex); return 0; }
 	}
+
 	private string GetRandomID(int num_bytes)
 	{
 		try{
@@ -336,15 +337,16 @@ public class ImageImporter : Node
 				int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
 				int color = (color1+color3)/2;
 				colors[color]++;
+				//colors[color3]++;
 			}
 		}
-		
+
 		float[] hash = new float[256/bucketSize];
 		for (int color = 0; color < colors.Length; color++) {
 			hash[color] = 100 * (float)colors[color]/size;
 		}
+
 		return hash;
-		
 	}
 	
 /*=========================================================================================
