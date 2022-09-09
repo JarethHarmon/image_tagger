@@ -697,6 +697,7 @@ public class Database : Node
 			var importInfo = GetImport(importId);
 			if (importInfo == null) return;
 			importInfo.finished = true;
+			importInfo.importFinish = DateTime.Now.Ticks;
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
@@ -766,12 +767,7 @@ public class Database : Node
 			importInfo.ignored += result[2];
 			importInfo.failed += result[3];
 			importInfo.processed += result[0] + result[1] + result[2] + result[3];
-			if (importInfo.processed == importInfo.total) {
-				importInfo.finished = true;
-				importInfo.importFinish = DateTime.Now.Ticks;
-				string[] tabs = GetTabIDs(importId);
-				signals.Call("emit_signal", "finish_import_buttons", tabs);
-			}
+			
 			importInfo.progressIds.Remove(progressId);
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
@@ -780,6 +776,14 @@ public class Database : Node
 
 			tempHashes.Remove(progressId);
 			tempCounts.Remove(progressId);
+
+			// need to track the number of total and completed sections instead; this code should not be working at all after separating sections and importing
+			//if (importInfo.processed == importInfo.total) {
+			if (importInfo.progressIds.Count == 0) {
+				string[] tabs = GetTabIDs(importId);
+				FinishImport(importId);
+				signals.Call("emit_signal", "finish_import_buttons", tabs);
+			}
 		}
 		// only add importId to hashInfo once the counts are correctly updated
 		foreach (HashInfo hashInfo in hashInfoList) {
@@ -787,7 +791,7 @@ public class Database : Node
 			hashInfo.imports.Add(importId);
 		}
 		colHashes.Upsert(hashInfoList);
-		GD.Print("finished: ", progressId);
+		//GD.Print("finished: ", progressId);
 	}
 
 /*==============================================================================*/

@@ -69,6 +69,7 @@ func indicate_selected_button(tab_id:String) -> void:
 	if last_selected_tab != "": 
 		var import_id = Database.GetImportId(last_selected_tab)
 		var finished:bool = true if import_id == null else Database.GetFinished(import_id)
+		#print(finished)
 		if buttons.has(last_selected_tab):
 			if Database.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
 				buttons[last_selected_tab].add_stylebox_override("normal", similarity_stylebox)
