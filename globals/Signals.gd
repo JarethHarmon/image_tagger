@@ -17,6 +17,7 @@ signal similarity_changed
 signal load_full_image(image_hash, path)
 signal load_image_tags(image_hash, selected_items)
 signal create_path_buttons(image_hash, paths)
+signal create_import_buttons(image_hash, imports)
 
 signal update_import_button(tab_id, finished, success_count, total_count, import_name)
 signal increment_all_button(value) # increments its text by 1
@@ -46,6 +47,7 @@ signal toggle_tab_section(visible)
 signal toggle_search_section(visible)
 signal toggle_thumbnail_section(visible)
 signal toggle_preview_section(visible)
+signal toggle_tablist_section(visible)
 signal toggle_tag_section(visible)
 
 signal image_count_changed(total)

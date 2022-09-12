@@ -179,7 +179,10 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	var progress_ids:Array = Database.GetProgressIds(import_id)
 	for progress_id in progress_ids:
 		append_arg([import_id, progress_id])
-
+	
+	# might be good, not sure
+	shuffle_args()
+	
 	start_manager()
 
 func create_similarity_tab(tab_id:String, image_hash:String) -> void:
@@ -343,6 +346,11 @@ func _stop(thread_id:int) -> void:
 		thread_pool[thread_id].wait_to_finish()
 		set_thread_status(thread_id, Status.INACTIVE)
 		active_threads -= 1
+
+func shuffle_args() -> void:
+	argument_mutex.lock()
+	argument_queue.shuffle()
+	argument_mutex.unlock()
 
 func append_arg(arg) -> void:
 	argument_mutex.lock()

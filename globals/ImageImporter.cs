@@ -312,7 +312,9 @@ public class ImageImporter : Node
 		try {
 			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(path);
 			var algo = new DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
-			return algo.Hash(stream);
+			ulong result = algo.Hash(stream);
+			stream.Dispose();
+			return result;
 		} catch (Exception ex) { GD.Print("Database::DifferenceHash() : ", ex); return 0; }
 	}
 
@@ -320,7 +322,9 @@ public class ImageImporter : Node
 	{
 		try {
 			var im = (path.Length() < MAX_PATH_LENGTH) ? new MagickImage(path) : new MagickImage(LoadFile(path));
-			return im.PerceptualHash().ToString();
+			string result = im.PerceptualHash().ToString();
+			im.Dispose();
+			return result;
 		}
 		catch (Exception ex) { GD.Print("Database::GetPerceptualHash() : ", ex); return ""; }
 	}
@@ -358,6 +362,7 @@ public class ImageImporter : Node
 				colors[color]++;
 			}
 		}
+		bitmap.Dispose();
 
 		float[] hash = new float[256/bucketSize];
 		for (int color = 0; color < colors.Length; color++) {
@@ -372,8 +377,6 @@ public class ImageImporter : Node
 =========================================================================================*/
 	public void ImportImages(string importId, string progressId)
 	{
-		// should now get paths and tabs from Database itself
-		// should process 16 images at once
 		try {
 			if (importId.Equals("") || progressId.Equals("")) return;
 			string[] tabs = db.GetTabIDs(importId);
@@ -386,10 +389,7 @@ public class ImageImporter : Node
 			var pathList = new List<string>();
 			int failCount = 0;
 			for (int i = 0; i < paths.Length; i++) {
-				if (_NonExistent(paths[i])) {
-					db.UpdateImportCount(importId, (int)ImportCode.FAILED);
-					failCount++;
-				}
+				if (NonExistent(paths[i])) failCount++;
 				else pathList.Add(paths[i]);
 			}
 			_ImportImages(importId, progressId, pathList, tabs, imageCount, failCount);
@@ -397,52 +397,48 @@ public class ImageImporter : Node
 		catch (Exception ex) { GD.Print("ImageImporter::ImportImages() : ", ex); return; }
 	}
 
+	private static readonly object locker = new object();
 	private void _ImportImages(string importId, string progressId, List<string> paths, string[] tabs, int imageCount, int failCount)
-	{
-		//int failedCount=failCount, successCount=0, duplicateCount=0, ignoredCount=0;
-		int successCount=0;
+	{	
 		try {
-			var hashInfoList = new List<HashInfo>();
+			int[] results = new int[4]; 				// success,duplicate,ignored,failed
+			results[(int)ImportCode.FAILED] += failCount;
+
+			var hashInfoList = new List<HashInfo>();	// the images that did not fail (need to have metadata updated)
+			var newHashInfoList = new List<HashInfo>();	// new images, need thumbnails and extra hashes
+			var newHashInfoSavePaths = new List<string>();
+
+			// iterate each path
 			foreach (string path in paths) {
 				var fileInfo = new System.IO.FileInfo(path);
 				string _imageHash = (string) globals.Call("get_sha256", path);
-								
-				var _hashInfo = db.GetHashInfo(_imageHash);
+
+				// try to get HashInfo from tempStorage,Dictionary,Database
+				var _hashInfo = db.GetHashInfo(importId, _imageHash);
+				
+				// if HashInfo was found in one of those locations
 				if (_hashInfo != null) {
-					// check if image has already been imported with the current importId
-					if (db.HasHashInfoAndImport(_imageHash, importId) || IgnoredCheckerHas(importId, _imageHash)) {
-						if (_hashInfo.paths == null) _hashInfo.paths = new HashSet<string>();
-						_hashInfo.paths.Add(path);
-						db.AddOrUpdateHashInfo(_imageHash, progressId, _hashInfo, (int)ImportCode.IGNORED);
-						db.UpdateImportCount(importId, (int)ImportCode.IGNORED);
-						//ignoredCount++;
-						continue;
-					}
-					else {
-						if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
-						ignoredChecker[importId].Add(_imageHash);
-					}
-
-					// check if image has already been imported with another importId
-					if (_hashInfo != null) {
-						if (_hashInfo.paths == null) _hashInfo.paths = new HashSet<string>();
-						_hashInfo.paths.Add(path);
-						db.AddOrUpdateHashInfo(_imageHash, progressId, _hashInfo, (int)ImportCode.DUPLICATE);
-						db.UpdateImportCount(importId, (int)ImportCode.DUPLICATE);
-						//duplicateCount++;
-						continue;
-					}
+					_hashInfo.paths.Add(path);
+					if (db.IsIgnored(importId, _imageHash) || IgnoredCheckerHas(importId, _imageHash)) 
+						results[(int)ImportCode.IGNORED]++;
+					else if (db.IsDuplicate(importId, _imageHash)) results[(int)ImportCode.DUPLICATE]++;
+					hashInfoList.Add(_hashInfo);
+					if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
+					ignoredChecker[importId].Add(_imageHash);
+					continue;
 				}
+				if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
+				ignoredChecker[importId].Add(_imageHash);
 
-				// check if image is corrupt
+				// else HashInfo was not found, check if it is corrupt
 				if (IsImageCorrupt(path)) {
-					db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-					db.UpdateImportCount(importId, (int)ImportCode.FAILED);
-					//failedCount++;
+					results[(int)ImportCode.FAILED]++;
 					continue;
 				}
 
+				// else generate the new HashInfo
 				(int _imageType, int _width, int _height) = GetImageInfo(path);
+				string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
 
 				// add hashInfo to list for bulk processing
 				var hashInfo = new HashInfo {
@@ -458,57 +454,49 @@ public class ImageImporter : Node
 					uploadTime = DateTime.Now.Ticks,
 					lastEditTime = DateTime.Now.Ticks,
 				};
-				hashInfoList.Add(hashInfo);
+				newHashInfoList.Add(hashInfo);
+				newHashInfoSavePaths.Add(savePath);
+				db.StoreOneTempHashInfo(importId, progressId, hashInfo);
 			}
 
-			var hashInfoListNeedThumbnails = new List<HashInfo>();
-			var hashInfoSavePaths = new List<string>();
+			if (newHashInfoList.Count > 0) {
+				// generate thumbnails using newHashInfoList and newHashInfoSavePaths
+				(List<HashInfo> hashInfos, int[] results1) = SaveThumbnailsPIL(newHashInfoList, newHashInfoSavePaths.ToArray(), 256);
+			
+				// merge the array of results (jpg/png/fail) from thumbnail saving
+				for (int i = 0; i < results.Length; i++) results[i] += results1[i];
+			
+				// iterate hashInfos and calc hashes
+				//(might be done inside SaveThumbnailsPIL())
 
+				foreach (HashInfo hashInfo in hashInfos) hashInfoList.Add(hashInfo);
+			}
+			// call StoreTempHashInfo on hashInfoList
+			db.StoreTempHashInfo(importId, progressId, hashInfoList, results);
+			
+			// update dictionaries
+			db.UpdateImportCounts(importId, results); // update imports dictionary
+			//globals.Call("_print", "::", results);
 			foreach (HashInfo hashInfo in hashInfoList) {
-				string savePath = thumbnailPath + hashInfo.imageHash.Substring(0,2) + "/" + hashInfo.imageHash + ".thumb";
-				
-				int _thumbnailType = (int)ImageType.ERROR;
-				if (System.IO.File.Exists(savePath)) {
-					_thumbnailType = GetActualFormat(savePath);
-					hashInfo.thumbnailType = _thumbnailType;
-				}
-				else {
-					hashInfoListNeedThumbnails.Add(hashInfo);
-					hashInfoSavePaths.Add(savePath);
+				var __hashInfo = db.GetDictHashInfo(hashInfo.imageHash);
+				if (__hashInfo != null) {
+					db.MergeHashInfo(hashInfo, __hashInfo);
+					db.UpsertDictHashInfo(hashInfo.imageHash, hashInfo);
 				}
 			}
 
-			int[] results = SaveThumbnailsPIL(hashInfoListNeedThumbnails, hashInfoSavePaths, 256);
-			if (results == null) 
-				for (int i = 0; i < hashInfoListNeedThumbnails.Count; i++) {
-					db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-					db.UpdateImportCount(importId, (int)ImportCode.FAILED);
-				}
-
-			for (int i = 0; i < results.Length; i++) {
-				if (results[i] == (int)ImportCode.SUCCESS) {
-					db.AddOrUpdateHashInfo(hashInfoListNeedThumbnails[i].imageHash, progressId, hashInfoListNeedThumbnails[i], (int)ImportCode.SUCCESS);
-					db.UpdateImportCount(importId, (int)ImportCode.SUCCESS);
-					successCount++;
-				}
-				else {
-					db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-					db.UpdateImportCount(importId, (int)ImportCode.FAILED);
-				}
-			}
-			if (successCount > 0)
+			// call signals
+			if (results[(int)ImportCode.SUCCESS] > 0 || results[(int)ImportCode.DUPLICATE] > 0)
 				if (tabs.Length > 0) 
-					signals.Call("emit_signal", "increment_import_buttons", tabs, successCount);
-				signals.Call("emit_signal", "increment_all_button", successCount);
+					signals.Call("emit_signal", "increment_import_buttons", tabs, results[(int)ImportCode.SUCCESS] + results[(int)ImportCode.DUPLICATE]);
+				signals.Call("emit_signal", "increment_all_button", results[(int)ImportCode.SUCCESS]);
 		}
 		catch (Exception ex) { 
 			GD.Print("ImageImporter::_ImportImages() : ", ex); 
-			db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-			db.UpdateImportCount(importId, (int)ImportCode.FAILED);
 		}
 	}
 
-	private int[] SaveThumbnailsPIL(List<HashInfo> hashInfos, List<string> _savePaths, int maxSize)
+	private (List<HashInfo>, int[]) SaveThumbnailsPIL(List<HashInfo> hashInfos, string[] _savePaths, int maxSize)
 	{
 		try {
 			string imagePaths="", savePaths="", saveTypes="";
@@ -536,31 +524,42 @@ public class ImageImporter : Node
 			reader.Dispose();
 			pil.Dispose();
 
-			var intResults = new List<int>();
+			int[] intResults = new int[4]; // success,duplicate,ignored,failed
 			string[] sep = new string[] { "?" };
 			string[] results = output.Split(sep, StringSplitOptions.RemoveEmptyEntries);
-			for (int i = 0; i < results.Length; i++)
+
+			for (int i = 0; i < hashInfos.Count; i++)
 			{
 				if (results[i].Equals("JPEG")) {
-					intResults.Add((int)ImportCode.SUCCESS);
-					hashInfos[i].thumbnailType = (int)ImageType.JPG;
-					hashInfos[i].differenceHash = DifferenceHash(_savePaths[i]);
-					hashInfos[i].colorHash = ColorHash(_savePaths[i]);
-					hashInfos[i].perceptualHash = GetPerceptualHash(_savePaths[i]);
+					intResults[(int)ImportCode.SUCCESS]++;
+					var tempHashInfo = hashInfos[i];
+					var tempSavePath = _savePaths[i];
+					tempHashInfo.thumbnailType = (int)ImageType.JPG;
+					tempHashInfo.differenceHash = DifferenceHash(tempSavePath);
+					tempHashInfo.colorHash = ColorHash(tempSavePath);
+					tempHashInfo.perceptualHash = GetPerceptualHash(tempSavePath);
+					hashInfos[i] = tempHashInfo;
 				}
 				else if (results[i].Equals("PNG")) {
-					intResults.Add((int)ImportCode.SUCCESS);
-					hashInfos[i].thumbnailType = (int)ImageType.PNG;
-					hashInfos[i].differenceHash = DifferenceHash(_savePaths[i]);
-					hashInfos[i].colorHash = ColorHash(_savePaths[i]);
-					hashInfos[i].perceptualHash = GetPerceptualHash(_savePaths[i]);
+					intResults[(int)ImportCode.SUCCESS]++;
+					var tempHashInfo = hashInfos[i];
+					var tempSavePath = _savePaths[i];
+					tempHashInfo.thumbnailType = (int)ImageType.PNG;
+					tempHashInfo.differenceHash = DifferenceHash(tempSavePath);
+					tempHashInfo.colorHash = ColorHash(tempSavePath);
+					tempHashInfo.perceptualHash = GetPerceptualHash(tempSavePath);
+					hashInfos[i] = tempHashInfo;
 				}
-				else intResults.Add((int)ImportCode.FAILED);
+				else {
+					GD.Print(results[i]);
+					intResults[(int)ImportCode.FAILED]++;
+					hashInfos[i].imageType = (int)ImageType.ERROR;
+				}
 			}
 
-			return intResults.ToArray();
+			return (hashInfos, intResults);
 		}
-		catch (Exception ex) { GD.Print("ImageImporter::SaveThumbnailsPIL() : ", ex); return null; }
+		catch (Exception ex) { GD.Print("ImageImporter::SaveThumbnailsPIL() : ", ex); return (null, null); }
 	}
 
 	public Dictionary<string, HashSet<string>> ignoredChecker = new Dictionary<string, HashSet<string>>();
@@ -571,7 +570,7 @@ public class ImageImporter : Node
 		return false;
 	}	
 
-	private bool _NonExistent(string path)
+	public bool NonExistent(string path)
 	{
 		bool safePathLength = path.Length() < MAX_PATH_LENGTH;
 		if ((safePathLength) ? !System.IO.File.Exists(path) : !Alphaleonis.Win32.Filesystem.File.Exists(path)) 

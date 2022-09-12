@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://themes/dark_sharp (arial).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
@@ -14,6 +14,10 @@
 [ext_resource path="res://scripts/popups.gd" type="Script" id=12]
 [ext_resource path="res://scenes/import_info.tscn" type="PackedScene" id=13]
 [ext_resource path="res://assets/icon.png" type="Texture" id=14]
+[ext_resource path="res://scenes/section_tabs.tscn" type="PackedScene" id=15]
+[ext_resource path="res://scenes/rating_list.tscn" type="PackedScene" id=16]
+[ext_resource path="res://scenes/path_list.tscn" type="PackedScene" id=17]
+[ext_resource path="res://scenes/import_display.tscn" type="PackedScene" id=18]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
@@ -159,13 +163,13 @@ margin_bottom = 982.0
 rect_clip_content = true
 size_flags_horizontal = 3
 size_flags_vertical = 3
-split_offset = 320
+split_offset = 480
 
 [node name="preview" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 4 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 1151.0
-margin_bottom = 807.0
+margin_bottom = 967.0
 camera = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Camera2D")
 viewport = NodePath("../../../../../../preview_container/ViewportContainer/Viewport")
 color_grading = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/ColorGrading")
@@ -176,12 +180,49 @@ preview = NodePath("../../../../../../preview_container/ViewportContainer/Viewpo
 normal_parent = NodePath("..")
 fullscreen_parent = NodePath("../../../../../../fullscreen")
 
-[node name="tag_list" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 3 )]
-anchor_right = 0.0
-anchor_bottom = 0.0
-margin_top = 815.0
+[node name="hsplit" type="HSplitContainer" parent="margin/vbox/hsplit/right/vsplit"]
+margin_top = 975.0
 margin_right = 1151.0
 margin_bottom = 982.0
+mouse_filter = 1
+size_flags_horizontal = 3
+size_flags_vertical = 3
+split_offset = -440
+
+[node name="section_tabs" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 15 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 131.0
+margin_bottom = 7.0
+
+[node name="tag_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 3 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 139.0
+margin_right = 1151.0
+margin_bottom = 7.0
+
+[node name="path_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 17 )]
+visible = false
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 139.0
+margin_right = 1151.0
+margin_bottom = 7.0
+
+[node name="import_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 18 )]
+visible = false
+
+[node name="group_list" type="Control" parent="margin/vbox/hsplit/right/vsplit/hsplit"]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 16 )]
+visible = false
 
 [node name="recent_tags" type="Control" parent="margin/vbox/hsplit/right"]
 visible = false
@@ -273,7 +314,7 @@ allow_search = true
 [node name="pmenu_view" type="PopupMenu" parent="popups/context_menu"]
 margin_right = 1820.0
 margin_bottom = 980.0
-items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Sections", null, 0, false, false, 3, 0, null, "", false, "", null, 0, false, false, 4, 0, null, "", true, "[1] File Buttons", null, 1, true, false, 5, 0, null, "", false, "[2] Tab Buttons", null, 1, true, false, 6, 0, null, "", false, "[3] Search Buttons", null, 1, true, false, 7, 0, null, "", false, "[4] Thumbnail List", null, 1, true, false, 8, 0, null, "", false, "[5] Preview Section", null, 1, true, false, 9, 0, null, "", false, "[6] Tag List", null, 1, true, false, 10, 0, null, "", false ]
+items = [ "Full Screen", null, 1, false, false, 0, 0, null, "", false, "Show Thumbnail Tooltips", null, 1, true, false, 1, 0, null, "", false, "", null, 0, false, false, 2, 0, null, "", true, "Sections", null, 0, false, false, 3, 0, null, "", false, "", null, 0, false, false, 4, 0, null, "", true, "[1] File Buttons", null, 1, true, false, 5, 0, null, "", false, "[2] Tab Buttons", null, 1, true, false, 6, 0, null, "", false, "[3] Search Buttons", null, 1, true, false, 7, 0, null, "", false, "[4] Thumbnail List", null, 1, true, false, 8, 0, null, "", false, "[5] Preview Section", null, 1, true, false, 9, 0, null, "", false, "[6] Tab List", null, 1, true, false, 10, 0, null, "", false, "[7] Tag List", null, 1, true, false, 11, 0, null, "", false ]
 
 [node name="FileDialog" type="FileDialog" parent="popups"]
 margin_left = 50.0

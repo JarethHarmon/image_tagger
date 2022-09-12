@@ -20,9 +20,6 @@ public class Database : Node
 /*==============================================================================*/
 /*                                   Variables                                  */
 /*==============================================================================*/
-	// might be better to increase this to 32+ for very large imports
-	// previously an import of size 150k did not work, 50k did, no idea on the exact cutoff point
-	// previous array was 16 times larger + there was 3-4 of them so should be at least a 48x reduction
 	private int progressSectionSize = 16;
 	private string metadataPath;
 	public void SetMetadataPath(string path) { metadataPath = path; }
@@ -60,7 +57,6 @@ public class Database : Node
 
 	public int Create()
 	{
-		//Test();
 		try {
 			dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
 			dbImports = new LiteDatabase(metadataPath + "import_info.db");
@@ -83,26 +79,23 @@ public class Database : Node
 
 			colHashes.EnsureIndex(x => x.imageHash);
 			colHashes.EnsureIndex(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
-			//colHashes.EnsureIndex(x => x.numColors);
-
-			//colHashes.EnsureIndex(x => x.size);
-			//colHashes.EnsureIndex(x => x.width*x.height);
-			//colHashes.EnsureIndex(x => x.tags.Count);
-
-			//colHashes.EnsureIndex(x => x.creationTime);
-			colHashes.EnsureIndex(x => x.uploadTime);
-			//colHashes.EnsureIndex(x => x.lastWriteTime);
-			
-			//colHashes.EnsureIndex(x => x.imageName);
-			//colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
 			colHashes.EnsureIndex(x => x.imports);
 			colHashes.EnsureIndex(x => x.groups);
 			colHashes.EnsureIndex(x => x.tags);
+			colHashes.EnsureIndex(x => x.ratings["Sum"]);
+			colHashes.EnsureIndex(x => x.uploadTime);
 
+			//colHashes.EnsureIndex(x => x.numColors);
+			//colHashes.EnsureIndex(x => x.size);
+			//colHashes.EnsureIndex(x => x.width*x.height);
+			//colHashes.EnsureIndex(x => x.tags.Count);
+			//colHashes.EnsureIndex(x => x.creationTime);
+			//colHashes.EnsureIndex(x => x.lastWriteTime);
+			//colHashes.EnsureIndex(x => x.imageName);
+			//colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
 			//colHashes.EnsureIndex(x => x.ratings["Quality"]);
 			//colHashes.EnsureIndex(x => x.ratings["Appeal"]);
 			//colHashes.EnsureIndex(x => x.ratings["Art"]);
-			colHashes.EnsureIndex(x => x.ratings["Sum"]);
 			//colHashes.EnsureIndex(x => x.ratings["Average"]);			
 
 			return (int)ErrorCodes.OK;
@@ -113,37 +106,6 @@ public class Database : Node
 		}
 	} 
 	
-	private class Foo {
-		[BsonId]
-    	public int Id { get; set; }
-	}
-	private void Test()
-	{
-		var path = metadataPath + "test" + DateTime.UtcNow.Ticks + ".lite";
-        var data = Enumerable
-            .Range (1, 10000)
-            .Select (i => new Foo () { Id = i })
-            .ToArray ();
-        var sw = System.Diagnostics.Stopwatch.StartNew ();
-        using (var db = new LiteDatabase(path)) {
-        	var col = db.GetCollection<Foo>("table");
-            col.Insert(data);
-        }
-        sw.Stop();
-        GD.Print("Bulk: Inserted ", data.Length, " ints in ", sw.Elapsed);
-
-		sw = System.Diagnostics.Stopwatch.StartNew ();
-		using (var db = new LiteDatabase(path)) {
-        	var col = db.GetCollection<Foo>("table");
-			foreach (Foo f in data) {
-				f.Id += 10000;
-				col.Insert(f);
-			}
-		}
-		sw.Stop();
-        GD.Print("Slow: Inserted ", data.Length, " ints in ", sw.Elapsed);
-	}
-
 	public void CreateAllInfo() 
 	{
 		try {
@@ -209,73 +171,125 @@ public class Database : Node
 	public void CheckpointTagDB() { dbTags.Checkpoint(); }
 
 /*==============================================================================*/
-/*                                  Hash Database                               */
+/*                            Temporary Hash Storage                            */
 /*==============================================================================*/
-  // imageHash : HashInfo
-	private Dictionary<string, HashInfo> tempHashInfo = new Dictionary<string, HashInfo>();
-  // progressId : imageHashes
+	// { importId : { imageHash : hashInfo }}
+	private Dictionary<string, Dictionary<string, HashInfo>> tempHashInfo = new Dictionary<string, Dictionary<string, HashInfo>>();
 	private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
-  // progressId : [success, duplicate, ignored, failed]
-	private Dictionary<string, int[]> tempCounts = new Dictionary<string, int[]>();
+	
+	private void MergeHashSets(HashSet<string> main, HashSet<string> sub)
+	{
+		if (sub.Count == 0) return;
+		if (main.Count == 0) main = sub;
+		foreach (string member in sub)
+			main.Add(member);
+	}
+	
+	public void MergeHashInfo(HashInfo main, HashInfo sub)
+	{
+		if (main.paths != null && sub.paths != null) MergeHashSets(main.paths, sub.paths);
+		else if (sub.paths != null) main.paths = sub.paths; 
 
-	public void AddOrUpdateHashInfo(string imageHash, string progressId, HashInfo hashInfo, int result)
+		if (main.imports != null && sub.imports != null) MergeHashSets(main.imports, sub.imports);
+		else if (sub.imports != null) main.imports = sub.imports; 
+
+		if (main.tags != null && sub.tags != null) MergeHashSets(main.tags, sub.tags);
+		else if (sub.tags != null) main.tags = sub.tags; 
+	}
+
+	public void StoreOneTempHashInfo(string importId, string progressId, HashInfo hashInfo)
 	{
 		lock (tempHashInfo) {
-			if (tempHashInfo.ContainsKey(imageHash)) {
-				var _hashInfo = tempHashInfo[imageHash];
-				if (_hashInfo.paths != null) 
-					foreach (string path in _hashInfo.paths)
-						hashInfo.paths.Add(path);
-				if (_hashInfo.imports != null)
-					foreach (string import in _hashInfo.imports)
-						hashInfo.imports.Add(import);
+			if (!tempHashInfo.ContainsKey(importId)) tempHashInfo[importId] = new Dictionary<string, HashInfo>();
+			if (!tempHashes.ContainsKey(progressId)) tempHashes[progressId] = new HashSet<string>();
+			if (tempHashInfo[importId].ContainsKey(hashInfo.imageHash)) {
+				var _hashInfo = tempHashInfo[importId][hashInfo.imageHash];
+				MergeHashInfo(hashInfo, _hashInfo);
 			}
-			tempHashInfo[imageHash] = hashInfo;
-			if (!tempHashes.ContainsKey(progressId))
-				tempHashes[progressId] = new HashSet<string>();
-			tempHashes[progressId].Add(imageHash);
+			tempHashInfo[importId][hashInfo.imageHash] = hashInfo;
+			tempHashes[progressId].Add(hashInfo.imageHash);
+		}
+	}
 
-			if (!tempCounts.ContainsKey(progressId)) {
-				int[] temp = {0, 0, 0, 0};
-				tempCounts[progressId] = temp;
-			}	
-			tempCounts[progressId][result]++;
+	public void StoreTempHashInfo(string importId, string progressId, List<HashInfo> sectionData, int[] results)
+	{
+		if (sectionData.Count < 1) return;
+		// check if in current importId or if in database already
+		lock (tempHashInfo) {
+			// iterate over each HashInfo in this section
+			if (!tempHashInfo.ContainsKey(importId)) tempHashInfo[importId] = new Dictionary<string, HashInfo>();
+			if (!tempHashes.ContainsKey(progressId)) tempHashes[progressId] = new HashSet<string>();
+			foreach (HashInfo hashInfo in sectionData) {
+				// if tempHashInfo already contains this hash in the current import, merge it with the new one
+				if (tempHashInfo[importId].ContainsKey(hashInfo.imageHash)) {
+					var _hashInfo = tempHashInfo[importId][hashInfo.imageHash];
+					MergeHashInfo(hashInfo, _hashInfo);
+				}
+				// upsert this hashInfo into tempHashInfo and tempHashes
+				tempHashInfo[importId][hashInfo.imageHash] = hashInfo;
+				tempHashes[progressId].Add(hashInfo.imageHash);
+			}
+			// update the results counts in the imports dictionary
+			/*if (results.Length < 4) return;
+			var importInfo = GetImport(importId);
+			importInfo.success += results[0];
+			importInfo.duplicate += results[1];
+			importInfo.ignored += results[2];
+			importInfo.failed += results[3];
+			AddImport(importId, importInfo);*/
 		}
 	}
 	
-	public void IncrementFailedCount(string progressId, int result)
+	public HashInfo GetHashInfo(string importId, string imageHash)
 	{
-		lock (tempHashInfo) {
-			if (!tempHashes.ContainsKey(progressId))
-				tempHashes[progressId] = new HashSet<string>();
-
-			if (!tempCounts.ContainsKey(progressId)) {
-				int[] temp = {0, 0, 0, 0};
-				tempCounts[progressId] = temp;
-			}	
-			tempCounts[progressId][result]++;
+		lock (tempHashInfo) { 
+			if (tempHashInfo.ContainsKey(importId)) 
+				if (tempHashInfo[importId].ContainsKey(imageHash))
+					return tempHashInfo[importId][imageHash]; 
 		}
-	}
-
-	public HashInfo GetHashInfo(string imageHash)
-	{
-		lock (tempHashInfo) {
-			if (tempHashInfo.ContainsKey(imageHash))
-				return tempHashInfo[imageHash];
-		}
-		if (dictHashes.ContainsKey(imageHash))
-			return dictHashes[imageHash];
+		if (dictHashes.ContainsKey(imageHash)) return dictHashes[imageHash];
 		return colHashes.FindById(imageHash);
 	}
-
-	public bool HasHashInfoAndImport(string imageHash, string importId)
+	
+	public bool IsIgnored(string importId, string imageHash)
 	{
-		var hashInfo = GetHashInfo(imageHash);
+		var hashInfo = GetHashInfo(importId, imageHash);
 		if (hashInfo == null) return false;
 		if (hashInfo.imports == null) return false;
 		if (hashInfo.imports.Contains(importId)) return true;
 		return false;
 	}
+	
+	public bool IsDuplicate(string importId, string imageHash)
+	{
+		foreach (string iid in tempHashInfo.Keys)
+			if (!iid.Equals(importId))
+				if (GetHashInfo(iid, imageHash) != null)
+					return true;
+		var temp = colHashes.FindById(imageHash);
+		if (temp != null)
+			if (temp.imports != null)
+				if (!temp.imports.Contains(importId))
+					return true;
+		return false;		
+	}
+
+	public HashInfo GetDictHashInfo(string imageHash)
+	{
+		if (dictHashes.ContainsKey(imageHash)) return dictHashes[imageHash];
+		return null;
+	}
+
+	public void UpsertDictHashInfo(string imageHash, HashInfo hashInfo)
+	{
+		dictHashes[imageHash] = hashInfo;
+	}
+
+/*==============================================================================*/
+/*                                  Hash Database                               */
+/*==============================================================================*/
+
+
 	
 	private int _lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return _lastQueriedCount; }
@@ -387,7 +401,7 @@ public class Database : Node
 			if (dictHashes.ContainsKey(imageHash))
 				return dictHashes[imageHash].colorHash;
 			return new float[0];
-		} catch { return new float[0]; }
+		} catch { GD.Print("ERR"); return new float[0]; }
 	}
 	public string GetCreationTime(string imageHash)
 	{
@@ -747,34 +761,6 @@ public class Database : Node
 		}
 	}
 
-	private HashInfo MergeHashInfo(HashInfo hashInfo1, HashInfo hashInfo2)
-	{
-		var hashInfo3 = hashInfo1;
-		if (hashInfo1.paths != null) {
-			// neither set of paths is null; add all paths from hashInfo2 to hashInfo3 (HashSet so no need to check duplicates)
-			if (hashInfo2.paths != null) {
-				foreach (string path in hashInfo2.paths)
-					hashInfo3.paths.Add(path);
-			}
-			// if hashInfo2 paths is null, nothing to add
-		}
-		// hashInfo1 paths is null and hashInfo2.paths is not
-		else if (hashInfo2.paths != null)
-			hashInfo3.paths = hashInfo2.paths;
-
-		// same as above but for imports (should really create a generic function for HashSets and just call that on each one (especially for when tags,groups,etc need to be supported))
-		if (hashInfo1.imports != null) {
-			if (hashInfo2.imports != null) {
-				foreach (string import in hashInfo2.imports)
-					hashInfo3.imports.Add(import);
-			}
-		}
-		else if (hashInfo2.imports != null)
-			hashInfo3.imports = hashInfo2.imports;
-		
-		return hashInfo3;
-	}
-
 	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
@@ -785,35 +771,28 @@ public class Database : Node
 		var hashInfoList = new List<HashInfo>();
 		foreach (string hash in hashes) {
 			HashInfo hashInfo = null;
-			lock (tempHashInfo) { if (tempHashInfo.ContainsKey(hash)) hashInfo = tempHashInfo[hash]; }
+			lock (tempHashInfo) { 
+				if (tempHashInfo.ContainsKey(importId)) 
+					if (tempHashInfo[importId].ContainsKey(hash))
+						hashInfo = tempHashInfo[importId][hash];
+			}
 			if (hashInfo == null) continue;
 
 			var dbHashInfo = colHashes.FindById(hash);
-			if (dbHashInfo != null) hashInfo = MergeHashInfo(hashInfo, dbHashInfo);
+			if (dbHashInfo != null) MergeHashInfo(hashInfo, dbHashInfo);
 			hashInfoList.Add(hashInfo);
 		}
 		colHashes.Upsert(hashInfoList);
 
-		var importInfo = colImports.FindById(importId);
 		lock (locker) {
-			dbImports.BeginTrans();
-			var allInfo = colImports.FindById("All");
-			int[] result = tempCounts[progressId];
-			importInfo.success += result[0];
-			allInfo.success += result[0];
-			importInfo.duplicate += result[1];
-			importInfo.ignored += result[2];
-			importInfo.failed += result[3];
-			importInfo.processed += result[0] + result[1] + result[2] + result[3];
-			
+			var importInfo = GetImport(importId);
+			var allInfo = GetImport("All");
+
 			importInfo.progressIds.Remove(progressId);
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
 			colProgress.Delete(progressId);
-			dbImports.Commit();
-
 			tempHashes.Remove(progressId);
-			tempCounts.Remove(progressId);
 
 			if (importInfo.progressIds.Count == 0) {
 				string[] tabs = GetTabIDs(importId);
@@ -832,7 +811,7 @@ public class Database : Node
 				if (importer.ignoredChecker.ContainsKey(importId))
 					importer.ignoredChecker[importId].Remove(hashInfo.imageHash);
 		}
-		GD.Print("finished: ", progressId);
+		//GD.Print("finished: ", progressId);
 	}
 
 /*==============================================================================*/
@@ -849,26 +828,24 @@ public class Database : Node
 		}
 	}
 
-	public void UpdateImportCount(string importId, int countResult)
+	public void UpdateImportCounts(string importId, int[] results)
 	{
 		try {
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
 
-			if (countResult == (int)ImportCode.SUCCESS) {
-				importInfo.success++;
-				allInfo.success++;
-			}
-			else if (countResult == (int)ImportCode.DUPLICATE) importInfo.duplicate++;
-			else if (countResult == (int)ImportCode.IGNORED) importInfo.ignored++;
-			else { 
-				importInfo.failed++;
-				allInfo.failed++;
-			}
-			AddImport(importId, importInfo);
+			allInfo.success += results[(int)ImportCode.SUCCESS];
+			importInfo.success += results[(int)ImportCode.SUCCESS];
+			importInfo.duplicate += results[(int)ImportCode.DUPLICATE];
+			importInfo.ignored += results[(int)ImportCode.IGNORED];
+			importInfo.failed += results[(int)ImportCode.FAILED];
+			importInfo.processed += results[0] + results[1] + results[2] + results[3];
+
 			AddImport("All", allInfo);
-		} catch(Exception ex) { 
-			GD.Print("Database::UpdateImportCount() : ", ex); 
+			AddImport(importId, importInfo);
+		} 
+		catch(Exception ex) { 
+			GD.Print("Database::UpdateImportCounts() : ", ex); 
 			return; 
 		}
 	}
@@ -930,6 +907,13 @@ public class Database : Node
 	public string[] GetImportIds()
 	{
 		return dictImports.Keys.ToArray();
+	}
+	public string[] GetImportIdsFromHash(string imageHash)
+	{
+		var temp = colHashes.FindById(imageHash);
+		if (temp == null) return null;
+		if (temp.imports == null) return null;
+		return temp.imports.ToArray();
 	}
 	public string[] GetTabIds()
 	{

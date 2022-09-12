@@ -24,6 +24,8 @@ var current_tab_type:int = Tab.IMPORT_GROUP
 var current_tab_id:String = "All"
 var current_similarity:int = Similarity.AVERAGE
 
+var current_visible_tab_section:Control
+
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports
 
@@ -51,7 +53,7 @@ var settings:Dictionary = {
   # Import
 	"use_recursion" : false,
 	"max_bytes_to_check_apng" : 256,
-	"max_import_threads" : 3,
+	"max_import_threads" : 1,
 
   # Thumbnails
 	"images_per_page" : 400,
