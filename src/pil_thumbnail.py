@@ -18,20 +18,27 @@ def has_transparency(img):
 
 
 def save_PIL_thumbnail(im_path, sv_path, sv_size, sv_type):
-    im = Image.open(im_path)
-    # need to figure out all the types and whether I need to convert it to RGBA for saving as png (if not RGBA already)
-    if sv_type == 'jpeg': 
-        if has_transparency(im): sv_type = 'png'
-        else: im = im.convert('RGB')       # only needed if saving as jpg
-    im.thumbnail((sv_size, sv_size))
-    im.save(sv_path, sv_type)
-    print(sv_type)
+    try:
+        im = Image.open(im_path)
+        # need to figure out all the types and whether I need to convert it to RGBA for saving as png (if not RGBA already)
+        if sv_type == 'jpeg': 
+            if has_transparency(im): sv_type = 'png'
+            else: im = im.convert('RGB')       # only needed if saving as jpg
+        im.thumbnail((sv_size, sv_size))
+        im.save(sv_path, sv_type)
+        return sv_type
+    except:
+        return 'error'
 
 if len(sys.argv) > 4:
-    im_path = sys.argv[1]       # path the full image is located at
-    sv_path = sys.argv[2]       # path the thumbnail will be saved at
-    sv_size = int(sys.argv[3])  # max dimensions of the thumbnail
-    sv_type = sys.argv[4]       # the type ('jpeg' or 'png') that the thumbnail will be saved as
-    save_PIL_thumbnail(im_path, sv_path, sv_size, sv_type)
+    im_paths = sys.argv[1].split('?')           # path the full image is located at
+    sv_paths = sys.argv[2].split('?')           # path the thumbnail will be saved at
+    sv_size = int(sys.argv[3])                  # max dimensions of the thumbnail
+    sv_types = sys.argv[4].split('?')           # the type ('jpeg' or 'png') that the thumbnail will be saved as
+    
+    result = ''
+    for i in range(0, len(im_paths)):
+        result += save_PIL_thumbnail(im_paths[i], sv_paths[i], sv_size, sv_types[i]) + '?'
+    print(result)
 
 

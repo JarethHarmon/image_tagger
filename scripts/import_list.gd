@@ -232,18 +232,18 @@ func update_button_text(tab_id:String, finished:bool, success_count:int, total_c
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]
 	else: buttons[tab_id].text = "  %s (%d)  " % [import_name, success_count]
 
-func increment_all_button() -> void:
+func increment_all_button(value:int) -> void:
 	count_mutex.lock()
-	thread_count["All"] += 1
+	thread_count["All"] += value#1
 	var count:int = thread_count["All"]
 	buttons["All"].text = "  All (%d)  " % count
 	count_mutex.unlock()
 
-func increment_import_buttons(tab_ids:Array) -> void:
+func increment_import_buttons(tab_ids:Array, value:int) -> void:
 	count_mutex.lock()
 	for tab_id in tab_ids:
 		if thread_count.has(tab_id):
-			thread_count[tab_id] += 1
+			thread_count[tab_id] += value#1
 			var count:int = thread_count[tab_id]
 			buttons[tab_id].text = "  %s (%d/%d)  " % [Database.GetName(tab_id), count, Database.GetTotalCount(Database.GetImportId(tab_id))]
 	count_mutex.unlock()
@@ -432,19 +432,10 @@ func _thread(thread_id:int) -> void:
 		if section == null and manager_done: break
 		if get_thread_status(thread_id) != Status.PAUSED and section != null:
 			var import_id:String = section[0]
-			var progress_id:String = section[1]
-			#print(thread_id, " :: ", progress_id)
-			if tabs == null: tabs = Database.GetTabIDs(import_id) as Array
-			if paths == null: paths = Database.GetPaths(progress_id) as Array
-			if not paths.empty():
-				var path:String = paths.pop_front()
-				ImageImporter.ImportImage(tabs, import_id, progress_id, path)
-			else: 
-				set_thread_args(thread_id, null)
-				_add_finished_section([import_id, progress_id])
-				#Database.FinishImportSection(import_id, progress_id)
-				tabs = null
-				paths = null
+			var progress_id:String = section[1]			
+			ImageImporter.ImportImages(import_id, progress_id)
+			set_thread_args(thread_id, null)
+			_add_finished_section([import_id, progress_id])
 		else: OS.delay_msec(delay_time)
 	call_deferred("_done", thread_id)
 
