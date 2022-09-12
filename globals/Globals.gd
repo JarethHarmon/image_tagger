@@ -79,6 +79,10 @@ var settings:Dictionary = {
 	"show_thumbnail_tooltips" : true,
 }
 
+func _get_program_directory() -> String: 
+	if OS.is_debug_build(): return ProjectSettings.globalize_path("res://").plus_file("/")
+	return OS.get_executable_path().get_base_dir().plus_file("/")
+
 func _print(string, args) -> void: print("  ", string + ": ", args)
 
 func _input(event:InputEvent) -> void:
@@ -94,6 +98,7 @@ func _ready() -> void:
 	if settings.thumbnail_path == "": settings.thumbnail_path = settings.default_thumbnail_path
 	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
 	Signals.call_deferred("emit_signal", "settings_loaded")
+	ImageImporter.SetExecutableDirectory(_get_program_directory())
 
 func load_settings() -> void:
 	var f:File = File.new()

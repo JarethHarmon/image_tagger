@@ -62,5 +62,19 @@ margin_bottom = 20.0
 disabled = true
 text = "  Help  "
 
+[node name="SPACE" type="Control" parent="margin/flow"]
+margin_left = 239.0
+margin_right = 1854.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="version" type="Label" parent="margin/flow"]
+margin_left = 1859.0
+margin_top = 3.0
+margin_right = 1910.0
+margin_bottom = 17.0
+text = "v0.8.0.0"
+
 [connection signal="pressed" from="margin/flow/file_button" to="." method="_on_file_button_pressed"]
 [connection signal="button_up" from="margin/flow/view_button" to="." method="_on_view_button_button_up"]

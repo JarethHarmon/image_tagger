@@ -85,25 +85,25 @@ public class Database : Node
 			colHashes.EnsureIndex(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//colHashes.EnsureIndex(x => x.numColors);
 
-			colHashes.EnsureIndex(x => x.size);
-			colHashes.EnsureIndex(x => x.width*x.height);
-			colHashes.EnsureIndex(x => x.tags.Count);
+			//colHashes.EnsureIndex(x => x.size);
+			//colHashes.EnsureIndex(x => x.width*x.height);
+			//colHashes.EnsureIndex(x => x.tags.Count);
 
-			colHashes.EnsureIndex(x => x.creationTime);
+			//colHashes.EnsureIndex(x => x.creationTime);
 			colHashes.EnsureIndex(x => x.uploadTime);
-			colHashes.EnsureIndex(x => x.lastWriteTime);
+			//colHashes.EnsureIndex(x => x.lastWriteTime);
 			
-			colHashes.EnsureIndex(x => x.imageName);
-			colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
+			//colHashes.EnsureIndex(x => x.imageName);
+			//colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
 			colHashes.EnsureIndex(x => x.imports);
 			colHashes.EnsureIndex(x => x.groups);
 			colHashes.EnsureIndex(x => x.tags);
 
-			colHashes.EnsureIndex(x => x.ratings["Quality"]);
-			colHashes.EnsureIndex(x => x.ratings["Appeal"]);
-			colHashes.EnsureIndex(x => x.ratings["Art"]);
+			//colHashes.EnsureIndex(x => x.ratings["Quality"]);
+			//colHashes.EnsureIndex(x => x.ratings["Appeal"]);
+			//colHashes.EnsureIndex(x => x.ratings["Art"]);
 			colHashes.EnsureIndex(x => x.ratings["Sum"]);
-			colHashes.EnsureIndex(x => x.ratings["Average"]);			
+			//colHashes.EnsureIndex(x => x.ratings["Average"]);			
 
 			return (int)ErrorCodes.OK;
 		} 
@@ -217,7 +217,7 @@ public class Database : Node
 	private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
   // progressId : [success, duplicate, ignored, failed]
 	private Dictionary<string, int[]> tempCounts = new Dictionary<string, int[]>();
-	
+
 	public void AddOrUpdateHashInfo(string imageHash, string progressId, HashInfo hashInfo, int result)
 	{
 		lock (tempHashInfo) {
@@ -739,6 +739,7 @@ public class Database : Node
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
+			importer.ignoredChecker.Remove(importId);
 		}
 		catch (Exception ex) {
 			GD.Print("Database::FinishImport() : ", ex);
@@ -774,7 +775,6 @@ public class Database : Node
 		return hashInfo3;
 	}
 
-	// have decided to change this to be purely single-threaded
 	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
@@ -794,9 +794,9 @@ public class Database : Node
 		}
 		colHashes.Upsert(hashInfoList);
 
+		var importInfo = colImports.FindById(importId);
 		lock (locker) {
 			dbImports.BeginTrans();
-			var importInfo = colImports.FindById(importId);
 			var allInfo = colImports.FindById("All");
 			int[] result = tempCounts[progressId];
 			importInfo.success += result[0];
@@ -821,13 +821,18 @@ public class Database : Node
 				signals.Call("emit_signal", "finish_import_buttons", tabs);
 			}
 		}
-		// only add importId to hashInfo once the counts are correctly updated
+
 		foreach (HashInfo hashInfo in hashInfoList) {
 			if (hashInfo.imports == null) hashInfo.imports = new HashSet<string>();
 			hashInfo.imports.Add(importId);
 		}
 		colHashes.Upsert(hashInfoList);
-		//GD.Print("finished: ", progressId);
+		lock (locker) {
+			foreach (HashInfo hashInfo in hashInfoList)
+				if (importer.ignoredChecker.ContainsKey(importId))
+					importer.ignoredChecker[importId].Remove(hashInfo.imageHash);
+		}
+		GD.Print("finished: ", progressId);
 	}
 
 /*==============================================================================*/

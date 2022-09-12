@@ -53,6 +53,14 @@ window/dpi/allow_hidpi=true
 window/per_pixel_transparency/allowed=true
 window/per_pixel_transparency/enabled=true
 
+[editor_plugins]
+
+enabled=PoolStringArray(  )
+
+[gdnative]
+
+singletons=[  ]
+
 [importer_defaults]
 
 texture={

@@ -32,6 +32,9 @@ public class ImageImporter : Node
 	public string thumbnailPath;
 	public void SetThumbnailPath(string path) { thumbnailPath = path; }
 	
+	public string executableDirectory;
+	public void SetExecutableDirectory(string path) { executableDirectory = path; }
+
 	private Dictionary<string, HashSet<string>> importedHashes = new Dictionary<string, HashSet<string>>();
 	
 /*=========================================================================================
@@ -43,7 +46,7 @@ public class ImageImporter : Node
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
-		LoadUnsupportedImage(@"W:/test/17.jpg");
+		//LoadUnsupportedImage(@"W:/test/17.jpg");
 	}
 	
 /*=========================================================================================
@@ -69,16 +72,15 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::IsImageCorrupt() : ", ex); return true; }
 	}
 	
-	public int SaveThumbnail(string imagePath, string savePath, string imageHash, long imageSize)
+	public int SaveThumbnail(string imagePath, string savePath, long imageSize)
 	{
 		// in general need to remove invalid paths whenver they are iterated
-		
 		return _SaveThumbnail(imagePath, savePath, imageSize);
 	}
 	private int _SaveThumbnail(string imagePath, string thumbPath, long imageSize)
 	{
 		try {
-			int result = (int)ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database) (need to create an Enum ideally)
+			int result = (int)ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database)
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			im.Strip();
 			if (imageSize > AVG_THUMBNAIL_SIZE) {
@@ -335,7 +337,6 @@ public class ImageImporter : Node
 		catch (Exception ex) { GD.Print("Database::GetRandomID() : ", ex); return ""; } 
 	}
 
-	// get 64bit ID
 	public string CreateImportID() { return "I" + GetRandomID(8); }
 	public string CreateTabID() { return "T" + GetRandomID(8); }	
 	public string CreateGroupID() { return "G" + GetRandomID(8); }
@@ -355,7 +356,6 @@ public class ImageImporter : Node
 				int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
 				int color = (color1+color3)/2;
 				colors[color]++;
-				//colors[color3]++;
 			}
 		}
 
@@ -395,13 +395,47 @@ public class ImageImporter : Node
 			return;
 		}
 	}
-	
+
+	private int SaveThumbnailPIL(string imagePath, string savePath, int maxSize, long imageSize)
+	{
+		try {
+			int result = (int)ImageType.ERROR;
+			string saveType = "jpeg";
+			if (imageSize < AVG_THUMBNAIL_SIZE)	saveType = "png";
+			
+			var pil = new Process();
+			// need a way to get program location after launching (OS.get_executable_path() maybe)
+			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
+			pil.StartInfo.CreateNoWindow = true;
+			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePath, savePath, maxSize, saveType);
+			pil.StartInfo.RedirectStandardOutput = true;
+			pil.StartInfo.UseShellExecute = false;
+			pil.Start();
+			var reader = pil.StandardOutput;
+			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
+			reader.Dispose();
+			pil.Dispose();
+			
+			if (output.Equals("JPEG")) result = (int)ImageType.JPG;
+			else if (output.Equals("PNG")) result = (int)ImageType.PNG;
+			return result;
+		}
+		catch (Exception ex) { GD.Print("ImageImporter::SaveThumbnailPIL() : ", ex); return (int)ImageType.ERROR; }
+	}
+
+	public Dictionary<string, HashSet<string>> ignoredChecker = new Dictionary<string, HashSet<string>>();
+	private bool IgnoredCheckerHas(string importId, string imageHash)
+	{
+		if (!ignoredChecker.ContainsKey(importId)) return false;
+		if (ignoredChecker[importId].Contains(imageHash)) return true;
+		return false;
+	}
+
 	private int _ImportImage((string,long,long,long) imageInfo, string importId, string progressId, int imageCount) 
 	{
 		try {
 			(string imagePath, long imageSize, long imageCreationUtc, long imageLastUpdateUtc) = imageInfo;
 			bool safePathLength = imagePath.Length() < MAX_PATH_LENGTH;
-			// checks if imagePath exists
 			if ((safePathLength) ? !System.IO.File.Exists(imagePath) : !Alphaleonis.Win32.Filesystem.File.Exists(imagePath)) {
 				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
 				return (int)ImportCode.FAILED; 
@@ -411,22 +445,24 @@ public class ImageImporter : Node
 
 			string _imageHash = (string) globals.Call("get_sha256", imagePath); 
 			string _imageName = (string) globals.Call("get_file_name", imagePath);
-
-			// checks if the current import has already processed this hash
-			if (db.HasHashInfoAndImport(_imageHash, importId)) {
+			
+			if (db.HasHashInfoAndImport(_imageHash, importId) || IgnoredCheckerHas(importId, _imageHash)) {
 				var _hashInfo = db.GetHashInfo(_imageHash);
 				if (_hashInfo.paths == null) _hashInfo.paths = new HashSet<string>();
 				_hashInfo.paths.Add(imagePath);
 				db.AddOrUpdateHashInfo(_imageHash, progressId, _hashInfo, (int)ImportCode.IGNORED);
 				return (int)ImportCode.IGNORED;
 			}
-			
+			else {
+				if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
+				ignoredChecker[importId].Add(_imageHash);
+			}
+
 			// checks if the hash has been imported before in another import
 			var __hashInfo = db.GetHashInfo(_imageHash);
 			if (__hashInfo != null) {
 				if (__hashInfo.paths == null) __hashInfo.paths = new HashSet<string>();
 				__hashInfo.paths.Add(imagePath);
-				//__hashInfo.imports.Add(importId); // shouldn't be needed?
 				db.AddOrUpdateHashInfo(_imageHash, progressId, __hashInfo, (int)ImportCode.DUPLICATE);
 				return (int)ImportCode.DUPLICATE;
 			}
@@ -438,28 +474,21 @@ public class ImageImporter : Node
 
 			string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
 			(int _imageType, int _width, int _height) = GetImageInfo(imagePath);
-			
+
 			int _thumbnailType = (int)ImageType.ERROR;
 			if (System.IO.File.Exists(savePath))
 				_thumbnailType = GetActualFormat(savePath);
 			else
-				_thumbnailType = SaveThumbnail(imagePath, savePath, _imageHash, imageSize);
+				_thumbnailType = SaveThumbnailPIL(imagePath, savePath, 256, imageSize); //SaveThumbnail(imagePath, savePath, imageSize);
 
 			if (_thumbnailType == (int)ImageType.ERROR) { 
 				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
 				return (int)ImportCode.FAILED; 
 			}
-			var now = DateTime.Now;
-			ulong _diffHash = DifferenceHash(savePath);
-			var dTime = DateTime.Now-now;
-			now = DateTime.Now;
-			float[] _colorHash = ColorHash(savePath);
-			var cTime = DateTime.Now-now;
-			now = DateTime.Now;
-			string _percHash = GetPerceptualHash(savePath);
-			var pTime = DateTime.Now-now;
 
-			GD.Print("\npath: ", imagePath, "\ndiff: ", dTime, "\nperc: ", pTime, "\ncolo: ", cTime);
+			ulong _diffHash = DifferenceHash(savePath);
+			float[] _colorHash = ColorHash(savePath);
+			string _percHash = GetPerceptualHash(savePath);
 
 			int _flags = 0;
 			
@@ -481,10 +510,10 @@ public class ImageImporter : Node
 				uploadTime = DateTime.Now.Ticks,
 				lastEditTime = DateTime.Now.Ticks,
 				paths = new HashSet<string>{imagePath},
-				//imports = new HashSet<string>{importId}, // only add imports after importCount correctly updated
 			};
 
 			db.AddOrUpdateHashInfo(_imageHash, progressId, hashInfo, (int)ImportCode.SUCCESS);
+
 			return (int)ImportCode.SUCCESS;	
 		} 
 		catch (Exception ex) { 
