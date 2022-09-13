@@ -13,8 +13,8 @@ func _ready() -> void:
 
 func _toggle_tablist_section(_visible:bool) -> void: 
 	self.visible = _visible
-	if Globals.all_siblings_hidden(self): get_parent().hide()
-	else: get_parent().show()	
+	Globals.toggle_parent_visibility_from_children(self)
+	Globals.toggle_parent_visibility_from_children(self.get_parent())
 
 # add some selection highlight colors; actually create the scenes for the other lists
 

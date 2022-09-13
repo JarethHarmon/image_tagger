@@ -5,5 +5,5 @@ func _ready() -> void:
 
 func _toggle_search_section(_visible:bool) -> void: 
 	self.visible = _visible
-	if Globals.all_siblings_hidden(self): get_parent().hide()
-	else: get_parent().show()
+	Globals.toggle_parent_visibility_from_children(self)
+	Globals.toggle_parent_visibility_from_children(self.get_parent())

@@ -189,10 +189,11 @@ func make_stylebox(color:Color, bg_mult=0.3, border_mult=0.05, border:int=1) -> 
 		sbf.set_corner_radius_all(5)
 	return sbf
 
-func all_siblings_hidden(node) -> bool:
+func toggle_parent_visibility_from_children(node) -> void:
 	var all_hidden:bool = true
 	for child in node.get_parent().get_children():
 		if child.visible: 
 			all_hidden = false
 			break
-	return all_hidden
+	if all_hidden: node.get_parent().hide()
+	else: node.get_parent().show()

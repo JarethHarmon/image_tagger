@@ -8,6 +8,6 @@ func _ready():
 	Signals.connect("toggle_tag_section", self, "_toggle_section")
 	
 func _toggle_section(_visible:bool) -> void:
-	if Globals.all_siblings_hidden(self): get_parent().hide()
-	else: get_parent().show()
+	Globals.toggle_parent_visibility_from_children(self)
+	Globals.toggle_parent_visibility_from_children(self.get_parent())
 
