@@ -573,10 +573,18 @@ public class Database : Node
 	{
 		var query = colHashes.Query();
 
+		bool counted=false;
+		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
+			_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
+			counted = true;
+		}
+
 		if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
 		if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 		if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
+
+		if (!counted) _lastQueriedCount = query.Count(); // slow
 
 		if (similarityMode == (int)Similarity.AVERAGE)
 			return query.Select(x => new SimilarityQueryResult { 
@@ -764,10 +772,8 @@ public class Database : Node
 	private static readonly object locker = new object();
 	public void FinishImportSection(string importId, string progressId)
 	{
-		
 		if (!tempHashes.ContainsKey(progressId)) return;
 		string[] hashes = tempHashes[progressId].ToArray();
-
 		var hashInfoList = new List<HashInfo>();
 		foreach (string hash in hashes) {
 			HashInfo hashInfo = null;
@@ -777,18 +783,16 @@ public class Database : Node
 						hashInfo = tempHashInfo[importId][hash];
 			}
 			if (hashInfo == null) continue;
-
 			var dbHashInfo = colHashes.FindById(hash);
 			if (dbHashInfo != null) MergeHashInfo(hashInfo, dbHashInfo);
 			hashInfoList.Add(hashInfo);
 		}
 		colHashes.Upsert(hashInfoList);
-
 		lock (locker) {
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
-
 			importInfo.progressIds.Remove(progressId);
+
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
 			colProgress.Delete(progressId);
@@ -996,7 +1000,8 @@ public class Database : Node
 	{
 		var phash1 = new ImageMagick.PerceptualHash(h1);
 		var phash2 = new ImageMagick.PerceptualHash(h2);
-		return (1000.0 - phash1.SumSquaredDistance(phash2)) / 10;
+		double distance = phash1.SumSquaredDistance(phash2);
+		return (100.0 - Math.Sqrt(distance)); // seems to range from 0-10000 (so 0 would be 100% similar, 10000 would be 0% similar; 100 would be 68.4%)
 	}
 
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)

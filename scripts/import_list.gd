@@ -181,7 +181,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 		append_arg([import_id, progress_id])
 	
 	# might be good, not sure
-	shuffle_args()
+	# shuffle_args()
 	
 	start_manager()
 

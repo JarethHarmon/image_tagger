@@ -11,7 +11,10 @@ func _ready() -> void:
 	controls.append_array([tag_list, path_list, import_list, group_list, rating_list])
 	Signals.connect("toggle_tablist_section", self, "_toggle_tablist_section")
 
-func _toggle_tablist_section(_visible:bool) -> void: self.visible = _visible
+func _toggle_tablist_section(_visible:bool) -> void: 
+	self.visible = _visible
+	if Globals.all_siblings_hidden(self): get_parent().hide()
+	else: get_parent().show()	
 
 # add some selection highlight colors; actually create the scenes for the other lists
 

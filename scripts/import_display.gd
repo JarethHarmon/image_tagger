@@ -9,6 +9,8 @@ func _ready() -> void:
 func _toggle_tag_section(_visible:bool) -> void: 
 	if not Globals.current_visible_tab_section == self: return
 	self.visible = _visible
+	if Globals.all_siblings_hidden(self): get_parent().hide()
+	else: get_parent().show()
 
 func _create_import_buttons(sha256:String, imports:Array) -> void:
 	for child in vbox.get_children(): child.queue_free()

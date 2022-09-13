@@ -310,12 +310,17 @@ public class ImageImporter : Node
 	public ulong DifferenceHash(string path)
 	{
 		try {
-			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(path);
-			var algo = new DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
+			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(@path);
+			var algo = new CoenM.ImageHash.HashAlgorithms.DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
 			ulong result = algo.Hash(stream);
 			stream.Dispose();
 			return result;
-		} catch (Exception ex) { GD.Print("Database::DifferenceHash() : ", ex); return 0; }
+		} catch (Exception ex) { 
+			GD.Print("Database::DifferenceHash() : ", ex); 
+			var label = (Label)GetNode("/root/main/Label");
+			label.Text = ex.ToString();
+			return 777; 
+		}
 	}
 
 	public string GetPerceptualHash(string path)
@@ -397,6 +402,7 @@ public class ImageImporter : Node
 		catch (Exception ex) { GD.Print("ImageImporter::ImportImages() : ", ex); return; }
 	}
 
+	private HashSet<string> blacklistSHA = new HashSet<string>{"034ba23e67d8fd5bc3f6ceaba66499af03091dfb9172451ec6021075f9c6b60e"};
 	private static readonly object locker = new object();
 	private void _ImportImages(string importId, string progressId, List<string> paths, string[] tabs, int imageCount, int failCount)
 	{	
@@ -412,6 +418,12 @@ public class ImageImporter : Node
 			foreach (string path in paths) {
 				var fileInfo = new System.IO.FileInfo(path);
 				string _imageHash = (string) globals.Call("get_sha256", path);
+
+				// for images that cause issues
+				if (blacklistSHA.Contains(_imageHash)) {
+					results[(int)ImportCode.IGNORED]++;
+					continue;
+				}
 
 				// try to get HashInfo from tempStorage,Dictionary,Database
 				var _hashInfo = db.GetHashInfo(importId, _imageHash);
@@ -486,10 +498,11 @@ public class ImageImporter : Node
 			}
 
 			// call signals
-			if (results[(int)ImportCode.SUCCESS] > 0 || results[(int)ImportCode.DUPLICATE] > 0)
+			if (results[(int)ImportCode.SUCCESS] > 0 || results[(int)ImportCode.DUPLICATE] > 0) {
 				if (tabs.Length > 0) 
 					signals.Call("emit_signal", "increment_import_buttons", tabs, results[(int)ImportCode.SUCCESS] + results[(int)ImportCode.DUPLICATE]);
 				signals.Call("emit_signal", "increment_all_button", results[(int)ImportCode.SUCCESS]);
+			}
 		}
 		catch (Exception ex) { 
 			GD.Print("ImageImporter::_ImportImages() : ", ex); 
@@ -553,7 +566,9 @@ public class ImageImporter : Node
 				else {
 					GD.Print(results[i]);
 					intResults[(int)ImportCode.FAILED]++;
-					hashInfos[i].imageType = (int)ImageType.ERROR;
+					hashInfos.RemoveAt(i);
+					// (prevent inserting broken image into database)
+					//hashInfos[i].imageType = (int)ImageType.ERROR;
 				}
 			}
 

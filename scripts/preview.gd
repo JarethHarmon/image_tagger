@@ -79,7 +79,10 @@ func _ready() -> void:
 
 	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
 
-func _toggle_preview_section(_visible:bool) -> void: self.visible = _visible
+func _toggle_preview_section(_visible:bool) -> void: 
+	self.visible = _visible
+	if Globals.all_siblings_hidden(self): get_parent().hide()
+	else: get_parent().show()
 
 func _rating_set(rating_name:String, rating_value:int) -> void:
 	if not current_image.has_meta("image_hash"): return
