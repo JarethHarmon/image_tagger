@@ -402,7 +402,7 @@ public class ImageImporter : Node
 		catch (Exception ex) { GD.Print("ImageImporter::ImportImages() : ", ex); return; }
 	}
 
-	private HashSet<string> blacklistSHA = new HashSet<string>{"034ba23e67d8fd5bc3f6ceaba66499af03091dfb9172451ec6021075f9c6b60e"};
+	private HashSet<string> blacklistSHA = new HashSet<string>();
 	private static readonly object locker = new object();
 	private void _ImportImages(string importId, string progressId, List<string> paths, string[] tabs, int imageCount, int failCount)
 	{	
@@ -420,10 +420,10 @@ public class ImageImporter : Node
 				string _imageHash = (string) globals.Call("get_sha256", path);
 
 				// for images that cause issues
-				if (blacklistSHA.Contains(_imageHash)) {
+				/*if (blacklistSHA.Contains(_imageHash)) {
 					results[(int)ImportCode.IGNORED]++;
 					continue;
-				}
+				}*/
 
 				// try to get HashInfo from tempStorage,Dictionary,Database
 				var _hashInfo = db.GetHashInfo(importId, _imageHash);
@@ -564,7 +564,6 @@ public class ImageImporter : Node
 					hashInfos[i] = tempHashInfo;
 				}
 				else {
-					GD.Print(results[i]);
 					intResults[(int)ImportCode.FAILED]++;
 					hashInfos.RemoveAt(i);
 					// (prevent inserting broken image into database)
