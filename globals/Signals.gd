@@ -20,8 +20,8 @@ signal create_path_buttons(image_hash, paths)
 signal create_import_buttons(image_hash, imports)
 
 signal update_import_button(tab_id, finished, success_count, total_count, import_name)
-signal increment_all_button(value) # increments its text by 1
-signal increment_import_buttons(tab_ids, value) # increments their text by 1
+signal increment_all_button # increments its text by 1
+signal increment_import_buttons(tab_ids) # increments their text by 1
 signal finish_import_buttons(tab_ids) # sets their text to successCount
 
 signal toggle_thumbnail_tooltips

@@ -101,6 +101,7 @@ func _ready() -> void:
 	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
 	Signals.call_deferred("emit_signal", "settings_loaded")
 	ImageImporter.SetExecutableDirectory(_get_program_directory())
+	ImageImporter.StartPython()
 
 func load_settings() -> void:
 	var f:File = File.new()

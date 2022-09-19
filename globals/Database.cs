@@ -201,7 +201,7 @@ public class Database : Node
 		if (main.perceptualHash == null) main.perceptualHash = sub.perceptualHash;
 	}
 
-	public void StoreOneTempHashInfo(string importId, string progressId, HashInfo hashInfo)
+	public void StoreTempHashInfo(string importId, string progressId, HashInfo hashInfo)
 	{
 		lock (tempHashInfo) {
 			if (!tempHashInfo.ContainsKey(importId)) tempHashInfo[importId] = new Dictionary<string, HashInfo>();
@@ -212,35 +212,6 @@ public class Database : Node
 			}
 			tempHashInfo[importId][hashInfo.imageHash] = hashInfo;
 			tempHashes[progressId].Add(hashInfo.imageHash);
-		}
-	}
-
-	public void StoreTempHashInfo(string importId, string progressId, List<HashInfo> sectionData, int[] results)
-	{
-		if (sectionData.Count < 1) return;
-		// check if in current importId or if in database already
-		lock (tempHashInfo) {
-			// iterate over each HashInfo in this section
-			if (!tempHashInfo.ContainsKey(importId)) tempHashInfo[importId] = new Dictionary<string, HashInfo>();
-			if (!tempHashes.ContainsKey(progressId)) tempHashes[progressId] = new HashSet<string>();
-			foreach (HashInfo hashInfo in sectionData) {
-				// if tempHashInfo already contains this hash in the current import, merge it with the new one
-				if (tempHashInfo[importId].ContainsKey(hashInfo.imageHash)) {
-					var _hashInfo = tempHashInfo[importId][hashInfo.imageHash];
-					MergeHashInfo(hashInfo, _hashInfo);
-				}
-				// upsert this hashInfo into tempHashInfo and tempHashes
-				tempHashInfo[importId][hashInfo.imageHash] = hashInfo;
-				tempHashes[progressId].Add(hashInfo.imageHash);
-			}
-			// update the results counts in the imports dictionary
-			/*if (results.Length < 4) return;
-			var importInfo = GetImport(importId);
-			importInfo.success += results[0];
-			importInfo.duplicate += results[1];
-			importInfo.ignored += results[2];
-			importInfo.failed += results[3];
-			AddImport(importId, importInfo);*/
 		}
 	}
 	
@@ -292,9 +263,6 @@ public class Database : Node
 /*==============================================================================*/
 /*                                  Hash Database                               */
 /*==============================================================================*/
-
-
-	
 	private int _lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return _lastQueriedCount; }
 	
@@ -765,7 +733,8 @@ public class Database : Node
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
-			importer.ignoredChecker.Remove(importId);
+			string[] tabs = GetTabIDs(importId);
+			signals.Call("emit_signal", "finish_import_buttons", tabs);
 		}
 		catch (Exception ex) {
 			GD.Print("Database::FinishImport() : ", ex);
@@ -802,11 +771,7 @@ public class Database : Node
 			colProgress.Delete(progressId);
 			tempHashes.Remove(progressId);
 
-			if (importInfo.progressIds.Count == 0) {
-				string[] tabs = GetTabIDs(importId);
-				FinishImport(importId);
-				signals.Call("emit_signal", "finish_import_buttons", tabs);
-			}
+			if (importInfo.progressIds.Count == 0) FinishImport(importId);
 		}
 
 		foreach (HashInfo hashInfo in hashInfoList) {
@@ -814,12 +779,6 @@ public class Database : Node
 			hashInfo.imports.Add(importId);
 		}
 		colHashes.Upsert(hashInfoList);
-		lock (locker) {
-			foreach (HashInfo hashInfo in hashInfoList)
-				if (importer.ignoredChecker.ContainsKey(importId))
-					importer.ignoredChecker[importId].Remove(hashInfo.imageHash);
-		}
-		//GD.Print("finished: ", progressId);
 	}
 
 /*==============================================================================*/
@@ -836,24 +795,25 @@ public class Database : Node
 		}
 	}
 
-	public void UpdateImportCounts(string importId, int[] results)
+	public void UpdateImportCount(string importId, int result)
 	{
 		try {
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
 
-			allInfo.success += results[(int)ImportCode.SUCCESS];
-			importInfo.success += results[(int)ImportCode.SUCCESS];
-			importInfo.duplicate += results[(int)ImportCode.DUPLICATE];
-			importInfo.ignored += results[(int)ImportCode.IGNORED];
-			importInfo.failed += results[(int)ImportCode.FAILED];
-			importInfo.processed += results[0] + results[1] + results[2] + results[3];
+			if (result == (int)ImportCode.SUCCESS) {
+				allInfo.success++;
+				importInfo.success++;
+			}
+			else if (result == (int)ImportCode.DUPLICATE) importInfo.duplicate++;
+			else if (result == (int)ImportCode.IGNORED) importInfo.ignored++;
+			else importInfo.failed++;
 
 			AddImport("All", allInfo);
 			AddImport(importId, importInfo);
-		} 
+		}
 		catch(Exception ex) { 
-			GD.Print("Database::UpdateImportCounts() : ", ex); 
+			GD.Print("Database::UpdateImportCount() : ", ex); 
 			return; 
 		}
 	}

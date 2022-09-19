@@ -235,18 +235,18 @@ func update_button_text(tab_id:String, finished:bool, success_count:int, total_c
 	if not finished: buttons[tab_id].text = "  %s (%d/%d)  " % [import_name, success_count, total_count]
 	else: buttons[tab_id].text = "  %s (%d)  " % [import_name, success_count]
 
-func increment_all_button(value:int) -> void:
+func increment_all_button() -> void:
 	count_mutex.lock()
-	thread_count["All"] += value#1
+	thread_count["All"] += 1
 	var count:int = thread_count["All"]
 	buttons["All"].text = "  All (%d)  " % count
 	count_mutex.unlock()
 
-func increment_import_buttons(tab_ids:Array, value:int) -> void:
+func increment_import_buttons(tab_ids:Array) -> void:
 	count_mutex.lock()
 	for tab_id in tab_ids:
 		if thread_count.has(tab_id):
-			thread_count[tab_id] += value#1
+			thread_count[tab_id] += 1
 			var count:int = thread_count[tab_id]
 			buttons[tab_id].text = "  %s (%d/%d)  " % [Database.GetName(tab_id), count, Database.GetTotalCount(Database.GetImportId(tab_id))]
 	count_mutex.unlock()

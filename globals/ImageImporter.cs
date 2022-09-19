@@ -19,135 +19,6 @@ using Python.Runtime;	// pythonnet v3.0.0-rc5
 
 public class ImageImporter : Node
 {
-	public void PILFreeze(string[] _paths, string[] _savePaths, int maxSize)
-	{
-		try {
-			string imagePaths="", savePaths="", saveTypes="";
-			for (int i = 0; i < _paths.Length-1; i++) {
-				imagePaths += _paths[i] + "?";
-				savePaths += _savePaths[i] + "?";
-				saveTypes += "jpeg" + "?";
-			}
-			imagePaths += _paths[_paths.Length-1];
-			savePaths += _savePaths[_savePaths.Length-1];
-			saveTypes += "jpeg";
-
-			var pil = new Process();
-			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
-			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePaths, savePaths, maxSize, saveTypes);
-			pil.StartInfo.UseShellExecute = false;
-			pil.StartInfo.CreateNoWindow = true;
-			pil.StartInfo.RedirectStandardOutput = true;
-			pil.StartInfo.RedirectStandardError = true;			
-
-			pil.Start();
-			var reader = pil.StandardOutput;
-			string stderr = pil.StandardError.ReadToEnd();
-			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
-			reader.Dispose();
-			pil.Dispose();
-		}
-		catch (Exception ex) { GD.Print("FREEZE: ", ex); }
-	}
-
-	public void PILCompile(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
-	{
-		string pyScript = System.IO.File.ReadAllText(@"R:\git\image_tagger\lib\python-3.10.7-embed-amd64\pil_thumbnail2.py");
-
-		using (Py.GIL()) {
-			try {
-				var pyScope = Py.CreateScope();
-				var pyCompiled = PythonEngine.Compile(pyScript);
-				pyScope.Execute(pyCompiled);
-				dynamic createThumbnails = pyScope.Get("save_thumbnails");
-				dynamic result = createThumbnails(paths.ToArray(), savePaths.ToArray(), saveTypes.ToArray(), maxSize);
-			}
-			catch (PythonException pex) { GD.Print(pex.Message); }
-			catch (Exception ex) { GD.Print(ex); }
-		}
-	}
-
-	public void PILImport(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
-	{
-		string pyScript = @"pil_thumbnail2";
-
-		using (Py.GIL()) {
-			try {
-				dynamic test = Py.Import(pyScript);
-				dynamic results = test.save_thumbnails(paths.ToArray(), savePaths.ToArray(), saveTypes.ToArray(), maxSize);
-			}
-			catch (PythonException pex) { GD.Print(pex.Message); }
-			catch (Exception ex) { GD.Print(ex); }
-		}
-	}
-
-	public void PILImportOne(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
-	{
-		string pyScript = @"pil_thumbnail2"; // will need to ensure the script is in the correct location after building release
-
-		for (int i = 0; i < paths.Count; i++) {
-			
-			using (Py.GIL()) {
-				try {
-					dynamic test = Py.Import(pyScript);
-					// did not want to rewrite a temp function, these create new arrays with 1 element (the current index in paths/savePaths/saveTypes)
-					dynamic results = test.save_thumbnails(new string[1]{paths.ToArray()[i]}, new string[1]{savePaths.ToArray()[i]}, new string[1]{saveTypes.ToArray()[i]}, maxSize);
-				}
-				catch (PythonException pex) { GD.Print(pex.Message); }
-				catch (Exception ex) { GD.Print(ex); }
-			}
-		}
-	}
-
-	long timeFreeze=0, timeCompile=0, timeImport=0, timeImport1=0;
-	public void CompareSpeed(List<string> paths)
-	{
-		string path1 = @"W:\シュヴィ\freeze\";
-		string path2 = @"W:\シュヴィ\compile\";
-		string path3 = @"W:\シュヴィ\import\";
-		string path4 = @"W:\シュヴィ\importOne\";
-
-		var savePaths1 = new List<string>();
-		var savePaths2 = new List<string>();
-		var savePaths3 = new List<string>();
-		var savePaths4 = new List<string>();
-		var saveTypes = new List<string>();
-		foreach (string path in paths) {
-			string _imageHash = (string) globals.Call("get_sha256", path);
-			savePaths1.Add(path1 +  _imageHash + ".thumb");
-			savePaths2.Add(path2 +  _imageHash + ".thumb");
-			savePaths3.Add(path3 +  _imageHash + ".thumb");
-			savePaths4.Add(path4 +  _imageHash + ".thumb");
-			saveTypes.Add("jpeg");
-		}
-
-		long now = DateTime.Now.Ticks;
-		PILFreeze(paths.ToArray(), savePaths1.ToArray(), 256);
-		timeFreeze += DateTime.Now.Ticks-now;
-		GD.Print("freeze: ", (float)timeFreeze/10000000);
-
-		now = DateTime.Now.Ticks;
-		PILCompile(paths, savePaths2, saveTypes, 256);
-		timeCompile += DateTime.Now.Ticks-now;
-		GD.Print("compile: ", (float)timeCompile/10000000);
-
-		now = DateTime.Now.Ticks;
-		PILImport(paths, savePaths3, saveTypes, 256);
-		timeImport += DateTime.Now.Ticks-now;
-		GD.Print("import: ", (float)timeImport/10000000);
-
-		now = DateTime.Now.Ticks;
-		PILImportOne(paths, savePaths4, saveTypes, 256);
-		timeImport1 += DateTime.Now.Ticks-now;
-		GD.Print("import1: ", (float)timeImport1/10000000);
-		
-		// results:
-		//  freeze: 4.973003
-		// compile: 5.014995
-		//  import: 5.006996
-		// import1: 4.840998
-		// note that the real life time is less than this since they are running on multiple threads; counting the real time would require a major rewrite
-	}
 
 /*=========================================================================================
 									   Variables
@@ -170,16 +41,19 @@ public class ImageImporter : Node
 /*=========================================================================================
 									 Initialization
 =========================================================================================*/
-	
-	private IntPtr state;
 	public override void _Ready() 
 	{
 		globals = (Node) GetNode("/root/Globals");
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
-		string pyPath = @"R:\git\image_tagger\lib\python-3.10.7-embed-amd64\python310.dll";	// I believe this path is the only thing that will need to change for release build;
-		// just calculate it dynamically using the exe path (release build test worked correctly)
+	}
+
+	// called by Globals.gd/_ready()
+	private IntPtr state;
+	public void StartPython()
+	{
+		string pyPath = @executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
 		System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
 		PythonEngine.Initialize();
 		state = PythonEngine.BeginAllowThreads();
@@ -192,7 +66,7 @@ public class ImageImporter : Node
 	}
 	
 /*=========================================================================================
-										 IO
+									    Thumbnails
 =========================================================================================*/
 	public static byte[] LoadFile(string path)
 	{
@@ -449,7 +323,7 @@ public class ImageImporter : Node
 	{
 		return (string)globals.Call("get_komi_hash", path);
 	}
-	public ulong DifferenceHash(string path)
+	public ulong GetDifferenceHash(string path)
 	{
 		try {
 			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(@path);
@@ -493,7 +367,7 @@ public class ImageImporter : Node
 	public string CreateGroupID() { return "G" + GetRandomID(8); }
 	public string CreateProgressID() { return "P" + GetRandomID(8); }
 	
-	public float[] ColorHash(string path, int bucketSize=16) 
+	public float[] GetColorHash(string path, int bucketSize=16) 
 	{
 		int[] colors = new int[256/bucketSize];
 		var bitmap = new Bitmap(@path, true);
@@ -524,229 +398,149 @@ public class ImageImporter : Node
 =========================================================================================*/
 	public void ImportImages(string importId, string progressId)
 	{
+		if (importId.Equals("") || progressId.Equals("")) return;
 		try {
-			if (importId.Equals("") || progressId.Equals("")) return;
+			// verify there are paths to check
 			string[] tabs = db.GetTabIDs(importId);
 			string[] paths = db.GetPaths(progressId);
-			if (paths == null) return;
-			if (paths.Length == 0) return;
-			int imageCount = db.GetTotalCount(importId);
-			if (imageCount == 0) return;
+			if (paths == null) goto finish_section;
+			if (paths.Length == 0) goto finish_section;
 
+			// verify there are images to import
+			int imageCount = db.GetTotalCount(importId);
+			if (imageCount <= 0) goto finish_section;
+			
+			// count failed images and create list of working paths
+			// filter paths here
 			var pathList = new List<string>();
 			int failCount = 0;
 			for (int i = 0; i < paths.Length; i++) {
-				if (NonExistent(paths[i])) failCount++;
+				if (FileDoesNotExist(paths[i])) {
+					signals.Call("emit_signal", "increment_import_buttons", tabs); // indicate that an image has been processed
+					failCount++;
+				}
 				else pathList.Add(paths[i]);
 			}
-			_ImportImages(importId, progressId, pathList, tabs, imageCount, failCount);
+			if (pathList.Count == 0) goto finish_section;
+
+			// update dictImports with fail count
+			if (failCount > 0) {
+				var importInfo = db.GetImport(importId);
+				importInfo.failed += failCount;
+				db.AddImport(importId, importInfo);
+			}
+
+			// iterate each path and import it
+			foreach (string path in pathList) {
+				int result = _ImportImage(importId, progressId, path);
+				signals.Call("emit_signal", "increment_import_buttons", tabs); // indicate that an image has been processed
+				if (result == (int)ImportCode.SUCCESS) signals.Call("emit_signal", "increment_all_button");
+				db.UpdateImportCount(importId, result);
+			}
+
+			finish_section:
+				db.FinishImportSection(importId, progressId);
 		}
-		catch (Exception ex) { GD.Print("ImageImporter::ImportImages() : ", ex); return; }
+		catch (Exception ex) {
+			GD.Print("Importer::ImportImages(): ", ex);
+			return;
+		}
 	}
 
-	private HashSet<string> tempHashList = new HashSet<string>();
-	private HashSet<string> blacklistSHA = new HashSet<string>();
-	private static readonly object locker = new object();
-	private void _ImportImages(string importId, string progressId, List<string> paths, string[] tabs, int imageCount, int failCount)
-	{	
-		CompareSpeed(paths);
-		return;
+	private bool FileDoesNotExist(string path) 
+	{
+		bool safePathLength = path.Length() < MAX_PATH_LENGTH;
+		if ((safePathLength) ? System.IO.File.Exists(path) : Alphaleonis.Win32.Filesystem.File.Exists(path)) 
+			return false;
+		return true;
+	}
+
+	private int thumbnailSize = 256;
+	private int _ImportImage(string importId, string progressId, string path)
+	{
 		try {
-			int[] results = new int[4]; 				// success,duplicate,ignored,failed
-			results[(int)ImportCode.FAILED] += failCount;
+			var fileInfo = new System.IO.FileInfo(path);
+			string fileHash = (string) globals.Call("get_sha256", path);
+			// filter hashes here
 
-			var hashInfoList = new List<HashInfo>();	// the images that did not fail (need to have metadata updated)
-			var newHashInfoList = new List<HashInfo>();	// new images, need thumbnails and extra hashes
-			var newHashInfoSavePaths = new List<string>();
+			int _imageType=(int)ImageType.ERROR, _thumbnailType=(int)ImageType.ERROR, _width=0, _height=0, result=(int)ImportCode.FAILED;
+			long _size=fileInfo.Length;
+			string savePath = thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + ".thumb";
+			string _saveType = ((_size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg");
 
-			// iterate each path
-			foreach (string path in paths) {
-				var fileInfo = new System.IO.FileInfo(path);
-				string _imageHash = (string) globals.Call("get_sha256", path);
+			// check if thumbnail exists; create it if not
+			if (FileDoesNotExist(savePath)) {
+				(_imageType, _width, _height) = GetImageInfo(path);
+				_thumbnailType = SaveThumbnailPIL(path, savePath, _saveType, thumbnailSize);
+			}
 
-				// for images that cause issues
-				/*if (blacklistSHA.Contains(_imageHash)) {
-					results[(int)ImportCode.IGNORED]++;
-					continue;
-				}*/
+			var _hashInfo = db.GetHashInfo(importId, fileHash);
+			if (_hashInfo == null) {
+				// for when the thumbnail already exists but the metadata doesn't
+				int h=0, w=0;
+				if (_imageType == (int)ImageType.ERROR) (_imageType, _width, _height) = GetImageInfo(path);
+				if (_thumbnailType == (int)ImageType.ERROR) (_thumbnailType, w, h) = GetImageInfo(savePath);
 
-				// try to get HashInfo from tempStorage,Dictionary,Database
-				var _hashInfo = db.GetHashInfo(importId, _imageHash);
-				
-				// if HashInfo was found in one of those locations
-				if (_hashInfo != null) {
-					_hashInfo.paths.Add(path);
-					if (db.IsIgnored(importId, _imageHash) || IgnoredCheckerHas(importId, _imageHash)) 
-						results[(int)ImportCode.IGNORED]++;
-					else if (db.IsDuplicate(importId, _imageHash)) results[(int)ImportCode.DUPLICATE]++;
-					hashInfoList.Add(_hashInfo);
-					if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
-					ignoredChecker[importId].Add(_imageHash);
-					continue;
-				}
-				if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
-				ignoredChecker[importId].Add(_imageHash);
+				_hashInfo = new HashInfo {
+					imageHash = fileHash,
+					imageName = (string)globals.Call("get_file_name", path),
 
-				// else HashInfo was not found, check if it is corrupt
-				if (IsImageCorrupt(path)) {
-					results[(int)ImportCode.FAILED]++;
-					continue;
-				}
+					differenceHash = GetDifferenceHash(savePath),
+					colorHash = GetColorHash(savePath),
+					perceptualHash = GetPerceptualHash(savePath),
 
-				// else generate the new HashInfo
-				(int _imageType, int _width, int _height) = GetImageInfo(path);
-				string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
-
-				// add hashInfo to list for bulk processing
-				var hashInfo = new HashInfo {
-					paths = new HashSet<string>{path},
-					imageName = (string) globals.Call("get_file_name", path),
-					imageHash = _imageHash,
-					size = fileInfo.Length,
 					width = _width,
 					height = _height,
+					flags = 0,
+					thumbnailType = _thumbnailType,
 					imageType = _imageType,
+					size = _size,
 					creationTime = fileInfo.CreationTimeUtc.Ticks,
 					lastWriteTime = fileInfo.LastWriteTimeUtc.Ticks,
 					uploadTime = DateTime.Now.Ticks,
 					lastEditTime = DateTime.Now.Ticks,
+
+					isGroupLeader = false,
+					imports = new HashSet<string>{importId},
+					paths = new HashSet<string>{path},
 				};
-				// only create the thumbnail if it does not already exist
-				if (NonExistent(savePath)) {
-					lock (locker) {
-						if (!tempHashList.Contains(_imageHash)) {
-							newHashInfoList.Add(hashInfo);
-							newHashInfoSavePaths.Add(savePath);
-						}
-					}
-				}
-				db.StoreOneTempHashInfo(importId, progressId, hashInfo);
+				result = (int)ImportCode.SUCCESS;
 			}
+			else {
+				if (_hashInfo.differenceHash == 0) _hashInfo.differenceHash = GetDifferenceHash(savePath);
+				if (_hashInfo.colorHash == null) _hashInfo.colorHash = GetColorHash(savePath);
+				if (_hashInfo.perceptualHash == null) _hashInfo.perceptualHash = GetPerceptualHash(savePath);
+				_hashInfo.paths.Add(path);
 
-			if (newHashInfoList.Count > 0) {
-				// generate thumbnails using newHashInfoList and newHashInfoSavePaths
-				(List<HashInfo> hashInfos, int[] results1) = SaveThumbnailsPIL(newHashInfoList, newHashInfoSavePaths.ToArray(), 256);
-			
-				// merge the array of results (jpg/png/fail) from thumbnail saving
-				for (int i = 0; i < results.Length; i++) results[i] += results1[i];
-			
-				// iterate hashInfos and calc hashes
-				//(might be done inside SaveThumbnailsPIL())
-
-				foreach (HashInfo hashInfo in hashInfos) {
-					hashInfoList.Add(hashInfo);
-					tempHashList.Remove(hashInfo.imageHash);
-				}
-			}
-			// call StoreTempHashInfo on hashInfoList
-			db.StoreTempHashInfo(importId, progressId, hashInfoList, results);
-			
-			// update dictionaries
-			db.UpdateImportCounts(importId, results); // update imports dictionary
-			//globals.Call("_print", "::", results);
-			foreach (HashInfo hashInfo in hashInfoList) {
-				var __hashInfo = db.GetDictHashInfo(hashInfo.imageHash);
-				if (__hashInfo != null) {
-					db.MergeHashInfo(hashInfo, __hashInfo);
-					db.UpsertDictHashInfo(hashInfo.imageHash, hashInfo);
+				if (_hashInfo.imports.Contains(importId)) result = (int)ImportCode.IGNORED;
+				else {
+					_hashInfo.imports.Add(importId);
+					result = (int)ImportCode.DUPLICATE;
 				}
 			}
 
-			// call signals
-			if (results[(int)ImportCode.SUCCESS] > 0 || results[(int)ImportCode.DUPLICATE] > 0) {
-				if (tabs.Length > 0) 
-					signals.Call("emit_signal", "increment_import_buttons", tabs, results[(int)ImportCode.SUCCESS] + results[(int)ImportCode.DUPLICATE]);
-				signals.Call("emit_signal", "increment_all_button", results[(int)ImportCode.SUCCESS]);
-			}
+			db.StoreTempHashInfo(importId, progressId, _hashInfo);
+			return result;
 		}
 		catch (Exception ex) { 
-			GD.Print("ImageImporter::_ImportImages() : ", ex); 
+			GD.Print("Importer::_ImportImage() : ", ex);
+			return (int)ImportCode.FAILED;
 		}
 	}
 
-	private (List<HashInfo>, int[]) SaveThumbnailsPIL(List<HashInfo> hashInfos, string[] _savePaths, int maxSize)
+	private int SaveThumbnailPIL(string imPath, string svPath, string svType, int svSize)
 	{
-		try {
-			string imagePaths="", savePaths="", saveTypes="";
-			for (int i = 0; i < hashInfos.Count-1; i++) {
-				var _hashInfo = hashInfos[i];
-				imagePaths += _hashInfo.paths.FirstOrDefault() + "?";
-				savePaths += _savePaths[i] + "?";
-				saveTypes += ((_hashInfo.size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg") + "?";
+		string pyScript = @"pil_thumbnail3";
+		int result = (int)ImageType.OTHER;
+		using (Py.GIL()) {
+			try {
+				dynamic script = Py.Import(pyScript);
+				dynamic image_type = script.save_thumbnail(imPath, svPath, svType, svSize);
+				result = (int)image_type;
 			}
-			var hashInfo = hashInfos[hashInfos.Count-1];
-			imagePaths += hashInfo.paths.FirstOrDefault();
-			savePaths += _savePaths[hashInfos.Count-1];
-			saveTypes += ((hashInfo.size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg");
-
-			var pil = new Process();
-			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
-			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePaths, savePaths, maxSize, saveTypes);
-			pil.StartInfo.UseShellExecute = false;
-			pil.StartInfo.CreateNoWindow = true;
-			pil.StartInfo.RedirectStandardOutput = true;
-			pil.StartInfo.RedirectStandardError = true;			
-
-			pil.Start();
-			var reader = pil.StandardOutput;
-			string stderr = pil.StandardError.ReadToEnd();
-			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
-			reader.Dispose();
-			pil.Dispose();
-
-			int[] intResults = new int[4]; // success,duplicate,ignored,failed
-			string[] sep = new string[] { "?" };
-			string[] results = output.Split(sep, StringSplitOptions.RemoveEmptyEntries);
-
-			for (int i = 0; i < hashInfos.Count; i++)
-			{
-				if (results[i].Equals("JPEG")) {
-					intResults[(int)ImportCode.SUCCESS]++;
-					var tempHashInfo = hashInfos[i];
-					var tempSavePath = _savePaths[i];
-					tempHashInfo.thumbnailType = (int)ImageType.JPG;
-					tempHashInfo.differenceHash = DifferenceHash(tempSavePath);
-					tempHashInfo.colorHash = ColorHash(tempSavePath);
-					tempHashInfo.perceptualHash = GetPerceptualHash(tempSavePath);
-					hashInfos[i] = tempHashInfo;
-				}
-				else if (results[i].Equals("PNG")) {
-					intResults[(int)ImportCode.SUCCESS]++;
-					var tempHashInfo = hashInfos[i];
-					var tempSavePath = _savePaths[i];
-					tempHashInfo.thumbnailType = (int)ImageType.PNG;
-					tempHashInfo.differenceHash = DifferenceHash(tempSavePath);
-					tempHashInfo.colorHash = ColorHash(tempSavePath);
-					tempHashInfo.perceptualHash = GetPerceptualHash(tempSavePath);
-					hashInfos[i] = tempHashInfo;
-				}
-				else {
-					GD.Print(results[i]);
-					intResults[(int)ImportCode.FAILED]++;
-					hashInfos.RemoveAt(i);
-					// (prevent inserting broken image into database)
-					//hashInfos[i].imageType = (int)ImageType.ERROR;
-				}
-			}
-
-			return (hashInfos, intResults);
+			catch (PythonException pex) { GD.Print(pex.Message); }
+			catch (Exception ex) { GD.Print(ex); }
 		}
-		catch (Exception ex) { GD.Print("ImageImporter::SaveThumbnailsPIL() : ", ex); return (null, null); }
-	}
-
-	public Dictionary<string, HashSet<string>> ignoredChecker = new Dictionary<string, HashSet<string>>();
-	private bool IgnoredCheckerHas(string importId, string imageHash)
-	{
-		if (!ignoredChecker.ContainsKey(importId)) return false;
-		if (ignoredChecker[importId].Contains(imageHash)) return true;
-		return false;
-	}	
-
-	public bool NonExistent(string path)
-	{
-		bool safePathLength = path.Length() < MAX_PATH_LENGTH;
-		if ((safePathLength) ? !System.IO.File.Exists(path) : !Alphaleonis.Win32.Filesystem.File.Exists(path)) 
-			return true;
-		return false;
+		return result;
 	}
 }
