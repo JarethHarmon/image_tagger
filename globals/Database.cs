@@ -20,7 +20,7 @@ public class Database : Node
 /*==============================================================================*/
 /*                                   Variables                                  */
 /*==============================================================================*/
-	private int progressSectionSize = 16;
+	private int progressSectionSize = 32;
 	private string metadataPath;
 	public void SetMetadataPath(string path) { metadataPath = path; }
 
@@ -195,6 +195,10 @@ public class Database : Node
 
 		if (main.tags != null && sub.tags != null) MergeHashSets(main.tags, sub.tags);
 		else if (sub.tags != null) main.tags = sub.tags; 
+
+		if (main.differenceHash == 0) main.differenceHash = sub.differenceHash;
+		if (main.colorHash == null) main.colorHash = sub.colorHash;
+		if (main.perceptualHash == null) main.perceptualHash = sub.perceptualHash;
 	}
 
 	public void StoreOneTempHashInfo(string importId, string progressId, HashInfo hashInfo)

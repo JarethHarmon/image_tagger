@@ -15,9 +15,139 @@ using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
 using Data;
+using Python.Runtime;	// pythonnet v3.0.0-rc5
 
 public class ImageImporter : Node
 {
+	public void PILFreeze(string[] _paths, string[] _savePaths, int maxSize)
+	{
+		try {
+			string imagePaths="", savePaths="", saveTypes="";
+			for (int i = 0; i < _paths.Length-1; i++) {
+				imagePaths += _paths[i] + "?";
+				savePaths += _savePaths[i] + "?";
+				saveTypes += "jpeg" + "?";
+			}
+			imagePaths += _paths[_paths.Length-1];
+			savePaths += _savePaths[_savePaths.Length-1];
+			saveTypes += "jpeg";
+
+			var pil = new Process();
+			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
+			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePaths, savePaths, maxSize, saveTypes);
+			pil.StartInfo.UseShellExecute = false;
+			pil.StartInfo.CreateNoWindow = true;
+			pil.StartInfo.RedirectStandardOutput = true;
+			pil.StartInfo.RedirectStandardError = true;			
+
+			pil.Start();
+			var reader = pil.StandardOutput;
+			string stderr = pil.StandardError.ReadToEnd();
+			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
+			reader.Dispose();
+			pil.Dispose();
+		}
+		catch (Exception ex) { GD.Print("FREEZE: ", ex); }
+	}
+
+	public void PILCompile(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
+	{
+		string pyScript = System.IO.File.ReadAllText(@"R:\git\image_tagger\lib\python-3.10.7-embed-amd64\pil_thumbnail2.py");
+
+		using (Py.GIL()) {
+			try {
+				var pyScope = Py.CreateScope();
+				var pyCompiled = PythonEngine.Compile(pyScript);
+				pyScope.Execute(pyCompiled);
+				dynamic createThumbnails = pyScope.Get("save_thumbnails");
+				dynamic result = createThumbnails(paths.ToArray(), savePaths.ToArray(), saveTypes.ToArray(), maxSize);
+			}
+			catch (PythonException pex) { GD.Print(pex.Message); }
+			catch (Exception ex) { GD.Print(ex); }
+		}
+	}
+
+	public void PILImport(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
+	{
+		string pyScript = @"pil_thumbnail2";
+
+		using (Py.GIL()) {
+			try {
+				dynamic test = Py.Import(pyScript);
+				dynamic results = test.save_thumbnails(paths.ToArray(), savePaths.ToArray(), saveTypes.ToArray(), maxSize);
+			}
+			catch (PythonException pex) { GD.Print(pex.Message); }
+			catch (Exception ex) { GD.Print(ex); }
+		}
+	}
+
+	public void PILImportOne(List<string> paths, List<string> savePaths, List<string> saveTypes, int maxSize)
+	{
+		string pyScript = @"pil_thumbnail2"; // will need to ensure the script is in the correct location after building release
+
+		for (int i = 0; i < paths.Count; i++) {
+			
+			using (Py.GIL()) {
+				try {
+					dynamic test = Py.Import(pyScript);
+					// did not want to rewrite a temp function, these create new arrays with 1 element (the current index in paths/savePaths/saveTypes)
+					dynamic results = test.save_thumbnails(new string[1]{paths.ToArray()[i]}, new string[1]{savePaths.ToArray()[i]}, new string[1]{saveTypes.ToArray()[i]}, maxSize);
+				}
+				catch (PythonException pex) { GD.Print(pex.Message); }
+				catch (Exception ex) { GD.Print(ex); }
+			}
+		}
+	}
+
+	long timeFreeze=0, timeCompile=0, timeImport=0, timeImport1=0;
+	public void CompareSpeed(List<string> paths)
+	{
+		string path1 = @"W:\シュヴィ\freeze\";
+		string path2 = @"W:\シュヴィ\compile\";
+		string path3 = @"W:\シュヴィ\import\";
+		string path4 = @"W:\シュヴィ\importOne\";
+
+		var savePaths1 = new List<string>();
+		var savePaths2 = new List<string>();
+		var savePaths3 = new List<string>();
+		var savePaths4 = new List<string>();
+		var saveTypes = new List<string>();
+		foreach (string path in paths) {
+			string _imageHash = (string) globals.Call("get_sha256", path);
+			savePaths1.Add(path1 +  _imageHash + ".thumb");
+			savePaths2.Add(path2 +  _imageHash + ".thumb");
+			savePaths3.Add(path3 +  _imageHash + ".thumb");
+			savePaths4.Add(path4 +  _imageHash + ".thumb");
+			saveTypes.Add("jpeg");
+		}
+
+		long now = DateTime.Now.Ticks;
+		PILFreeze(paths.ToArray(), savePaths1.ToArray(), 256);
+		timeFreeze += DateTime.Now.Ticks-now;
+		GD.Print("freeze: ", (float)timeFreeze/10000000);
+
+		now = DateTime.Now.Ticks;
+		PILCompile(paths, savePaths2, saveTypes, 256);
+		timeCompile += DateTime.Now.Ticks-now;
+		GD.Print("compile: ", (float)timeCompile/10000000);
+
+		now = DateTime.Now.Ticks;
+		PILImport(paths, savePaths3, saveTypes, 256);
+		timeImport += DateTime.Now.Ticks-now;
+		GD.Print("import: ", (float)timeImport/10000000);
+
+		now = DateTime.Now.Ticks;
+		PILImportOne(paths, savePaths4, saveTypes, 256);
+		timeImport1 += DateTime.Now.Ticks-now;
+		GD.Print("import1: ", (float)timeImport1/10000000);
+		
+		// results:
+		//  freeze: 4.973003
+		// compile: 5.014995
+		//  import: 5.006996
+		// import1: 4.840998
+		// note that the real life time is less than this since they are running on multiple threads; counting the real time would require a major rewrite
+	}
 
 /*=========================================================================================
 									   Variables
@@ -40,13 +170,25 @@ public class ImageImporter : Node
 /*=========================================================================================
 									 Initialization
 =========================================================================================*/
+	
+	private IntPtr state;
 	public override void _Ready() 
 	{
 		globals = (Node) GetNode("/root/Globals");
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
-		//LoadUnsupportedImage(@"W:/test/17.jpg");
+		string pyPath = @"R:\git\image_tagger\lib\python-3.10.7-embed-amd64\python310.dll";	// I believe this path is the only thing that will need to change for release build;
+		// just calculate it dynamically using the exe path (release build test worked correctly)
+		System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
+		PythonEngine.Initialize();
+		state = PythonEngine.BeginAllowThreads();
+	}
+
+	public void Shutdown()
+	{
+		PythonEngine.EndAllowThreads(state);
+		PythonEngine.Shutdown();
 	}
 	
 /*=========================================================================================
@@ -402,10 +544,13 @@ public class ImageImporter : Node
 		catch (Exception ex) { GD.Print("ImageImporter::ImportImages() : ", ex); return; }
 	}
 
+	private HashSet<string> tempHashList = new HashSet<string>();
 	private HashSet<string> blacklistSHA = new HashSet<string>();
 	private static readonly object locker = new object();
 	private void _ImportImages(string importId, string progressId, List<string> paths, string[] tabs, int imageCount, int failCount)
 	{	
+		CompareSpeed(paths);
+		return;
 		try {
 			int[] results = new int[4]; 				// success,duplicate,ignored,failed
 			results[(int)ImportCode.FAILED] += failCount;
@@ -466,8 +611,15 @@ public class ImageImporter : Node
 					uploadTime = DateTime.Now.Ticks,
 					lastEditTime = DateTime.Now.Ticks,
 				};
-				newHashInfoList.Add(hashInfo);
-				newHashInfoSavePaths.Add(savePath);
+				// only create the thumbnail if it does not already exist
+				if (NonExistent(savePath)) {
+					lock (locker) {
+						if (!tempHashList.Contains(_imageHash)) {
+							newHashInfoList.Add(hashInfo);
+							newHashInfoSavePaths.Add(savePath);
+						}
+					}
+				}
 				db.StoreOneTempHashInfo(importId, progressId, hashInfo);
 			}
 
@@ -481,7 +633,10 @@ public class ImageImporter : Node
 				// iterate hashInfos and calc hashes
 				//(might be done inside SaveThumbnailsPIL())
 
-				foreach (HashInfo hashInfo in hashInfos) hashInfoList.Add(hashInfo);
+				foreach (HashInfo hashInfo in hashInfos) {
+					hashInfoList.Add(hashInfo);
+					tempHashList.Remove(hashInfo.imageHash);
+				}
 			}
 			// call StoreTempHashInfo on hashInfoList
 			db.StoreTempHashInfo(importId, progressId, hashInfoList, results);
@@ -526,13 +681,15 @@ public class ImageImporter : Node
 
 			var pil = new Process();
 			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
-			pil.StartInfo.CreateNoWindow = true;
 			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePaths, savePaths, maxSize, saveTypes);
-			pil.StartInfo.RedirectStandardOutput = true;
 			pil.StartInfo.UseShellExecute = false;
+			pil.StartInfo.CreateNoWindow = true;
+			pil.StartInfo.RedirectStandardOutput = true;
+			pil.StartInfo.RedirectStandardError = true;			
 
 			pil.Start();
 			var reader = pil.StandardOutput;
+			string stderr = pil.StandardError.ReadToEnd();
 			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
 			reader.Dispose();
 			pil.Dispose();
@@ -564,6 +721,7 @@ public class ImageImporter : Node
 					hashInfos[i] = tempHashInfo;
 				}
 				else {
+					GD.Print(results[i]);
 					intResults[(int)ImportCode.FAILED]++;
 					hashInfos.RemoveAt(i);
 					// (prevent inserting broken image into database)
