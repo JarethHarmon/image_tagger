@@ -68,7 +68,7 @@ size_flags_vertical = 3
 
 [node name="viewport_display" type="TextureRect" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 963.0
+margin_bottom = 988.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 expand = true
@@ -76,19 +76,21 @@ stretch_mode = 7
 script = ExtResource( 2 )
 
 [node name="hbox" type="HBoxContainer" parent="margin/vbox"]
-margin_top = 967.0
+margin_top = 992.0
 margin_right = 1910.0
 margin_bottom = 1012.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="rating_quality" parent="margin/vbox/hbox" instance=ExtResource( 6 )]
+visible = false
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 271.0
 margin_bottom = 45.0
 
 [node name="space1" type="Control" parent="margin/vbox/hbox"]
+visible = false
 margin_left = 275.0
 margin_right = 307.0
 margin_bottom = 45.0
@@ -97,6 +99,7 @@ mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="rating_appeal" parent="margin/vbox/hbox" instance=ExtResource( 5 )]
+visible = false
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_left = 311.0
@@ -104,6 +107,7 @@ margin_right = 582.0
 margin_bottom = 45.0
 
 [node name="space2" type="Control" parent="margin/vbox/hbox"]
+visible = false
 margin_left = 586.0
 margin_right = 618.0
 margin_bottom = 45.0
@@ -112,6 +116,7 @@ mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="rating_art" parent="margin/vbox/hbox" instance=ExtResource( 7 )]
+visible = false
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_left = 622.0
@@ -119,6 +124,7 @@ margin_right = 893.0
 margin_bottom = 45.0
 
 [node name="space3" type="Control" parent="margin/vbox/hbox"]
+visible = false
 margin_left = 897.0
 margin_right = 929.0
 margin_bottom = 45.0
@@ -127,21 +133,20 @@ mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="flip_h" type="Button" parent="margin/vbox/hbox"]
-margin_left = 933.0
-margin_right = 998.0
-margin_bottom = 45.0
+margin_right = 65.0
+margin_bottom = 20.0
 text = "  Flip H  "
 
 [node name="flip_v" type="Button" parent="margin/vbox/hbox"]
-margin_left = 1002.0
-margin_right = 1065.0
-margin_bottom = 45.0
+margin_left = 69.0
+margin_right = 132.0
+margin_bottom = 20.0
 text = "  Flip V  "
 
 [node name="space" type="Control" parent="margin/vbox/hbox"]
-margin_left = 1069.0
+margin_left = 136.0
 margin_right = 1910.0
-margin_bottom = 45.0
+margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

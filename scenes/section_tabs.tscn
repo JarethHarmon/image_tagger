@@ -1,0 +1,74 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://scripts/section_tabs.gd" type="Script" id=1]
+
+[node name="section_tabs" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 1 )
+
+[node name="panel" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1915.0
+margin_bottom = 1075.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="tags" type="Button" parent="margin/vbox"]
+margin_right = 1910.0
+margin_bottom = 20.0
+text = "  Tags  "
+
+[node name="paths" type="Button" parent="margin/vbox"]
+margin_top = 24.0
+margin_right = 1910.0
+margin_bottom = 44.0
+text = "  Paths  "
+
+[node name="imports" type="Button" parent="margin/vbox"]
+margin_top = 48.0
+margin_right = 1910.0
+margin_bottom = 68.0
+text = "  Imports  "
+
+[node name="groups" type="Button" parent="margin/vbox"]
+margin_top = 72.0
+margin_right = 1910.0
+margin_bottom = 92.0
+disabled = true
+text = "  Groups  "
+
+[node name="ratings" type="Button" parent="margin/vbox"]
+margin_top = 96.0
+margin_right = 1910.0
+margin_bottom = 116.0
+text = "  Ratings  "
+
+[connection signal="button_up" from="margin/vbox/tags" to="." method="_on_tags_button_up"]
+[connection signal="button_up" from="margin/vbox/paths" to="." method="_on_paths_button_up"]
+[connection signal="button_up" from="margin/vbox/imports" to="." method="_on_imports_button_up"]
+[connection signal="button_up" from="margin/vbox/groups" to="." method="_on_groups_button_up"]
+[connection signal="button_up" from="margin/vbox/ratings" to="." method="_on_ratings_button_up"]

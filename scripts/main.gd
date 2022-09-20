@@ -25,6 +25,7 @@ func _notification(what) -> void:
 		Database.CheckpointImportDB()
 		Database.CheckpointTagDB()
 		Database.Destroy()
+		ImageImporter.Shutdown();
 		Globals.save_settings()
 		print_debug("exiting program")
 		get_tree().quit()

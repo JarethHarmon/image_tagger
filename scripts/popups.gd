@@ -2,7 +2,7 @@ extends MarginContainer
 
 enum file_context_menu { ImportImages, }
 enum view_context_menu { FullScreen, ShowThumbnailTooltips, FileButtons=5, TabButtons, 
-						 SearchButtons, ThumbnailList, PreviewSection, TagList }
+						 SearchButtons, ThumbnailList, PreviewSection, TabList, TagList }
 
 onready var import_panel:PopupPanel = $ppanel_import
 onready var darkened_background:ColorRect = $background/bg_darken
@@ -81,7 +81,10 @@ func _unhandled_input(event:InputEvent) -> void:
 		elif event.scancode == KEY_5 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.PreviewSection)
 			Signals.emit_signal("toggle_preview_section", checked)
-		elif event.scancode == KEY_6 and event.pressed: 
+		elif event.scancode == KEY_6 and event.pressed:
+			var checked:bool = get_set_view_context_checked(view_context_menu.TabList)
+			Signals.emit_signal("toggle_tablist_section", checked)
+		elif event.scancode == KEY_7 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.TagList)
 			Signals.emit_signal("toggle_tag_section", checked)
 

@@ -26,19 +26,14 @@ def save_PIL_thumbnail(im_path, sv_path, sv_size, sv_type):
             elif im.mode != 'RGB': im = im.convert('RGB')       
         im.thumbnail((sv_size, sv_size))
         im.save(sv_path, sv_type)
-        return sv_type
+        
+        if sv_type == 'png': return 1
+        return 0
     except:
-        return 'error'
-
-if len(sys.argv) > 4:
-    im_paths = sys.argv[1].split('?')           # path the full image is located at
-    sv_paths = sys.argv[2].split('?')           # path the thumbnail will be saved at
-    sv_size = int(sys.argv[3])                  # max dimensions of the thumbnail
-    sv_types = sys.argv[4].split('?')           # the type ('jpeg' or 'png') that the thumbnail will be saved as
-    
-    result = ''
-    for i in range(0, len(im_paths)):
-        result += save_PIL_thumbnail(im_paths[i], sv_paths[i], sv_size, sv_types[i]) + '?'
-    print(result)
+        return -1
 
 
+def save_thumbnail(im_path, sv_path, sv_type, sv_size):
+    result = 7
+    result = save_PIL_thumbnail(im_path, sv_path, sv_size, sv_type)
+    return result

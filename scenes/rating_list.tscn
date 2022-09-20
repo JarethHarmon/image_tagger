@@ -1,0 +1,68 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://scenes/rating_art.tscn" type="PackedScene" id=1]
+[ext_resource path="res://scenes/rating_appeal.tscn" type="PackedScene" id=2]
+[ext_resource path="res://scenes/rating_quality.tscn" type="PackedScene" id=3]
+[ext_resource path="res://scripts/rating_list.gd" type="Script" id=4]
+
+[node name="rating_list" type="Control"]
+margin_left = 139.0
+margin_right = 1151.0
+margin_bottom = 7.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 4 )
+
+[node name="panel" type="PanelContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="hbox" type="HBoxContainer" parent="margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 1007.0
+margin_bottom = 148.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="vbox" type="VBoxContainer" parent="margin/hbox"]
+margin_right = 271.0
+margin_bottom = 143.0
+mouse_filter = 2
+size_flags_vertical = 3
+
+[node name="rating_quality" parent="margin/hbox/vbox" instance=ExtResource( 3 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 271.0
+margin_bottom = 45.0
+
+[node name="rating_appeal" parent="margin/hbox/vbox" instance=ExtResource( 2 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 49.0
+margin_right = 271.0
+margin_bottom = 94.0
+
+[node name="rating_art" parent="margin/hbox/vbox" instance=ExtResource( 1 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 98.0
+margin_right = 271.0
+margin_bottom = 143.0

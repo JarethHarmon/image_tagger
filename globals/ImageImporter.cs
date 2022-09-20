@@ -15,6 +15,7 @@ using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
 using Data;
+using Python.Runtime;	// pythonnet v3.0.0-rc5
 
 public class ImageImporter : Node
 {
@@ -46,11 +47,26 @@ public class ImageImporter : Node
 		signals = (Node) GetNode("/root/Signals");
 		iscan = (ImageScanner) GetNode("/root/ImageScanner");
 		db = (Database) GetNode("/root/Database");
-		//LoadUnsupportedImage(@"W:/test/17.jpg");
+	}
+
+	// called by Globals.gd/_ready()
+	private IntPtr state;
+	public void StartPython()
+	{
+		string pyPath = @executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
+		System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
+		PythonEngine.Initialize();
+		state = PythonEngine.BeginAllowThreads();
+	}
+
+	public void Shutdown()
+	{
+		PythonEngine.EndAllowThreads(state);
+		PythonEngine.Shutdown();
 	}
 	
 /*=========================================================================================
-										 IO
+									    Thumbnails
 =========================================================================================*/
 	public static byte[] LoadFile(string path)
 	{
@@ -307,20 +323,29 @@ public class ImageImporter : Node
 	{
 		return (string)globals.Call("get_komi_hash", path);
 	}
-	public ulong DifferenceHash(string path)
+	public ulong GetDifferenceHash(string path)
 	{
 		try {
-			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(path);
-			var algo = new DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
-			return algo.Hash(stream);
-		} catch (Exception ex) { GD.Print("Database::DifferenceHash() : ", ex); return 0; }
+			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(@path);
+			var algo = new CoenM.ImageHash.HashAlgorithms.DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
+			ulong result = algo.Hash(stream);
+			stream.Dispose();
+			return result;
+		} catch (Exception ex) { 
+			GD.Print("Database::DifferenceHash() : ", ex); 
+			var label = (Label)GetNode("/root/main/Label");
+			label.Text = ex.ToString();
+			return 777; 
+		}
 	}
 
 	public string GetPerceptualHash(string path)
 	{
 		try {
 			var im = (path.Length() < MAX_PATH_LENGTH) ? new MagickImage(path) : new MagickImage(LoadFile(path));
-			return im.PerceptualHash().ToString();
+			string result = im.PerceptualHash().ToString();
+			im.Dispose();
+			return result;
 		}
 		catch (Exception ex) { GD.Print("Database::GetPerceptualHash() : ", ex); return ""; }
 	}
@@ -342,7 +367,7 @@ public class ImageImporter : Node
 	public string CreateGroupID() { return "G" + GetRandomID(8); }
 	public string CreateProgressID() { return "P" + GetRandomID(8); }
 	
-	public float[] ColorHash(string path, int bucketSize=16) 
+	public float[] GetColorHash(string path, int bucketSize=16) 
 	{
 		int[] colors = new int[256/bucketSize];
 		var bitmap = new Bitmap(@path, true);
@@ -358,6 +383,7 @@ public class ImageImporter : Node
 				colors[color]++;
 			}
 		}
+		bitmap.Dispose();
 
 		float[] hash = new float[256/bucketSize];
 		for (int color = 0; color < colors.Length; color++) {
@@ -370,157 +396,151 @@ public class ImageImporter : Node
 /*=========================================================================================
 									   Importing
 =========================================================================================*/
-	public void ImportImage(string[] tabs, string importId, string progressId, string path)
+	public void ImportImages(string importId, string progressId)
 	{
+		if (importId.Equals("") || progressId.Equals("")) return;
 		try {
-			if (importId.Equals("") || progressId.Equals("") || path.Equals("")) return;
-			
+			// verify there are paths to check
+			string[] tabs = db.GetTabIDs(importId);
+			string[] paths = db.GetPaths(progressId);
+			if (paths == null) goto finish_section;
+			if (paths.Length == 0) goto finish_section;
+
+			// verify there are images to import
 			int imageCount = db.GetTotalCount(importId);
-			//var file = ((path.Length() < MAX_PATH_LENGTH) ?
-			//	new System.IO.FileInfo(path) : 
-			//	new Alphaleonis.Win32.Filesystem.FileInfo(path));
-			var file = new System.IO.FileInfo(path);
-			var image = (path, file.Length, file.CreationTimeUtc.Ticks, file.LastWriteTimeUtc.Ticks);	
-		
-			int result = _ImportImage(image, importId, progressId, imageCount);
-			db.UpdateImportCount(importId, result);
+			if (imageCount <= 0) goto finish_section;
 			
-			if (tabs.Length > 0) 
-				signals.Call("emit_signal", "increment_import_buttons", tabs);
-			if (result == (int)ImportCode.SUCCESS)
-				signals.Call("emit_signal", "increment_all_button");
+			// count failed images and create list of working paths
+			// filter paths here
+			var pathList = new List<string>();
+			int failCount = 0;
+			for (int i = 0; i < paths.Length; i++) {
+				if (FileDoesNotExist(paths[i])) {
+					signals.Call("emit_signal", "increment_import_buttons", tabs); // indicate that an image has been processed
+					failCount++;
+				}
+				else pathList.Add(paths[i]);
+			}
+			if (pathList.Count == 0) goto finish_section;
+
+			// update dictImports with fail count
+			if (failCount > 0) {
+				var importInfo = db.GetImport(importId);
+				importInfo.failed += failCount;
+				db.AddImport(importId, importInfo);
+			}
+
+			// iterate each path and import it
+			foreach (string path in pathList) {
+				int result = _ImportImage(importId, progressId, path);
+				signals.Call("emit_signal", "increment_import_buttons", tabs); // indicate that an image has been processed
+				if (result == (int)ImportCode.SUCCESS) signals.Call("emit_signal", "increment_all_button");
+				db.UpdateImportCount(importId, result);
+			}
+
+			finish_section:
+				db.FinishImportSection(importId, progressId);
 		}
 		catch (Exception ex) {
-			GD.Print("ImageImporter::ImportImage() : ", ex);
+			GD.Print("Importer::ImportImages(): ", ex);
 			return;
 		}
 	}
 
-	private int SaveThumbnailPIL(string imagePath, string savePath, int maxSize, long imageSize)
+	private bool FileDoesNotExist(string path) 
 	{
-		try {
-			int result = (int)ImageType.ERROR;
-			string saveType = "jpeg";
-			if (imageSize < AVG_THUMBNAIL_SIZE)	saveType = "png";
-			
-			var pil = new Process();
-			// need a way to get program location after launching (OS.get_executable_path() maybe)
-			pil.StartInfo.FileName = @executableDirectory + @"lib/pil_thumbnail/pil_thumbnail.exe";
-			pil.StartInfo.CreateNoWindow = true;
-			pil.StartInfo.Arguments = String.Format("\"{0}\" \"{1}\" {2} {3}", imagePath, savePath, maxSize, saveType);
-			pil.StartInfo.RedirectStandardOutput = true;
-			pil.StartInfo.UseShellExecute = false;
-			pil.Start();
-			var reader = pil.StandardOutput;
-			string output = String.Concat(reader.ReadToEnd().ToUpperInvariant().Where(c => !Char.IsWhiteSpace(c)));
-			reader.Dispose();
-			pil.Dispose();
-			
-			if (output.Equals("JPEG")) result = (int)ImageType.JPG;
-			else if (output.Equals("PNG")) result = (int)ImageType.PNG;
-			return result;
-		}
-		catch (Exception ex) { GD.Print("ImageImporter::SaveThumbnailPIL() : ", ex); return (int)ImageType.ERROR; }
+		bool safePathLength = path.Length() < MAX_PATH_LENGTH;
+		if ((safePathLength) ? System.IO.File.Exists(path) : Alphaleonis.Win32.Filesystem.File.Exists(path)) 
+			return false;
+		return true;
 	}
 
-	public Dictionary<string, HashSet<string>> ignoredChecker = new Dictionary<string, HashSet<string>>();
-	private bool IgnoredCheckerHas(string importId, string imageHash)
-	{
-		if (!ignoredChecker.ContainsKey(importId)) return false;
-		if (ignoredChecker[importId].Contains(imageHash)) return true;
-		return false;
-	}
-
-	private int _ImportImage((string,long,long,long) imageInfo, string importId, string progressId, int imageCount) 
+	private int thumbnailSize = 256;
+	private int _ImportImage(string importId, string progressId, string path)
 	{
 		try {
-			(string imagePath, long imageSize, long imageCreationUtc, long imageLastUpdateUtc) = imageInfo;
-			bool safePathLength = imagePath.Length() < MAX_PATH_LENGTH;
-			if ((safePathLength) ? !System.IO.File.Exists(imagePath) : !Alphaleonis.Win32.Filesystem.File.Exists(imagePath)) {
-				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-				return (int)ImportCode.FAILED; 
+			var fileInfo = new System.IO.FileInfo(path);
+			string fileHash = (string) globals.Call("get_sha256", path);
+			// filter hashes here
+
+			int _imageType=(int)ImageType.ERROR, _thumbnailType=(int)ImageType.ERROR, _width=0, _height=0, result=(int)ImportCode.FAILED;
+			long _size=fileInfo.Length;
+			string savePath = thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + ".thumb";
+			string _saveType = ((_size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg");
+
+			// check if thumbnail exists; create it if not
+			if (FileDoesNotExist(savePath)) {
+				(_imageType, _width, _height) = GetImageInfo(path);
+				_thumbnailType = SaveThumbnailPIL(path, savePath, _saveType, thumbnailSize);
 			}
 
-			// check that the path/type/time/size meet the conditions specified by user (return ImportCode.IGNORED if not)
+			var _hashInfo = db.GetHashInfo(importId, fileHash);
+			if (_hashInfo == null) {
+				// for when the thumbnail already exists but the metadata doesn't
+				int h=0, w=0;
+				if (_imageType == (int)ImageType.ERROR) (_imageType, _width, _height) = GetImageInfo(path);
+				if (_thumbnailType == (int)ImageType.ERROR) (_thumbnailType, w, h) = GetImageInfo(savePath);
 
-			string _imageHash = (string) globals.Call("get_sha256", imagePath); 
-			string _imageName = (string) globals.Call("get_file_name", imagePath);
-			
-			if (db.HasHashInfoAndImport(_imageHash, importId) || IgnoredCheckerHas(importId, _imageHash)) {
-				var _hashInfo = db.GetHashInfo(_imageHash);
-				if (_hashInfo.paths == null) _hashInfo.paths = new HashSet<string>();
-				_hashInfo.paths.Add(imagePath);
-				db.AddOrUpdateHashInfo(_imageHash, progressId, _hashInfo, (int)ImportCode.IGNORED);
-				return (int)ImportCode.IGNORED;
+				_hashInfo = new HashInfo {
+					imageHash = fileHash,
+					imageName = (string)globals.Call("get_file_name", path),
+
+					differenceHash = GetDifferenceHash(savePath),
+					colorHash = GetColorHash(savePath),
+					perceptualHash = GetPerceptualHash(savePath),
+
+					width = _width,
+					height = _height,
+					flags = 0,
+					thumbnailType = _thumbnailType,
+					imageType = _imageType,
+					size = _size,
+					creationTime = fileInfo.CreationTimeUtc.Ticks,
+					lastWriteTime = fileInfo.LastWriteTimeUtc.Ticks,
+					uploadTime = DateTime.Now.Ticks,
+					lastEditTime = DateTime.Now.Ticks,
+
+					isGroupLeader = false,
+					imports = new HashSet<string>{importId},
+					paths = new HashSet<string>{path},
+				};
+				result = (int)ImportCode.SUCCESS;
 			}
 			else {
-				if (!ignoredChecker.ContainsKey(importId)) ignoredChecker[importId] = new HashSet<string>();
-				ignoredChecker[importId].Add(_imageHash);
+				if (_hashInfo.differenceHash == 0) _hashInfo.differenceHash = GetDifferenceHash(savePath);
+				if (_hashInfo.colorHash == null) _hashInfo.colorHash = GetColorHash(savePath);
+				if (_hashInfo.perceptualHash == null) _hashInfo.perceptualHash = GetPerceptualHash(savePath);
+				_hashInfo.paths.Add(path);
+
+				if (_hashInfo.imports.Contains(importId)) result = (int)ImportCode.IGNORED;
+				else {
+					_hashInfo.imports.Add(importId);
+					result = (int)ImportCode.DUPLICATE;
+				}
 			}
 
-			// checks if the hash has been imported before in another import
-			var __hashInfo = db.GetHashInfo(_imageHash);
-			if (__hashInfo != null) {
-				if (__hashInfo.paths == null) __hashInfo.paths = new HashSet<string>();
-				__hashInfo.paths.Add(imagePath);
-				db.AddOrUpdateHashInfo(_imageHash, progressId, __hashInfo, (int)ImportCode.DUPLICATE);
-				return (int)ImportCode.DUPLICATE;
-			}
-			
-			if (IsImageCorrupt(imagePath)) {
-				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-				return (int)ImportCode.FAILED; 
-			}
-
-			string savePath = thumbnailPath + _imageHash.Substring(0,2) + "/" + _imageHash + ".thumb";
-			(int _imageType, int _width, int _height) = GetImageInfo(imagePath);
-
-			int _thumbnailType = (int)ImageType.ERROR;
-			if (System.IO.File.Exists(savePath))
-				_thumbnailType = GetActualFormat(savePath);
-			else
-				_thumbnailType = SaveThumbnailPIL(imagePath, savePath, 256, imageSize); //SaveThumbnail(imagePath, savePath, imageSize);
-
-			if (_thumbnailType == (int)ImageType.ERROR) { 
-				db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-				return (int)ImportCode.FAILED; 
-			}
-
-			ulong _diffHash = DifferenceHash(savePath);
-			float[] _colorHash = ColorHash(savePath);
-			string _percHash = GetPerceptualHash(savePath);
-
-			int _flags = 0;
-			
-			var hashInfo = new HashInfo {
-				imageHash = _imageHash, 
-				imageName = _imageName,
-				differenceHash = _diffHash,
-				colorHash = _colorHash,
-				perceptualHash = _percHash,
-				//numColors = GetNumColors(imagePath),
-				width = _width,
-				height = _height,
-				flags = _flags,
-				thumbnailType = _thumbnailType,
-				imageType = _imageType,
-				size = imageSize,
-				creationTime = imageCreationUtc,
-				lastWriteTime = imageLastUpdateUtc,
-				uploadTime = DateTime.Now.Ticks,
-				lastEditTime = DateTime.Now.Ticks,
-				paths = new HashSet<string>{imagePath},
-			};
-
-			db.AddOrUpdateHashInfo(_imageHash, progressId, hashInfo, (int)ImportCode.SUCCESS);
-
-			return (int)ImportCode.SUCCESS;	
-		} 
+			db.StoreTempHashInfo(importId, progressId, _hashInfo);
+			return result;
+		}
 		catch (Exception ex) { 
-			GD.Print("ImageImporter::_ImportImage() : ", ex); 
-			db.IncrementFailedCount(progressId, (int)ImportCode.FAILED);
-			return (int)ImportCode.FAILED; 
+			GD.Print("Importer::_ImportImage() : ", ex);
+			return (int)ImportCode.FAILED;
 		}
 	}
-	
+
+	private int SaveThumbnailPIL(string imPath, string svPath, string svType, int svSize)
+	{
+		string pyScript = @"pil_thumbnail3";
+		int result = (int)ImageType.OTHER;
+		using (Py.GIL()) {
+			try {
+				dynamic script = Py.Import(pyScript);
+				dynamic image_type = script.save_thumbnail(imPath, svPath, svType, svSize);
+				result = (int)image_type;
+			}
+			catch (PythonException pex) { GD.Print(pex.Message); }
+			catch (Exception ex) { GD.Print(ex); }
+		}
+		return result;
+	}
 }

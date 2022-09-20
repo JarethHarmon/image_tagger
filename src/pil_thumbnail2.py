@@ -30,15 +30,12 @@ def save_PIL_thumbnail(im_path, sv_path, sv_size, sv_type):
     except:
         return 'error'
 
-if len(sys.argv) > 4:
-    im_paths = sys.argv[1].split('?')           # path the full image is located at
-    sv_paths = sys.argv[2].split('?')           # path the thumbnail will be saved at
-    sv_size = int(sys.argv[3])                  # max dimensions of the thumbnail
-    sv_types = sys.argv[4].split('?')           # the type ('jpeg' or 'png') that the thumbnail will be saved as
-    
+# need to look into either returning a tuple, or storing the variables in temp vars and retrieving them 1 by 1
+# should actually be possible to directly return an object (class) as well, though currently I only need an array of ints
+def save_thumbnails(im_paths, sv_paths, sv_types, sv_size):
     result = ''
     for i in range(0, len(im_paths)):
         result += save_PIL_thumbnail(im_paths[i], sv_paths[i], sv_size, sv_types[i]) + '?'
-    print(result)
+    return result
 
-
+#save_thumbnails(['W:/fubuki-confused.gif'], ['W:/fubuki-confused.thumb'], ['jpeg'], 256)

@@ -24,6 +24,8 @@ var current_tab_type:int = Tab.IMPORT_GROUP
 var current_tab_id:String = "All"
 var current_similarity:int = Similarity.AVERAGE
 
+var current_visible_tab_section:Control
+
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports
 
@@ -51,7 +53,7 @@ var settings:Dictionary = {
   # Import
 	"use_recursion" : false,
 	"max_bytes_to_check_apng" : 256,
-	"max_import_threads" : 3,
+	"max_import_threads" : 1,
 
   # Thumbnails
 	"images_per_page" : 400,
@@ -99,6 +101,7 @@ func _ready() -> void:
 	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
 	Signals.call_deferred("emit_signal", "settings_loaded")
 	ImageImporter.SetExecutableDirectory(_get_program_directory())
+	ImageImporter.StartPython()
 
 func load_settings() -> void:
 	var f:File = File.new()
@@ -187,3 +190,11 @@ func make_stylebox(color:Color, bg_mult=0.3, border_mult=0.05, border:int=1) -> 
 		sbf.set_corner_radius_all(5)
 	return sbf
 
+func toggle_parent_visibility_from_children(node) -> void:
+	var all_hidden:bool = true
+	for child in node.get_parent().get_children():
+		if child.visible: 
+			all_hidden = false
+			break
+	if all_hidden: node.get_parent().hide()
+	else: node.get_parent().show()

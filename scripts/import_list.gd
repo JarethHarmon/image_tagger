@@ -179,7 +179,10 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	var progress_ids:Array = Database.GetProgressIds(import_id)
 	for progress_id in progress_ids:
 		append_arg([import_id, progress_id])
-
+	
+	# might be good, not sure
+	# shuffle_args()
+	
 	start_manager()
 
 func create_similarity_tab(tab_id:String, image_hash:String) -> void:
@@ -344,6 +347,11 @@ func _stop(thread_id:int) -> void:
 		set_thread_status(thread_id, Status.INACTIVE)
 		active_threads -= 1
 
+func shuffle_args() -> void:
+	argument_mutex.lock()
+	argument_queue.shuffle()
+	argument_mutex.unlock()
+
 func append_arg(arg) -> void:
 	argument_mutex.lock()
 	argument_queue.push_back(arg)
@@ -432,19 +440,10 @@ func _thread(thread_id:int) -> void:
 		if section == null and manager_done: break
 		if get_thread_status(thread_id) != Status.PAUSED and section != null:
 			var import_id:String = section[0]
-			var progress_id:String = section[1]
-			#print(thread_id, " :: ", progress_id)
-			if tabs == null: tabs = Database.GetTabIDs(import_id) as Array
-			if paths == null: paths = Database.GetPaths(progress_id) as Array
-			if not paths.empty():
-				var path:String = paths.pop_front()
-				ImageImporter.ImportImage(tabs, import_id, progress_id, path)
-			else: 
-				set_thread_args(thread_id, null)
-				_add_finished_section([import_id, progress_id])
-				#Database.FinishImportSection(import_id, progress_id)
-				tabs = null
-				paths = null
+			var progress_id:String = section[1]			
+			ImageImporter.ImportImages(import_id, progress_id)
+			set_thread_args(thread_id, null)
+			_add_finished_section([import_id, progress_id])
 		else: OS.delay_msec(delay_time)
 	call_deferred("_done", thread_id)
 

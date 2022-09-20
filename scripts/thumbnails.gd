@@ -457,6 +457,7 @@ func select_items() -> void:
 	
 	var image_hash:String = current_hashes[last_index]
 	var paths:Array = Database.GetHashPaths(image_hash)
+	var imports = Database.GetImportIdsFromHash(image_hash)
 	if not paths.empty():
 		var f:File = File.new()
 		for path in paths:
@@ -464,6 +465,7 @@ func select_items() -> void:
 				Signals.emit_signal("load_full_image", image_hash, path)
 				Signals.emit_signal("load_image_tags", image_hash, selected_items)
 				Signals.emit_signal("create_path_buttons", image_hash, paths)
+				if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
 				break
 	called_already = false
 
