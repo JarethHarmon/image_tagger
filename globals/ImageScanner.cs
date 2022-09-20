@@ -9,6 +9,7 @@ using Alphaleonis.Win32.Filesystem;
 // return error codes when relevant
 // use AlphaFS when relevant
 
+// need a way to interrupt the scan if the user cancels the import 
 public class ImageScanner : Node
 {
 	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG", ".APNG", ".GIF", ".BMP", ".WEBP"};
