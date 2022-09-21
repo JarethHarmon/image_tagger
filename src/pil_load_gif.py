@@ -6,7 +6,7 @@ GifImagePlugin.LOADING_STRATEGY = GifImagePlugin.LoadingStrategy.RGB_ALWAYS
 import base64
 def load_gif(path):
     im = Image.open(path)
-    frm = []
+    frames = []
     for i in range(0, im.n_frames):
         bi = io.BytesIO()
         im.seek(i)
@@ -15,6 +15,6 @@ def load_gif(path):
         base64_str = base64_str.replace('\'', '')
         base64_str = base64_str[1:len(base64_str)]
         base64_str = str(im.info['duration']) + '?' + base64_str
-        frm.append(base64_str)
-    return frm
+        frames.append(base64_str)
+    return frames
 

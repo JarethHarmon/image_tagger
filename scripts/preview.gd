@@ -127,6 +127,9 @@ func _on_settings_loaded() -> void:
 	_on_color_grading_toggled(Globals.settings.use_color_grading)
 	#_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
 
+	create_current_image()
+	resize_current_image()
+
 func clear_image_preview() -> void:
 	for child in image_grid.get_children():
 		child.texture = null
@@ -341,6 +344,15 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		pass
 	current_image = it	
 
+func change_filter() -> void:
+	if preview.get_texture() == null: return
+	var it:Texture
+	if animation_mode: it = animation_images[animation_index]
+	else: it = preview.get_texture()
+	
+	if Globals.settings.use_filter: it.flags = 4
+	else: it.flags = 0	
+
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: pass#return
@@ -390,9 +402,10 @@ func _on_filter_toggled(button_pressed:bool) -> void:
 	if button_pressed: smooth_pixel_button.disabled = false
 	else: smooth_pixel_button.disabled = true
 	_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
-
-	create_current_image()
-	resize_current_image()
+	
+	change_filter()
+	#create_current_image()
+	#resize_current_image()
 	
 func _on_fxaa_toggled(button_pressed:bool) -> void: 
 	Globals.settings.use_fxaa = button_pressed
@@ -477,14 +490,20 @@ func update_animation(path:String, new_image:bool=false) -> void:
 		animation_images[animation_index].set_size_override(animation_size)
 		current_image = animation_images[animation_index]
 		delay = animation_delays[animation_index]
-		preview.set_texture(animation_images[animation_index])
+		var tex:ImageTexture = animation_images[animation_index]
+		if Globals.settings.use_filter: tex.flags = 4
+		else: tex.flags = 0
+		preview.set_texture(tex)
 		animation_index = 1
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			animation_images[animation_index].set_size_override(animation_size)
 			delay = animation_delays[animation_index]
-			preview.set_texture(animation_images[animation_index])
+			var tex:ImageTexture = animation_images[animation_index]
+			if Globals.settings.use_filter: tex.flags = 4
+			else: tex.flags = 0
+			preview.set_texture(tex)
 			animation_index += 1
 	animation_mutex.unlock()
 	get_tree().create_timer(delay if delay > 0.0 else animation_min_delay).connect("timeout", self, "update_animation", [path])

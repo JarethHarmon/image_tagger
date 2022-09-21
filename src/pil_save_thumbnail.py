@@ -1,5 +1,5 @@
-import sys, io
-from PIL import Image, ImageFile, GifImagePlugin
+import sys
+from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 def has_transparency(img):
