@@ -53,10 +53,14 @@ public class ImageImporter : Node
 	private IntPtr state;
 	public void StartPython()
 	{
-		string pyPath = @executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
-		System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
-		PythonEngine.Initialize();
-		state = PythonEngine.BeginAllowThreads();
+		try {
+			string pyPath = @executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
+			System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
+			PythonEngine.Initialize();
+			state = PythonEngine.BeginAllowThreads();
+		}
+		catch (PythonException pex) { GD.Print(pex.Message); }
+		catch (Exception ex) { GD.Print(ex); }
 	}
 
 	public void Shutdown()
@@ -218,39 +222,44 @@ public class ImageImporter : Node
 	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
 	public void LoadGif(string imagePath)
 	{
-		try {
-			var frames = new MagickImageCollection(imagePath);
-			int frameCount = frames.Count;
-			if (frameCount <= 0) {
+		string pyScript = @"pil_load_gif";
+		int frameCount=0;
+		string[] frames = new string[0];
+		using (Py.GIL()) {
+			try {
+				dynamic script = Py.Import(pyScript);
+				dynamic tempFrames = script.load_gif(@imagePath);
+				frames = (string[])tempFrames.As<string[]>();
+				frameCount = frames.Length;
+				signals.Call("emit_signal", "set_animation_info", frameCount, 24);
+				bool firstFrame = true;
+				for (int i = 0; i < frames.Length; i++) {
+					if (GetAnimationStatus(imagePath)) break;
+					string[] sections = frames[i].Split('?');
+					float delay = (float)int.Parse(sections[0])/1000;
+					string base64 = sections[1];
+					byte[] bytes = System.Convert.FromBase64String(base64);
+					var image = new Godot.Image();
+					image.LoadJpgFromBuffer(bytes);
+					var texture = new ImageTexture();
+					texture.CreateFromImage(image, animatedFlags);
+					signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false);
+					firstFrame = false;
+				}
+			}
+			catch (PythonException pex) { 
+				GD.Print(pex.Message); 
 				signals.Call("emit_signal", "finish_animation", imagePath);
 				return;
 			}
-			GD.Print("frames: ", frameCount);
-			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
-
-			signals.Call("emit_signal", "set_animation_info", frameCount, 12); // need to actually calculate framerate
-			frames.Coalesce();
-			foreach (MagickImage frame in frames) {
-				if (GetAnimationStatus(imagePath)) break;
-				frame.Format = MagickFormat.Jpg;
-				frame.Quality = 95;
-				byte[] data = frame.ToByteArray();
-				var image = new Godot.Image();
-				image.LoadJpgFromBuffer(data);
-				var texture = new ImageTexture();
-				texture.CreateFromImage(image, animatedFlags);
-				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, 0f, (firstFrame) ? true : false); // need to actually calculate delay
-				firstFrame = false;
+			catch (Exception ex) { 
+				GD.Print(ex); 
+				signals.Call("emit_signal", "finish_animation", imagePath);
+				return;
 			}
-			frames.Clear();
-			frames = null;
-			signals.Call("emit_signal", "finish_animation", imagePath);
 		}
-		catch (Exception ex) {
-			GD.Print("ImageImporter::LoadGif() : ", ex);
-			signals.Call("emit_signal", "finish_animation", imagePath);
-			return;
-		}
+		Array.Clear(frames, 0, frames.Length);
+		signals.Call("emit_signal", "finish_animation", imagePath);
 	}
 
 	public void LoadAPng(string imagePath)
@@ -266,7 +275,7 @@ public class ImageImporter : Node
 			GD.Print("frames: ", frameCount);
 			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
 
-			signals.Call("emit_signal", "set_animation_info", frameCount, 12); // need to actually calculate framerate
+			signals.Call("emit_signal", "set_animation_info", frameCount, 24);
 
 			Bitmap prevFrame = null;
 			for (int i = 0; i < frameCount; i++) {
@@ -280,6 +289,8 @@ public class ImageImporter : Node
 				graphics.DrawImage(frames[i].ToBitmap(), info.xOffset, info.yOffset);
 				prevFrame = newFrame;
 
+				float delay = (float)frames[i].FrameRate/1000;
+
 				var converter = new ImageConverter();
 				byte[] data = (byte[]) converter.ConvertTo(newFrame, typeof(byte[]));
 
@@ -287,7 +298,7 @@ public class ImageImporter : Node
 				Array.Clear(data, 0, data.Length);
 				var texture = new ImageTexture();
 				texture.CreateFromImage(image, animatedFlags);
-				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, 0f, (firstFrame) ? true : false); // need to actually calculate delay
+				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false); 
 				firstFrame = false;
 			}
 			apng.ClearFrames();
@@ -530,7 +541,7 @@ public class ImageImporter : Node
 
 	private int SaveThumbnailPIL(string imPath, string svPath, string svType, int svSize)
 	{
-		string pyScript = @"pil_thumbnail3";
+		string pyScript = @"pil_save_thumbnail";
 		int result = (int)ImageType.OTHER;
 		using (Py.GIL()) {
 			try {

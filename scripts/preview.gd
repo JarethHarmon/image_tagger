@@ -470,21 +470,24 @@ func update_animation(path:String, new_image:bool=false) -> void:
 	if animation_status[path] == a_status.STOPPING: return
 	animation_mutex.lock()
 	# set frame counter label text
+	var delay:float = 0.0
 	if new_image:
 		animation_index = 0
 		animation_size = calc_size(animation_images[animation_index])
 		animation_images[animation_index].set_size_override(animation_size)
 		current_image = animation_images[animation_index]
+		delay = animation_delays[animation_index]
 		preview.set_texture(animation_images[animation_index])
 		animation_index = 1
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			animation_images[animation_index].set_size_override(animation_size)
+			delay = animation_delays[animation_index]
 			preview.set_texture(animation_images[animation_index])
 			animation_index += 1
 	animation_mutex.unlock()
-	get_tree().create_timer(animation_min_delay).connect("timeout", self, "update_animation", [path])
+	get_tree().create_timer(delay if delay > 0.0 else animation_min_delay).connect("timeout", self, "update_animation", [path])
 
 func remove_status(path:String) -> void:
 	animation_mutex.lock()
