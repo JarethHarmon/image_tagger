@@ -253,25 +253,37 @@ visible = false
 margin_left = 5.0
 margin_top = 5.0
 margin_right = 1915.0
-margin_bottom = 5.0
+margin_bottom = 25.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
 
 [node name="space" type="Control" parent="margin/hbox"]
-margin_right = 1858.0
-margin_bottom = 48.0
+margin_right = 1838.0
+margin_bottom = 68.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="pc" type="PanelContainer" parent="margin/hbox"]
-margin_left = 1862.0
+[node name="margin" type="MarginContainer" parent="margin/hbox"]
+margin_left = 1842.0
 margin_right = 1910.0
-margin_bottom = 48.0
+margin_bottom = 68.0
+mouse_filter = 2
+size_flags_vertical = 3
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="pc" type="PanelContainer" parent="margin/hbox/margin"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 58.0
+margin_bottom = 58.0
 mouse_filter = 2
 custom_styles/panel = SubResource( 1 )
 
-[node name="buffering" type="TextureRect" parent="margin/hbox/pc"]
+[node name="buffering" type="TextureRect" parent="margin/hbox/margin/pc"]
 margin_right = 48.0
 margin_bottom = 48.0
 rect_min_size = Vector2( 48, 48 )

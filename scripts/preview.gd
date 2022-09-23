@@ -548,6 +548,7 @@ func update_animation(path:String, new_image:bool=false) -> void:
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
 		Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
 	else:
+		#print(animation_index, ":::", animation_total_frames, ":::", animation_images.size())
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			animation_images[animation_index].set_size_override(animation_size)

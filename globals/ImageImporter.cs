@@ -10,7 +10,6 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using Alphaleonis.Win32.Filesystem;
-using AnimatedImages;
 using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
@@ -22,9 +21,9 @@ public class PythonInterop : Node
 {
 	/*
 		This class is used for inter-op with Python.
-		1.	ImageImporter::LoadGif() calls pil_load_gif::get_gif_frames()
-		2.	pil_load_gif imports this ('PythonInterop') class
-		3.	pil_load_gif::get_gif_frames() instances this class and calls Setup()
+		1.	ImageImporter::LoadGif() calls pil_load_animation::get_gif_frames()
+		2.	pil_load_animation imports this ('PythonInterop') class
+		3.	pil_load_animation::get_gif_frames() instances this class and calls Setup()
 		4.	said instance is now completely unrelated to Godot, but access to sceneTree is needed for signals
 		5.	Setup() gains access to the mainloop > sceneTree > current instance of ImageImporter
 		6.	now that there is a reference to Godot's instance of ImageImporter, python can pass the values back to it
@@ -54,6 +53,18 @@ public class PythonInterop : Node
 		string base64_str = (string)d_base64_str;
 		importer.SendGifFrame(base64_str);
 	}
+	public void SendAFrame(dynamic d_base64_str)
+	{
+		string base64_str = (string)d_base64_str;
+		importer.SendAPngFrame(base64_str);
+	}
+
+	public void SetAnimatedImageType(dynamic d_isPng)
+	{ 
+		bool isPng = (bool)d_isPng;
+		if (isPng) importer.setAnimatedImageType((int)ImageType.PNG);
+		else importer.setAnimatedImageType((int)ImageType.JPG);
+	}
 
 	public bool StopLoading(dynamic d_path)
 	{
@@ -62,6 +73,7 @@ public class PythonInterop : Node
 		return false;
 	}
 }
+
 public class ImageImporter : Node
 {
 
@@ -259,13 +271,15 @@ public class ImageImporter : Node
 		}
 	}
 
+	private int animatedImageType = (int)ImageType.JPG;
+	public void setAnimatedImageType(int type) { animatedImageType = type; }
 	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
 	//private DateTime time;
 	public void LoadGif(string imagePath, string imageHash)
 	{
 		//var label = (Label)GetNode("/root/main/Label");
 		//time = DateTime.Now;
-		string pyScript = @"pil_load_gif"; // "/lib/python-3.10.7-embed-amd64/pil_load_gif.py"
+		string pyScript = @"pil_load_animation"; // "/lib/python-3.10.7-embed-amd64/pil_load_animation.py"
 		int frameCount=0;
 		using (Py.GIL()) {
 			try {
@@ -301,89 +315,73 @@ public class ImageImporter : Node
 		string imagePath = sections[1];
 		if (GetAnimationStatus(imagePath)) return;
 
-		float delay = (float)int.Parse(sections[2])/1000;
+		float delay;
+		int temp;
+		if (int.TryParse(sections[2], out temp)) delay = (float)temp/1000;
+		else delay = (float)double.Parse(sections[2])/1000;
+
 		string base64 = sections[3];
 		byte[] bytes = System.Convert.FromBase64String(base64);
 		var image = new Godot.Image();
-		image.LoadJpgFromBuffer(bytes);
+		if (animatedImageType == (int)ImageType.JPG) image.LoadJpgFromBuffer(bytes);
+		else image.LoadPngFromBuffer(bytes);
+
 		var texture = new ImageTexture();
 		texture.CreateFromImage(image, animatedFlags);
 		texture.SetMeta("image_hash", imageHash);
+		if (GetAnimationStatus(imagePath)) return;
 		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
 		//if (frameOne)
 		//	label.Text += "\nframe_one : " + (DateTime.Now-time).ToString();
 		frameOne = false;
 	}
+	public void SendAPngFrame(string base64_str)
+	{
+		string[] sections = base64_str.Split('?');
+		string imageHash = sections[0];
+		string imagePath = sections[1];
+		if (GetAnimationStatus(imagePath)) return;
+
+		float delay;
+		int temp;
+		if (int.TryParse(sections[2], out temp)) delay = (float)temp/1000;
+		else delay = (float)double.Parse(sections[2])/1000;
+
+		string base64 = sections[3];
+		byte[] bytes = System.Convert.FromBase64String(base64);
+		var image = new Godot.Image();
+		if (animatedImageType == (int)ImageType.JPG) image.LoadJpgFromBuffer(bytes);
+		else image.LoadPngFromBuffer(bytes);
+
+		var texture = new ImageTexture();
+		texture.CreateFromImage(image, animatedFlags);
+		texture.SetMeta("image_hash", imageHash);
+		if (GetAnimationStatus(imagePath)) return;
+		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
+		frameOne = false;
+	}
 
 	public void LoadAPng(string imagePath, string imageHash)
 	{	
-		try {
-			//var label = (Label)GetNode("/root/main/Label");
-			//DateTime now = DateTime.Now, now2 = DateTime.Now;
-			var apng = new APNG();
-			//GD.Print("apng_create: ", DateTime.Now-now);
-			//now = DateTime.Now;
-			//var apng = APNG.FromFile(imagePath);
-			apng.Load(imagePath);
-			//label.Text = "apng_load: " + (DateTime.Now-now).ToString();
-			//GD.Print("apng_load: ", DateTime.Now-now);
-			//now = DateTime.Now;
-			var frames = apng.Frames;
-			int frameCount = apng.FrameCount;
-			if (frameCount <= 0) {
+		string pyScript = @"pil_load_animation"; // "/lib/python-3.10.7-embed-amd64/pil_load_animation.py"
+		int frameCount=0;
+		using (Py.GIL()) {
+			try {
+				dynamic script = Py.Import(pyScript);
+				script.get_apng_frames(@imagePath, imageHash);
+			}
+			catch (PythonException pex) { 
+				GD.Print(pex.Message); 
 				signals.Call("emit_signal", "finish_animation", imagePath);
 				return;
 			}
-			GD.Print("frames: ", frameCount);
-			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
-
-			signals.Call("emit_signal", "set_animation_info", frameCount, 24);
-			//GD.Print("apng_setup: ", DateTime.Now-now);
-			//now = DateTime.Now;
-
-			Bitmap prevFrame = null;
-			for (int i = 0; i < frameCount; i++) {
-				if (GetAnimationStatus(imagePath)) break;
-				var image = new Godot.Image();
-				var info = frames[i].GetAPngInfo();
-
-				var newFrame = (i == 0) ? apng.DefaultImage.ToBitmap() : prevFrame;
-				var graphics = Graphics.FromImage(newFrame);
-				graphics.CompositingMode = CompositingMode.SourceOver;
-				graphics.DrawImage(frames[i].ToBitmap(), info.xOffset, info.yOffset);
-				prevFrame = newFrame;
-
-				float delay = (float)frames[i].FrameRate/1000;
-
-				var converter = new ImageConverter();
-				byte[] data = (byte[]) converter.ConvertTo(newFrame, typeof(byte[]));
-
-				image.LoadPngFromBuffer(data);
-				Array.Clear(data, 0, data.Length);
-				var texture = new ImageTexture();
-				texture.CreateFromImage(image, animatedFlags);
-				texture.SetMeta("image_hash", imageHash);
-				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false); 
-				firstFrame = false;
-				//GD.Print("frame_", i, ": ", DateTime.Now-now);
-				//now = DateTime.Now;
+			catch (Exception ex) { 
+				GD.Print(ex); 
+				signals.Call("emit_signal", "finish_animation", imagePath);
+				return;
 			}
-			apng.ClearFrames();
-			Array.Clear(frames, 0, frames.Length);
-			if (prevFrame != null) {
-				prevFrame.Dispose();
-				prevFrame = null;
-			}
-			apng = null;
-			frames = null;
-			//signals.Call("emit_signal", "finish_animation", imagePath);
-			//label.Text += "\ntotal_load: " + (DateTime.Now-now2).ToString();
 		}
-		catch (Exception ex) {
-			GD.Print("ImageImporter::LoadAPng() : ", ex);
-			signals.Call("emit_signal", "finish_animation", imagePath);
-			return;
-		}
+		signals.Call("emit_signal", "finish_animation", imagePath);
 	}
 
 
