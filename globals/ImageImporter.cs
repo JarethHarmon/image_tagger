@@ -17,12 +17,50 @@ using ImageMagick;
 using Data;
 using Python.Runtime;	// pythonnet v3.0.0-rc5
 
+namespace Importer {
+public class PythonInterop : Node
+{
+	/*
+		This class is used for inter-op with Python.
+		1.	ImageImporter::LoadGif() calls pil_load_gif::get_gif_frames()
+		2.	pil_load_gif imports this ('PythonInterop') class
+		3.	pil_load_gif::get_gif_frames() instances this class and calls Setup()
+		4.	said instance is now completely unrelated to Godot, but access to sceneTree is needed for signals
+		5.	Setup() gains access to the mainloop > sceneTree > current instance of ImageImporter
+		6.	now that there is a reference to Godot's instance of ImageImporter, python can pass the values back to it
+
+		+ can now load frames 1-by-1 without re-opening and re-iterating the image for every frame
+		+ this should result in similar load speeds, but with much lower initial frame delay
+			(testing on a large Gif )
+		- much harder to interrupt the load process
+	*/
+	public ImageImporter importer;
+	public void Setup()
+	{
+		var mainLoop = Godot.Engine.GetMainLoop();
+		var sceneTree = mainLoop as SceneTree;
+		sceneTree.Root.AddChild(this);
+		importer = (ImageImporter)GetNode("/root/ImageImporter");
+	}
+
+	private bool frameOne = true;
+	public void SendFrameCount(dynamic d_frameCount)
+	{
+		int frameCount = (int)d_frameCount;
+		importer.SendFrameCount(frameCount);
+	}
+	public void SendFrame(dynamic d_base64_str)
+	{
+		string base64_str = (string)d_base64_str;
+		importer.SendFrame(base64_str);
+	}
+}
 public class ImageImporter : Node
 {
 
 /*=========================================================================================
 									   Variables
-=========================================================================================*/
+=========================================================================================*/	
 	public const int MAX_PATH_LENGTH = 256, AVG_THUMBNAIL_SIZE = 7424;
 	
 	public Node globals, signals;
@@ -220,22 +258,35 @@ public class ImageImporter : Node
 	//	2. I want to return each frame as it loads (rather than doing nothing for potentially minutes)
 	//	3. So instead, append each frame to an array as soon as it loads, code elsewhere will control iterating the array
 	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
+	//private DateTime temp;
 	public void LoadGif(string imagePath, string imageHash)
 	{
+		//var label = (Label)GetNode("/root/main/Label");
+		//var now = DateTime.Now;
+		//temp = now;
 		string pyScript = @"pil_load_gif";
 		int frameCount=0;
 		string[] frames = new string[0];
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);
-				dynamic tempFrames = script.load_gif(@imagePath);
-				frames = (string[])tempFrames.As<string[]>();
-				frameCount = frames.Length;
+				script.get_gif_frames(@imagePath, @imageHash);
+				//dynamic tempFrames = script.load_gif(@imagePath);
+				//frames = (string[])tempFrames.As<string[]>();
+				//frameCount = frames.Length;
+				/*frameCount = script.get_gif_frame_count(@imagePath);
+				label.Text = "frame_count: " + (DateTime.Now-now).ToString();
 				signals.Call("emit_signal", "set_animation_info", frameCount, 24);
 				bool firstFrame = true;
-				for (int i = 0; i < frames.Length; i++) {
+				//for (int i = 0; i < frames.Length; i++) {
+				for (int i = 0; i < frameCount; i++) {
 					if (GetAnimationStatus(imagePath)) break;
-					string[] sections = frames[i].Split('?');
+					//string[] sections = frames[i].Split('?');
+
+					dynamic base64_str = script.get_gif_frame(@imagePath, i);
+					string base64_str_s = (string)base64_str;
+					string[] sections = base64_str_s.Split('?');
+
 					float delay = (float)int.Parse(sections[0])/1000;
 					string base64 = sections[1];
 					byte[] bytes = System.Convert.FromBase64String(base64);
@@ -245,8 +296,10 @@ public class ImageImporter : Node
 					texture.CreateFromImage(image, animatedFlags);
 					texture.SetMeta("image_hash", imageHash);
 					signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false);
+					if (firstFrame)
+						label.Text += "\nframe_load : " + (DateTime.Now-now).ToString();
 					firstFrame = false;
-				}
+				}*/
 			}
 			catch (PythonException pex) { 
 				GD.Print(pex.Message); 
@@ -261,6 +314,35 @@ public class ImageImporter : Node
 		}
 		Array.Clear(frames, 0, frames.Length);
 		signals.Call("emit_signal", "finish_animation", imagePath);
+		//label.Text += "\ngif_load   : " + (DateTime.Now-now).ToString();
+	}
+
+	private bool frameOne = true;
+	public void SendFrameCount(int frameCount)
+	{
+		signals.Call("emit_signal", "set_animation_info", frameCount, 24);
+		frameOne = true;
+	}
+	public void SendFrame(string base64_str)
+	{
+		//var label = (Label)GetNode("/root/main/Label");
+		string[] sections = base64_str.Split('?');
+		string imageHash = sections[0];
+		string imagePath = sections[1];
+		if (GetAnimationStatus(imagePath)) return;
+
+		float delay = (float)int.Parse(sections[2])/1000;
+		string base64 = sections[3];
+		byte[] bytes = System.Convert.FromBase64String(base64);
+		var image = new Godot.Image();
+		image.LoadJpgFromBuffer(bytes);
+		var texture = new ImageTexture();
+		texture.CreateFromImage(image, animatedFlags);
+		texture.SetMeta("image_hash", imageHash);
+		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
+		//if (frameOne)
+		//	label.Text += "\nframe_one : " + (DateTime.Now-temp).ToString();
+		frameOne = false;
 	}
 
 	public void LoadAPng(string imagePath, string imageHash)
@@ -570,4 +652,5 @@ public class ImageImporter : Node
 		}
 		return result;
 	}
+}
 }

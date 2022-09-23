@@ -41,7 +41,7 @@ public class Database : Node
 	private Dictionary<string, TabInfo> dictTabs = new Dictionary<string, TabInfo>();
 
 	private ImageScanner scanner;
-	private ImageImporter importer;
+	private Importer.ImageImporter importer;
 	private Node globals, signals;
 
 /*==============================================================================*/
@@ -50,7 +50,7 @@ public class Database : Node
 	public override void _Ready()
 	{
 		scanner = (ImageScanner) GetNode("/root/ImageScanner");
-		importer = (ImageImporter) GetNode("/root/ImageImporter");
+		importer = (Importer.ImageImporter) GetNode("/root/ImageImporter");
 		globals = (Node) GetNode("/root/Globals");
 		signals = (Node) GetNode("/root/Signals");
 	}
