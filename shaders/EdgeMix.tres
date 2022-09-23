@@ -32,4 +32,4 @@ shader_param/LineSize = 0.0
 shader_param/Threshold = 0.0
 shader_param/LineWeight = 0.0
 shader_param/GradationSize = 2.5
-shader_param/Weight = 0.5
+shader_param/Weight = 1.0

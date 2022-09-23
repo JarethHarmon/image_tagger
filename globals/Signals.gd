@@ -53,6 +53,7 @@ signal toggle_tag_section(visible)
 signal image_count_changed(total)
 
 signal update_default_camera_position(new_position)
+signal calc_default_camera_zoom(image_size)
 
 # core_buttons
 signal file_button_pressed(position)

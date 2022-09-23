@@ -41,7 +41,7 @@ void fragment() {
 
 [resource]
 shader = SubResource( 1 )
-shader_param/size = 64
+shader_param/size = 1024
 shader_param/dot_size = 2.0
 shader_param/value_multiplier = 0.1
 shader_param/invert = true

@@ -18,14 +18,14 @@ func initialize(cam:Camera2D) -> void:
 	
 # zoom
 var zoom_to_point:bool = true
-var zoom_in_max:float = 0.025
-var zoom_out_max:float = 4.0
+var zoom_in_max:float = 0.005
+var zoom_out_max:float = 7.0
 var zoom_step:float = 0.05
 
 # scroll
-var scroll_step:float = 15.0
-var scroll_speed:float = 4.0
-var scroll_weight:float = 0.3
+var scroll_step:float = 45.0
+var scroll_speed:float = 5.0
+var scroll_weight:float = 0.35
 
 # drag
 var dragging:bool = false
@@ -46,11 +46,24 @@ var edmm_line_weight:float = 0.0
 var edmm_graduation_size:float = 2.5
 var edmm_weight:float = 0.5
 
-func _ready() -> void: Signals.connect("update_default_camera_position", self, "_update_default_camera_position")
+func _ready() -> void: 
+	Signals.connect("update_default_camera_position", self, "_update_default_camera_position")
+	Signals.connect("calc_default_camera_zoom", self, "calc_default_camera_zoom")
 
 func _update_default_camera_position(new_position:Vector2) -> void: 
 	default_camera_position = new_position
 	camera.position = default_camera_position
+
+func calc_default_camera_zoom(image_size:Vector2) -> void:
+	# camera_zoom_baseline = 1.0,1.0
+	# maybe add a check for invert
+	var ratio_x:float = image_size.x/self.rect_size.x
+	var ratio_y:float = image_size.y/self.rect_size.y
+	var _zoom:float = max(ratio_x, ratio_y)
+	default_camera_zoom = Vector2(_zoom, _zoom)
+	camera.zoom = default_camera_zoom
+
+	print(ratio_x, "::", ratio_y, "\n", image_size, "::", self.rect_size, "\n", camera.zoom, "::", default_camera_zoom, "\n")
 
 func zoom_point(amount:float, position:Vector2) -> void:
 	var prev_zoom:Vector2 = camera.zoom
@@ -59,6 +72,7 @@ func zoom_point(amount:float, position:Vector2) -> void:
 
 func _on_viewport_display_gui_input(event:InputEvent) -> void:
 	if event is InputEventMouseButton:
+		#print(camera.offset.y)
 		if event.button_index == BUTTON_WHEEL_UP:
 			if Input.is_action_pressed("ctrl"): # scroll up
 				camera.offset.y = lerp(camera.offset.y, camera.offset.y - scroll_step * scroll_speed * camera.zoom.y, scroll_weight)

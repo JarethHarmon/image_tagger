@@ -57,6 +57,24 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
+[node name="HalfTone" type="Control" parent="ColorGrading"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="ColorGrading/HalfTone"]
+copy_mode = 2
+rect = Rect2( 0, 0, 0, 0 )
+
+[node name="Shader" type="ColorRect" parent="ColorGrading/HalfTone"]
+material = ExtResource( 5 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
 [node name="EdgeMix" type="Control" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -96,20 +114,11 @@ margin_right = -27.0
 margin_bottom = -13.0
 mouse_filter = 2
 
-[node name="HalfTone" type="Control" parent="."]
-visible = false
+[node name="ReferenceRect" type="ReferenceRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-
-[node name="BackBufferCopy" type="BackBufferCopy" parent="HalfTone"]
-copy_mode = 2
-rect = Rect2( 0, 0, 0, 0 )
-
-[node name="Shader" type="ColorRect" parent="HalfTone"]
-material = ExtResource( 5 )
-anchor_right = 1.0
-anchor_bottom = 1.0
-mouse_filter = 2
+border_width = 10.0
+editor_only = false

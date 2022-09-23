@@ -259,7 +259,15 @@ func _thread(args:Array) -> void:
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
-		if e != OK: print_debug(e, " :: ", path)
+		if e != OK: 
+			print_debug(e, " :: ", path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return 
+			i = ImageImporter.LoadUnsupportedImage(path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return
 		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
@@ -274,7 +282,15 @@ func _thread(args:Array) -> void:
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
-		if e != OK: print_debug(e, " :: ", path)
+		if e != OK: 
+			print_debug(e, " :: ", path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return 
+			i = ImageImporter.LoadUnsupportedImage(path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return
 		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
 			return
@@ -357,6 +373,10 @@ func resize_current_image(path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: pass#return
 	
+	#yield(get_tree(), "idle_frame")
+	#var im_size:Vector2 = Vector2(current_image.get_width(), current_image.get_height())
+	#Signals.emit_signal("calc_default_camera_zoom", im_size)
+
 	preview.set_texture(null)
 	animation_size = calc_size(current_image)
 
@@ -365,6 +385,11 @@ func resize_current_image(path:String="") -> void:
 	preview.set_texture(current_image)
 	buffering.hide()
 
+# add a toggle button that inverts the calculations for portrait/landscape
+# this way the user can change the size of a tall vertical image to fit horizontally on the screen
+# also in general need to see if I can change to only moving the camera and not changing sizes at all 
+#	(would help especially with animated images)
+var invert:bool = false
 func calc_size(it:ImageTexture) -> Vector2:
 	var size_1:Vector2 = viewport_display.rect_size
 	var size_2:Vector2 = preview.rect_size
@@ -377,13 +402,13 @@ func calc_size(it:ImageTexture) -> Vector2:
 	var ratio_w:float = size_1.x / size_i.x
 	var ratio_s:Vector2 = size_2 / size_1
 	
-	if ratio_h < ratio_w: # portrait
+	if (ratio_h < ratio_w and not invert) or (ratio_h > ratio_w and invert): # portrait or landscape+invert
 		size.y = size_1.y
 		size.x = (size_1.y / size_i.y) * size_i.x
 		if ratio_s.y < ratio_s.x: # portrait-shaped section
 			size *= ratio_s.y
 		else: size *= ratio_s.x
-	else: # landscape or square
+	else: # landscape or square or portrait+invert
 		size.x = size_1.x
 		size.y = (size_1.x / size_i.x) * size_i.y
 		if ratio_s.y < ratio_s.x: size *= ratio_s.y
@@ -516,4 +541,6 @@ func remove_status(path:String) -> void:
 
 func _on_flip_h_button_up() -> void: preview.flip_h = not preview.flip_h
 func _on_flip_v_button_up() -> void: preview.flip_v = not preview.flip_v
-
+func _on_invert_size_toggled(button_pressed:bool) -> void:
+	invert = button_pressed
+	resize_current_image()
