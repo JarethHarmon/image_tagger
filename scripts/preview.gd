@@ -275,7 +275,6 @@ func _thread(args:Array) -> void:
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 		if e != OK: 
-			print_debug(e, " :: ", path)
 			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path)
 				return 
@@ -396,7 +395,8 @@ func resize_current_image(path:String="") -> void:
 
 	var temp_size:Vector2 = calc_size(current_image).round()
 
-	if temp_size != animation_size:
+	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
+	if temp_size != animation_size or (current_image.get_meta("image_hash") != preview.get_texture().get_meta("image_hash")):
 		animation_size = temp_size
 		preview.set_texture(null)
 		current_image.set_size_override(animation_size)
