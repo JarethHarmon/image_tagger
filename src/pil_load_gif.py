@@ -27,6 +27,7 @@ def get_gif_frames(path, im_hash):
     csharp.SendFrameCount(frame_count)
     
     for i in range(0, frame_count):
+        if csharp.StopLoading(path): break
         bi = io.BytesIO()
         im.seek(i)
         im.save(bi, 'jpeg', disposal=1)

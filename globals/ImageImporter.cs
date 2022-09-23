@@ -54,6 +54,13 @@ public class PythonInterop : Node
 		string base64_str = (string)d_base64_str;
 		importer.SendFrame(base64_str);
 	}
+
+	public bool StopLoading(dynamic d_path)
+	{
+		string imagePath = (string)d_path;
+		if (importer.GetAnimationStatus(imagePath)) return true;
+		return false;
+	}
 }
 public class ImageImporter : Node
 {
