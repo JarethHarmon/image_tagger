@@ -47,12 +47,12 @@ public class PythonInterop : Node
 	public void SendFrameCount(dynamic d_frameCount)
 	{
 		int frameCount = (int)d_frameCount;
-		importer.SendFrameCount(frameCount);
+		importer.SendGifFrameCount(frameCount);
 	}
 	public void SendFrame(dynamic d_base64_str)
 	{
 		string base64_str = (string)d_base64_str;
-		importer.SendFrame(base64_str);
+		importer.SendGifFrame(base64_str);
 	}
 
 	public bool StopLoading(dynamic d_path)
@@ -259,54 +259,18 @@ public class ImageImporter : Node
 		}
 	}
 
-	// this is code from my last attempt; currently uncertain if there is a better way
-	// the basic concept behind this is :
-	//	1. Godot AnimatedTexture has a frame limit of 256
-	//	2. I want to return each frame as it loads (rather than doing nothing for potentially minutes)
-	//	3. So instead, append each frame to an array as soon as it loads, code elsewhere will control iterating the array
 	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
-	//private DateTime temp;
+	//private DateTime time;
 	public void LoadGif(string imagePath, string imageHash)
 	{
 		//var label = (Label)GetNode("/root/main/Label");
-		//var now = DateTime.Now;
-		//temp = now;
-		string pyScript = @"pil_load_gif";
+		//time = DateTime.Now;
+		string pyScript = @"pil_load_gif"; // "/lib/python-3.10.7-embed-amd64/pil_load_gif.py"
 		int frameCount=0;
-		string[] frames = new string[0];
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);
-				script.get_gif_frames(@imagePath, @imageHash);
-				//dynamic tempFrames = script.load_gif(@imagePath);
-				//frames = (string[])tempFrames.As<string[]>();
-				//frameCount = frames.Length;
-				/*frameCount = script.get_gif_frame_count(@imagePath);
-				label.Text = "frame_count: " + (DateTime.Now-now).ToString();
-				signals.Call("emit_signal", "set_animation_info", frameCount, 24);
-				bool firstFrame = true;
-				//for (int i = 0; i < frames.Length; i++) {
-				for (int i = 0; i < frameCount; i++) {
-					if (GetAnimationStatus(imagePath)) break;
-					//string[] sections = frames[i].Split('?');
-
-					dynamic base64_str = script.get_gif_frame(@imagePath, i);
-					string base64_str_s = (string)base64_str;
-					string[] sections = base64_str_s.Split('?');
-
-					float delay = (float)int.Parse(sections[0])/1000;
-					string base64 = sections[1];
-					byte[] bytes = System.Convert.FromBase64String(base64);
-					var image = new Godot.Image();
-					image.LoadJpgFromBuffer(bytes);
-					var texture = new ImageTexture();
-					texture.CreateFromImage(image, animatedFlags);
-					texture.SetMeta("image_hash", imageHash);
-					signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false);
-					if (firstFrame)
-						label.Text += "\nframe_load : " + (DateTime.Now-now).ToString();
-					firstFrame = false;
-				}*/
+				script.get_gif_frames(@imagePath, imageHash);
 			}
 			catch (PythonException pex) { 
 				GD.Print(pex.Message); 
@@ -319,18 +283,17 @@ public class ImageImporter : Node
 				return;
 			}
 		}
-		Array.Clear(frames, 0, frames.Length);
 		signals.Call("emit_signal", "finish_animation", imagePath);
-		//label.Text += "\ngif_load   : " + (DateTime.Now-now).ToString();
+		//label.Text += "\ngif_load   : " + (DateTime.Now-time).ToString();
 	}
 
 	private bool frameOne = true;
-	public void SendFrameCount(int frameCount)
+	public void SendGifFrameCount(int frameCount)
 	{
 		signals.Call("emit_signal", "set_animation_info", frameCount, 24);
 		frameOne = true;
 	}
-	public void SendFrame(string base64_str)
+	public void SendGifFrame(string base64_str)
 	{
 		//var label = (Label)GetNode("/root/main/Label");
 		string[] sections = base64_str.Split('?');
@@ -348,7 +311,7 @@ public class ImageImporter : Node
 		texture.SetMeta("image_hash", imageHash);
 		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
 		//if (frameOne)
-		//	label.Text += "\nframe_one : " + (DateTime.Now-temp).ToString();
+		//	label.Text += "\nframe_one : " + (DateTime.Now-time).ToString();
 		frameOne = false;
 	}
 

@@ -386,7 +386,7 @@ func change_filter() -> void:
 
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return
-	if path != "" and path != current_path: pass#return
+	if path != "" and path != current_path: pass#return # do not remember why I commented return here
 	
 	# new code (still erratic and incorrect)
 	#yield(get_tree(), "idle_frame")
@@ -394,12 +394,14 @@ func resize_current_image(path:String="") -> void:
 	#Signals.emit_signal("calc_default_camera_zoom", im_size)
 	#image_grid.get_parent().rect_size = im_size
 
-	preview.set_texture(null)
-	animation_size = calc_size(current_image)
+	var temp_size:Vector2 = calc_size(current_image).round()
 
-	current_image.set_size_override(animation_size)
-	yield(get_tree(), "idle_frame")
-	preview.set_texture(current_image)
+	if temp_size != animation_size:
+		animation_size = temp_size
+		preview.set_texture(null)
+		current_image.set_size_override(animation_size)
+		yield(get_tree(), "idle_frame")
+		preview.set_texture(current_image)
 	buffering.hide()
 
 # add a toggle button that inverts the calculations for portrait/landscape
@@ -521,14 +523,19 @@ func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, n
 
 func update_animation(path:String, new_image:bool=false) -> void:
 	if current_path != path: return
-	if not animation_status.has(path): return
-	if animation_status[path] == a_status.STOPPING: return
 	animation_mutex.lock()
+	if not animation_status.has(path): 
+		animation_mutex.unlock()
+		return
+	if animation_status[path] == a_status.STOPPING: 
+		animation_mutex.unlock()
+		return
+	
 	# set frame counter label text
 	var delay:float = 0.0
 	if new_image:
 		animation_index = 0
-		animation_size = calc_size(animation_images[animation_index])
+		animation_size = calc_size(animation_images[animation_index]).round()
 		animation_images[animation_index].set_size_override(animation_size)
 		current_image = animation_images[animation_index]
 		delay = animation_delays[animation_index]
