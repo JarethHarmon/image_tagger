@@ -63,7 +63,7 @@ func calc_default_camera_zoom(image_size:Vector2) -> void:
 	default_camera_zoom = Vector2(_zoom, _zoom)
 	camera.zoom = default_camera_zoom
 
-	print(ratio_x, "::", ratio_y, "\n", image_size, "::", self.rect_size, "\n", camera.zoom, "::", default_camera_zoom, "\n")
+	#print(ratio_x, "::", ratio_y, "\n", image_size, "::", self.rect_size, "\n", camera.zoom, "::", default_camera_zoom, "\n")
 
 func zoom_point(amount:float, position:Vector2) -> void:
 	var prev_zoom:Vector2 = camera.zoom

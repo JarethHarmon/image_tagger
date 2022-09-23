@@ -26,6 +26,7 @@ enum a_status { PLAYING, LOADING, STOPPING }
 
 var current_image:Texture
 var current_path:String
+var current_hash:String
 
 onready var manager_thread:Thread = Thread.new()
 onready var image_mutex:Mutex = Mutex.new()
@@ -85,6 +86,19 @@ func _toggle_preview_section(_visible:bool) -> void:
 	Globals.toggle_parent_visibility_from_children(self.get_parent())
 
 func _rating_set(rating_name:String, rating_value:int) -> void:
+	# for now, I will just ensure each frame of an animation has a rating
+	# in the future though, I should use current_hash instead
+	#	which requires that it DEFINITELY matches the current displayed image
+	# 	which might mean only showing ratings when an image has loaded, and removing 
+	#	them immediately if another image is clicked; (if so then do the same for tags/paths/etc)
+
+	# currently, ratings do not load until the image has finished loading (at least the first frame)
+	# ratings are also not cleared until the new image has finished loading (after clicking a new image)
+	# if you load image A, then click image B, then change the ratings before image B loads, then the 
+	#	ratings will be changed on image A
+	#	this behavior is not a major issue since image A is also still displayed, but I need to be 
+	#	certain about whether I want this to happen, and be consistent with how this functions for all
+	#	metadata (including tags/paths/imports/etc)
 	if not current_image.has_meta("image_hash"): return
 	var image_hash:String = current_image.get_meta("image_hash")
 	append_rating([image_hash, rating_name, rating_value])
@@ -156,6 +170,7 @@ func create_threads(num_threads:int) -> void:
 func _load_full_image(image_hash:String, path:String) -> void:	
 	image_mutex.lock()
 	current_path = path
+	current_hash = image_hash
 
 	if image_history.has(image_hash): 
 		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
@@ -297,10 +312,10 @@ func _thread(args:Array) -> void:
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
 		animation_mode = true
-		ImageImporter.LoadAPng(path)
+		ImageImporter.LoadAPng(path, image_hash)
 	elif actual_format == Globals.ImageType.GIF: 
 		animation_mode = true
-		ImageImporter.LoadGif(path)
+		ImageImporter.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
 		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path)
@@ -373,9 +388,11 @@ func resize_current_image(path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: pass#return
 	
+	# new code (still erratic and incorrect)
 	#yield(get_tree(), "idle_frame")
 	#var im_size:Vector2 = Vector2(current_image.get_width(), current_image.get_height())
 	#Signals.emit_signal("calc_default_camera_zoom", im_size)
+	#image_grid.get_parent().rect_size = im_size
 
 	preview.set_texture(null)
 	animation_size = calc_size(current_image)
@@ -520,6 +537,9 @@ func update_animation(path:String, new_image:bool=false) -> void:
 		else: tex.flags = 0
 		preview.set_texture(tex)
 		animation_index = 1
+		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:

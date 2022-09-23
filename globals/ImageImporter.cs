@@ -220,7 +220,7 @@ public class ImageImporter : Node
 	//	2. I want to return each frame as it loads (rather than doing nothing for potentially minutes)
 	//	3. So instead, append each frame to an array as soon as it loads, code elsewhere will control iterating the array
 	public uint animatedFlags; // public so that it can be updated mid-load so that images do not have to be recreated with different flags as soon as they finish
-	public void LoadGif(string imagePath)
+	public void LoadGif(string imagePath, string imageHash)
 	{
 		string pyScript = @"pil_load_gif";
 		int frameCount=0;
@@ -243,6 +243,7 @@ public class ImageImporter : Node
 					image.LoadJpgFromBuffer(bytes);
 					var texture = new ImageTexture();
 					texture.CreateFromImage(image, animatedFlags);
+					texture.SetMeta("image_hash", imageHash);
 					signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false);
 					firstFrame = false;
 				}
@@ -262,10 +263,19 @@ public class ImageImporter : Node
 		signals.Call("emit_signal", "finish_animation", imagePath);
 	}
 
-	public void LoadAPng(string imagePath)
+	public void LoadAPng(string imagePath, string imageHash)
 	{	
 		try {
-			var apng = APNG.FromFile(imagePath);
+			//var label = (Label)GetNode("/root/main/Label");
+			//DateTime now = DateTime.Now, now2 = DateTime.Now;
+			var apng = new APNG();
+			//GD.Print("apng_create: ", DateTime.Now-now);
+			//now = DateTime.Now;
+			//var apng = APNG.FromFile(imagePath);
+			apng.Load(imagePath);
+			//label.Text = "apng_load: " + (DateTime.Now-now).ToString();
+			//GD.Print("apng_load: ", DateTime.Now-now);
+			//now = DateTime.Now;
 			var frames = apng.Frames;
 			int frameCount = apng.FrameCount;
 			if (frameCount <= 0) {
@@ -276,6 +286,8 @@ public class ImageImporter : Node
 			bool firstFrame = true; // need to consider changing logic to create a magickImage on the object, return it as the first frame, and then skip frame 1 in the foreach loop
 
 			signals.Call("emit_signal", "set_animation_info", frameCount, 24);
+			//GD.Print("apng_setup: ", DateTime.Now-now);
+			//now = DateTime.Now;
 
 			Bitmap prevFrame = null;
 			for (int i = 0; i < frameCount; i++) {
@@ -298,8 +310,11 @@ public class ImageImporter : Node
 				Array.Clear(data, 0, data.Length);
 				var texture = new ImageTexture();
 				texture.CreateFromImage(image, animatedFlags);
+				texture.SetMeta("image_hash", imageHash);
 				signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (firstFrame) ? true : false); 
 				firstFrame = false;
+				//GD.Print("frame_", i, ": ", DateTime.Now-now);
+				//now = DateTime.Now;
 			}
 			apng.ClearFrames();
 			Array.Clear(frames, 0, frames.Length);
@@ -309,7 +324,8 @@ public class ImageImporter : Node
 			}
 			apng = null;
 			frames = null;
-			signals.Call("emit_signal", "finish_animation", imagePath);
+			//signals.Call("emit_signal", "finish_animation", imagePath);
+			//label.Text += "\ntotal_load: " + (DateTime.Now-now2).ToString();
 		}
 		catch (Exception ex) {
 			GD.Print("ImageImporter::LoadAPng() : ", ex);
