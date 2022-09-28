@@ -19,6 +19,7 @@ onready var fxaa_button:CheckButton = $margin/vbox/flow/fxaa
 onready var edge_mix_button:CheckButton = $margin/vbox/flow/edge_mix
 onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
 
+onready var timer:Timer = $Timer
 onready var buffering:HBoxContainer = $margin/hbox
 
 enum status { INACTIVE = 0, ACTIVE, PAUSED, CANCELED }
@@ -79,6 +80,8 @@ func _ready() -> void:
 	_on_settings_loaded()
 
 	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
+	
+	timer.connect("timeout", self, "update_animation")
 
 func _toggle_preview_section(_visible:bool) -> void: 
 	self.visible = _visible
@@ -143,6 +146,8 @@ func _on_settings_loaded() -> void:
 
 	create_current_image()
 	resize_current_image()
+	yield(get_tree(), "idle_frame")
+	get_node("/root/main/preview_container/ViewportContainer/Viewport/preview_viewport/image_grid/image_0").get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
 
 func clear_image_preview() -> void:
 	for child in image_grid.get_children():
@@ -168,6 +173,7 @@ func create_threads(num_threads:int) -> void:
 		_stop_threads = false
 
 func _load_full_image(image_hash:String, path:String) -> void:	
+	if current_hash == image_hash: return
 	image_mutex.lock()
 	current_path = path
 	current_hash = image_hash
@@ -181,7 +187,6 @@ func _load_full_image(image_hash:String, path:String) -> void:
 		preview.set_texture(it)
 		current_image = it
 		# need to call a function that gets a list of ratings instead
-		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
 		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
@@ -191,17 +196,18 @@ func _load_full_image(image_hash:String, path:String) -> void:
 	for i in thread_status.size():
 		if thread_status[i] == status.ACTIVE:
 			thread_status[i] = status.CANCELED
+	animation_mutex.lock()
 	for path in animation_status:
 		animation_status[path] = a_status.STOPPING
 		ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
+	animation_mutex.unlock()
 
 	remove_animations()
-
 	image_mutex.unlock()
 	
 	if use_buffering_icon: 
 		buffering.show()
-		#preview.set_texture(buffer_icon)
+
 	append_args(image_hash, path)
 	start_manager()
 
@@ -222,27 +228,31 @@ func start_manager() -> void:
 	if not manager_thread.is_active(): 
 		manager_thread.start(self, "_manager_thread")
 
-func start_one(current_hash:String, _current_path:String, thread_id:int) -> void:
+func start_one(_current_hash:String, _current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	animation_status[_current_path] = a_status.LOADING
-	ImageImporter.AddOrUpdateAnimationStatus(_current_path, a_status.LOADING)
-	thread_pool[thread_id].start(self, "_thread", [current_hash, _current_path, thread_id])
+	var actual_format:int = ImageImporter.GetActualFormat(_current_path)
+	if actual_format == Globals.ImageType.APNG or actual_format == Globals.ImageType.GIF:
+		animation_mutex.lock()
+		animation_status[_current_path] = a_status.LOADING
+		animation_mutex.unlock()
+		ImageImporter.AddOrUpdateAnimationStatus(_current_path, a_status.LOADING)
+	thread_pool[thread_id].start(self, "_thread", [_current_hash, _current_path, thread_id, actual_format])
 	active_threads += 1
 
 func _manager_thread() -> void:
-	var args:Array = _get_args()
-	var current_hash:String = args[0]
-	var _current_path:String = args[1]
-	var path_used:bool = false
 	while not _stop_threads:
+		var args:Array = _get_args()
+		if args.empty(): break
+
+		var _current_hash:String = args[0]
+		var _current_path:String = args[1]
 		if _current_path == "": break
+
 		for thread_id in thread_pool.size():
 			if _current_path == "": break
 			if thread_status[thread_id] == status.INACTIVE:
-				start_one(current_hash, _current_path, thread_id)
-				path_used = true
+				start_one(_current_hash, _current_path, thread_id)
 				break
-		if path_used: break
 		OS.delay_msec(50)		
 	call_deferred("_manager_done")
 
@@ -255,11 +265,8 @@ func _thread(args:Array) -> void:
 	var image_hash:String = args[0]
 	var path:String = args[1]
 	var thread_id:int = args[2]
+	var actual_format:int = args[3]
 
-	if _stop_threads or thread_status[thread_id] == status.CANCELED:
-		call_deferred("_done", thread_id, path)
-		return
-	var actual_format:int = ImageImporter.GetActualFormat(path)
 	if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 		call_deferred("_done", thread_id, path)
 		return
@@ -339,6 +346,9 @@ func _stop(thread_id:int) -> void:
 		active_threads -= 1	
 
 func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image_hash:String="") -> void:
+	# this function is no longer called for animated images (resize() rewrite)
+	# needs to be rewritten, but I will do so when the entire script gets rewritten
+	
 	if im == null:
 		if animation_mode:
 			im = animation_images[animation_index].get_data()
@@ -362,7 +372,13 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 			image_history[image_hash] = it
 			image_queue.push_back(image_hash)
 		image_mutex.unlock()
+
 		# need to call a function that gets a list of ratings instead
+		#	var ratings:Array = Database.GetRatings()
+		#	for rating in ratings:
+		#		Signals.emit_signal("set_rating", rating, Database.GetRating(image_hash, rating))
+		# also need to consider doing this in bulk (which would likely require a rewrite of the rating.gd script, or the logic behind ratings in general)
+
 		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
@@ -399,8 +415,10 @@ func resize_current_image(path:String="") -> void:
 	if temp_size != animation_size or (current_image.get_meta("image_hash") != preview.get_texture().get_meta("image_hash")):
 		animation_size = temp_size
 		preview.set_texture(null)
+		if current_image == null: return
 		current_image.set_size_override(animation_size)
 		yield(get_tree(), "idle_frame")
+		if current_image == null: return
 		preview.set_texture(current_image)
 	buffering.hide()
 
@@ -433,7 +451,6 @@ func calc_size(it:ImageTexture) -> Vector2:
 		if ratio_s.y < ratio_s.x: size *= ratio_s.y
 		else: size *= ratio_s.x
 	return size
-
 
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
@@ -501,8 +518,10 @@ func set_frames(total_frames:int, fps:int=0) -> void:
 	# set max frames label text
 
 func remove_animations() -> void:
+	animation_mutex.lock()
 	animation_delays.clear()
 	animation_images.clear()
+	animation_mutex.unlock()
 
 func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, new_image:bool=false) -> void:
 	if path == current_path:
@@ -514,15 +533,19 @@ func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, n
 		if delay > 0.0: animation_delays.append(delay)
 		if new_image:
 			animation_mutex.unlock()
-			update_animation(path, new_image)
+			update_animation(new_image)
+			#update_animation(path, new_image)
 		else: animation_mutex.unlock()
 	else: 
+		animation_mutex.lock()
 		if animation_status.has(path): 
 			animation_status[path] = a_status.STOPPING
 			ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
+		animation_mutex.unlock()
 
-func update_animation(path:String, new_image:bool=false) -> void:
-	if current_path != path: return
+func update_animation(new_image:bool=false) -> void:
+	if not timer.is_stopped(): timer.stop()
+	var path:String = current_path
 	animation_mutex.lock()
 	if not animation_status.has(path): 
 		animation_mutex.unlock()
@@ -548,7 +571,6 @@ func update_animation(path:String, new_image:bool=false) -> void:
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
 		Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
 	else:
-		#print(animation_index, ":::", animation_total_frames, ":::", animation_images.size())
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			animation_images[animation_index].set_size_override(animation_size)
@@ -559,13 +581,12 @@ func update_animation(path:String, new_image:bool=false) -> void:
 			preview.set_texture(tex)
 			animation_index += 1
 	animation_mutex.unlock()
-	get_tree().create_timer(delay if delay > 0.0 else animation_min_delay).connect("timeout", self, "update_animation", [path])
+	timer.start(delay if delay > 0.0 else animation_min_delay)
 
 func remove_status(path:String) -> void:
 	animation_mutex.lock()
 	animation_status[path] = a_status.PLAYING
 	animation_mutex.unlock()
-
 
 func _on_flip_h_button_up() -> void: preview.flip_h = not preview.flip_h
 func _on_flip_v_button_up() -> void: preview.flip_v = not preview.flip_v

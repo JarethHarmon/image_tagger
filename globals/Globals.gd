@@ -81,8 +81,10 @@ var settings:Dictionary = {
 	"show_thumbnail_tooltips" : true,
 }
 
+# note: this does not work correctly for release_debug
 func _get_program_directory() -> String: 
-	if OS.is_debug_build(): return ProjectSettings.globalize_path("res://").plus_file("/")
+	if OS.is_debug_build(): 
+		return ProjectSettings.globalize_path("res://").plus_file("/")
 	return OS.get_executable_path().get_base_dir().plus_file("/")
 
 func _print(string, args) -> void: print("  ", string + ": ", args)

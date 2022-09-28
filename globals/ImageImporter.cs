@@ -112,6 +112,7 @@ public class ImageImporter : Node
 	{
 		try {
 			string pyPath = @executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
+			//string pyPath = @"R:\git\image_tagger\bin\lib\python-3.10.7-embed-amd64\python310.dll"; // temp hardcoded path for release_debug
 			System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
 			PythonEngine.Initialize();
 			state = PythonEngine.BeginAllowThreads();
@@ -357,6 +358,7 @@ public class ImageImporter : Node
 		texture.CreateFromImage(image, animatedFlags);
 		texture.SetMeta("image_hash", imageHash);
 		if (GetAnimationStatus(imagePath)) return;
+
 		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
 		frameOne = false;
 	}

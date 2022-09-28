@@ -440,6 +440,19 @@ public class Database : Node
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
+
+			// I would like to support a user-specified specific number of tags (ie image must contain N of these tags)
+			// but there is no easy way, best option would probably be to iterate page-by-page with query.Offset(offset).Limit(count).ToList();
+			// and filter those based on the number of tags they should have, then get the next page if not at page limit yet
+			
+			// I also still need to find a good way to do a basic filter before I get into the complex ones, otherwise performance will decrease
+			// if the default all/any/none are not empty then I can just use those for a basic filter
+			// but if they are all empty, I will need to construct my own (All from any common tags between sections), (Any from any leftover tags), (None from any common tags)
+
+			// var tagArrays = new List<Dictionary<string, string[]>>();
+			// each member of tagArrays will be a dictionary{"All":[], "Any":[], "None":[]}
+
+			
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 
 			if (sort == (int)Sort.SIZE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.size) : query.OrderByDescending(x => x.size);
@@ -461,7 +474,7 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_SUM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Sum"]) : query.OrderByDescending(x => x.ratings["Sum"]);
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
-
+			
 			/* only current hope for supporting tags formatted as
 					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
 				is PredicateBuilder (which is slower I believe) */
@@ -555,6 +568,8 @@ public class Database : Node
 		if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 		if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
+
+		//
 
 		if (!counted) _lastQueriedCount = query.Count(); // slow
 
