@@ -423,19 +423,21 @@ public class Database : Node
 		
 	private BsonExpression CreateCondition(string[] tags, int numTags, int type)
 	{
-		if (numTags == 1) return ((type == (int)Types.ALL) || (type == (int)Types.ANY)) ? 
-			Query.Contains("$.tags[*] ANY", tags[0]) : 
-			Query.Not(Query.Contains("$.tags[*] ANY", tags[0]), true);
+		// NONE
+		if (type == (int)Types.NONE)
+			return (BsonExpression)string.Format("($.tags[*] ANY IN {0})!=true", BsonMapper.Global.Serialize(tags));
+
+		// one ALL or ANY
+		if (numTags == 1)
+			return Query.Contains("$.tags[*] ANY", tags[0]);
 		
+		// multiple ALL or ANY 
 		var list = new List<BsonExpression>();
-		if (type == (int)Types.ALL || type == (int)Types.ANY)
-			foreach (string tag in tags)
-				list.Add(Query.Contains("$.tags[*] ANY", tag));
-		else 
-			foreach (string tag in tags)
-				list.Add(Query.Not(Query.Contains("$.tags[*] ANY", tag), true));
-		
-		if (type == (int)Types.ALL || type == (int)Types.NONE)
+		foreach (string tag in tags)
+			list.Add(Query.Contains("$.tags[*] ANY", tag));
+
+		// check AND or OR
+		if (type == (int)Types.ALL)
 			return Query.And(list.ToArray());
 		return Query.Or(list.ToArray());
 	}
