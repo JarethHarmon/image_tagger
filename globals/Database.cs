@@ -384,7 +384,7 @@ public class Database : Node
 		} catch { return ""; }
 	}
 
-	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
+	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
 		try {			
 			dictHashes.Clear();
@@ -392,7 +392,7 @@ public class Database : Node
 			int tabType = GetTabType(tabId);
 			if (tabType == (int)Tab.IMPORT_GROUP) {
 				string importId = GetImportId(tabId);
-				var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, sort, order, countResults);
+				var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, tagsComplex, sort, order, countResults);
 				if (hashInfos == null) return new string[0];
 				foreach (HashInfo hashInfo in hashInfos) {
 					results.Add(hashInfo.imageHash);
@@ -419,13 +419,34 @@ public class Database : Node
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
 	}
 
-	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
+	enum Types { ALL, ANY, NONE }
+		
+	private BsonExpression CreateCondition(string[] tags, int numTags, int type)
+	{
+		if (numTags == 1) return ((type == (int)Types.ALL) || (type == (int)Types.ANY)) ? 
+			Query.Contains("$.tags[*] ANY", tags[0]) : 
+			Query.Not(Query.Contains("$.tags[*] ANY", tags[0]), true);
+		
+		var list = new List<BsonExpression>();
+		if (type == (int)Types.ALL || type == (int)Types.ANY)
+			foreach (string tag in tags)
+				list.Add(Query.Contains("$.tags[*] ANY", tag));
+		else 
+			foreach (string tag in tags)
+				list.Add(Query.Not(Query.Contains("$.tags[*] ANY", tag), true));
+		
+		if (type == (int)Types.ALL || type == (int)Types.NONE)
+			return Query.And(list.ToArray());
+		return Query.Or(list.ToArray());
+	}
+
+	private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
 	{
 		try {
 			var now = DateTime.Now;
 			bool counted=false;
 
-			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
+			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && tagsComplex.Length == 0) {
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 				counted = true;
 			}
@@ -436,23 +457,101 @@ public class Database : Node
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
 			//if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
 			
+			// this will eventually be handled automatically on the gdscript side (once the ui is replaced to something easier to take advantage of)
+			// there is also a lot of optimization to be done here
+			var tagArrays = new List<Dictionary<string, HashSet<string>>>();
+			var newAll = new HashSet<string>(tagsAll);
+			var newAny = new HashSet<string>(tagsAny);
+			var newNone = new HashSet<string>(tagsNone);
+
+			if (tagsAll.Length > 0 || tagsAny.Length > 0 || tagsNone.Length > 0) {
+				string condition = "";
+				if (tagsAll.Length > 0) foreach (string tag in tagsAll) condition += tag + ",";
+				condition += "%";
+				if (tagsAny.Length > 0) foreach (string tag in tagsAny) condition += tag + ",";
+				condition += "%";
+				if (tagsNone.Length > 0) foreach (string tag in tagsNone) condition += tag + ",";
+				var tempList = new List<string>(tagsComplex);
+				tempList.Add(condition);
+				tagsComplex = tempList.ToArray();
+			}
+
+			if (tagsComplex.Length > 0) {
+				var tempAll = new HashSet<string>();
+				var tempAny = new HashSet<string>();
+				var tempNone = new HashSet<string>();
+
+				foreach (string condition in tagsComplex) {
+					string[] sections = condition.Split(new string[1]{"%"}, StringSplitOptions.None);
+
+					if (sections.Length < 3) { GD.Print("ERROR"); continue; }
+					string[] _all = sections[0].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
+					string[] _any = sections[1].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
+					string[] _none = sections[2].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
+
+					foreach (string tag in _all) tempAll.Add(tag);
+					foreach (string tag in _any) tempAny.Add(tag);
+					foreach (string tag in _none) tempNone.Add(tag);
+
+					var dict = new Dictionary<string, HashSet<string>>();
+					dict["All"] = new HashSet<string>(_all);
+					dict["Any"] = new HashSet<string>(_any);
+					dict["None"] = new HashSet<string>(_none);
+					tagArrays.Add(dict);
+				}
+
+				foreach (string tag in tempAll) {
+					bool allContain = true;
+					foreach (Dictionary<string, HashSet<string>> condition in tagArrays) {
+						if (!condition["All"].Contains(tag)) { newAny.Add(tag); allContain = false; }
+						if (!allContain) break;
+					}
+					if (allContain) newAll.Add(tag);
+				}
+				foreach (Dictionary<string, HashSet<string>> condition in tagArrays)
+					foreach (string tag in condition["Any"])
+						newAny.Add(tag);
+				foreach (string tag in tempNone) {
+					bool allContain = true;
+					foreach (Dictionary<string, HashSet<string>> condition in tagArrays) {
+						if (!condition["None"].Contains(tag)) allContain = false;
+						if (!allContain) break;
+					}
+					if (allContain) newNone.Add(tag);
+				}
+			}
+
+			tagsAll = newAll.ToArray();
+			tagsAny = newAny.ToArray();
+			tagsNone = newNone.ToArray();
+
 			if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 			
+			if (tagsComplex.Length > 0 && tagsAny.Length > 0) {
+				var condList = new List<BsonExpression>();
+				foreach (Dictionary<string, HashSet<string>> condition in tagArrays) {
+					if (condition["All"].Count == 0 && condition["Any"].Count == 0 && condition["None"].Count == 0) continue;
 
-			// I would like to support a user-specified specific number of tags (ie image must contain N of these tags)
-			// but there is no easy way, best option would probably be to iterate page-by-page with query.Offset(offset).Limit(count).ToList();
-			// and filter those based on the number of tags they should have, then get the next page if not at page limit yet
-			
-			// I also still need to find a good way to do a basic filter before I get into the complex ones, otherwise performance will decrease
-			// if the default all/any/none are not empty then I can just use those for a basic filter
-			// but if they are all empty, I will need to construct my own (All from any common tags between sections), (Any from any leftover tags), (None from any common tags)
+					var _list = new List<BsonExpression>();
+					if (condition["All"].Count > 0)
+						_list.Add(CreateCondition(condition["All"].ToArray(), condition["All"].Count, (int)Types.ALL));
+					if (condition["Any"].Count > 0)
+						_list.Add(CreateCondition(condition["Any"].ToArray(), condition["Any"].Count, (int)Types.ANY));
+					if (condition["None"].Count > 0)
+						_list.Add(CreateCondition(condition["None"].ToArray(), condition["None"].Count, (int)Types.NONE));
 
-			// var tagArrays = new List<Dictionary<string, string[]>>();
-			// each member of tagArrays will be a dictionary{"All":[], "Any":[], "None":[]}
+					if (_list.Count == 0) continue;
+					else if (_list.Count == 1) condList.Add(_list[0]);
+					else condList.Add(Query.And(_list.ToArray()));
+				}
+				if (condList.Count == 1)
+					query = query.Where(condList[0]);
+				else if (condList.Count > 1)
+					query = query.Where(Query.Or(condList.ToArray()));
+			}
 
-			
 			if (countResults && !counted) _lastQueriedCount = query.Count(); // slow
 
 			if (sort == (int)Sort.SIZE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.size) : query.OrderByDescending(x => x.size);

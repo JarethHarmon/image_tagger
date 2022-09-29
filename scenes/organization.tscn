@@ -48,35 +48,35 @@ size_flags_horizontal = 3
 
 [node name="search_buttons" type="HFlowContainer" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 mouse_filter = 2
 size_flags_horizontal = 3
 script = ExtResource( 2 )
 
 [node name="vbox1" type="VBoxContainer" parent="margin/vbox/search_buttons"]
 margin_right = 81.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="clear_all" type="Button" parent="margin/vbox/search_buttons/vbox1"]
 margin_right = 81.0
-margin_bottom = 62.0
+margin_bottom = 92.0
 size_flags_vertical = 3
 disabled = true
 text = "  Clear All  "
 
 [node name="default" type="Button" parent="margin/vbox/search_buttons/vbox1"]
-margin_top = 66.0
+margin_top = 96.0
 margin_right = 81.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 disabled = true
 text = "  Default  "
 
 [node name="vbox2" type="VBoxContainer" parent="margin/vbox/search_buttons"]
 margin_left = 85.0
 margin_right = 1798.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -107,23 +107,30 @@ placeholder_text = "[Exclude All] of these comma-separated tags..."
 caret_blink = true
 caret_blink_speed = 0.5
 
+[node name="complex" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
+margin_top = 90.0
+margin_right = 1713.0
+margin_bottom = 116.0
+clear_button_enabled = true
+placeholder_text = "[Complex]"
+
 [node name="vbox3" type="VBoxContainer" parent="margin/vbox/search_buttons"]
 margin_left = 1802.0
 margin_right = 1910.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="search" type="Button" parent="margin/vbox/search_buttons/vbox3"]
 margin_right = 108.0
-margin_bottom = 68.0
+margin_bottom = 98.0
 size_flags_vertical = 3
 text = "  Search  "
 
 [node name="advanced_search" type="LinkButton" parent="margin/vbox/search_buttons/vbox3"]
-margin_top = 72.0
+margin_top = 102.0
 margin_right = 108.0
-margin_bottom = 86.0
+margin_bottom = 116.0
 focus_mode = 2
 disabled = true
 text = "Advanced Search"
@@ -134,3 +141,5 @@ text = "Advanced Search"
 [connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/include_any" to="margin/vbox/search_buttons" method="_on_include_any_text_entered"]
 [connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/exclude_all" to="margin/vbox/search_buttons" method="_on_exclude_all_text_changed"]
 [connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/exclude_all" to="margin/vbox/search_buttons" method="_on_exclude_all_text_entered"]
+[connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/complex" to="margin/vbox/search_buttons" method="_on_complex_text_changed"]
+[connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/complex" to="margin/vbox/search_buttons" method="_on_complex_text_entered"]

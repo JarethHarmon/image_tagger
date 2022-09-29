@@ -126,10 +126,11 @@ size_flags_vertical = 3
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 751.0
-margin_bottom = 106.0
+margin_bottom = 138.0
+rect_min_size = Vector2( 0, 138 )
 
 [node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/left"]
-margin_top = 110.0
+margin_top = 142.0
 margin_right = 751.0
 margin_bottom = 982.0
 size_flags_horizontal = 3
@@ -147,7 +148,7 @@ margin_bottom = 70.0
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 751.0
-margin_bottom = 872.0
+margin_bottom = 840.0
 
 [node name="right" type="HSplitContainer" parent="margin/vbox/hsplit"]
 margin_left = 759.0

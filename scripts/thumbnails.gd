@@ -75,12 +75,13 @@ func _ready() -> void:
 #					Querying and Loading Thumbnails						#
 #-----------------------------------------------------------------------#
 var first_time:bool = true # prevents scroll from being reset when going back to the same page (would not be needed if I fixed logic to not call this function twice)
-func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], new_query:bool=true) -> void: 
+func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], tags_complex:Array = [], new_query:bool=true) -> void: 
 	var query:Dictionary = {
 		"tab_id" : Globals.current_tab_id,
 		"tags_all" : tags_all,
 		"tags_any" : tags_any,
 		"tags_none" : tags_none,
+		"tags_complex" : tags_complex,
 	}
 	if new_query:
 		curr_page_number = 1
@@ -129,6 +130,7 @@ func _query_thread(args:Array) -> void:
 	var tags_all:Array = query.tags_all
 	var tags_any:Array = query.tags_any
 	var tags_none:Array = query.tags_none
+	var tags_complex:Array = query.tags_complex
 	
 	if _is_invalid_query(thread, query): return
 	
@@ -139,7 +141,7 @@ func _query_thread(args:Array) -> void:
 	var current_sort:int = Globals.settings.current_sort
    # order by descending if Similarity Tab
 	var current_order:int = Globals.settings.current_order if tab_type < Globals.Tab.SIMILARITY else Globals.OrderBy.Descending
-	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none]
+	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
 	var num_threads:int = Globals.settings.load_threads
 	var similarity:int = Globals.current_similarity
 	
@@ -167,7 +169,7 @@ func _query_thread(args:Array) -> void:
 
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
-		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, current_sort, current_order, count_results, similarity)
+		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
 		queried_image_count = Database.GetLastQueriedCount()
 #		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 #		var lqh:int = lqc.hash()
