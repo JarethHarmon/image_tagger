@@ -529,8 +529,9 @@ public class Database : Node
 
 			if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));
 			if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
-			if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
-			
+			//if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
+			if (tagsNone.Length > 0) query = query.Where("($.tags[*] ANY IN @0)!=true", BsonMapper.Global.Serialize(tagsNone));
+
 			if (tagsComplex.Length > 0 && tagsAny.Length > 0) {
 				var condList = new List<BsonExpression>();
 				foreach (Dictionary<string, HashSet<string>> condition in tagArrays) {
