@@ -13,7 +13,16 @@ var tags_any:Array = []
 var tags_none:Array = []
 
 func _ready() -> void:
+	include_all.connect("text_entered", self, "_on_include_all_text_entered")
+	include_all.connect("text_changed", self, "_on_include_all_text_changed")
+	include_any.connect("text_entered", self, "_on_include_any_text_entered")
+	include_any.connect("text_changed", self, "_on_include_any_text_changed")
+	exclude_all.connect("text_entered", self, "_on_exclude_all_text_entered")
+	exclude_all.connect("text_changed", self, "_on_exclude_all_text_changed")
+	complex.connect("text_entered", self, "_on_complex_text_entered")
+	complex.connect("text_changed", self, "_on_complex_text_changed")
 	search_button.connect("button_up", self, "search_pressed")
+	
 	Signals.connect("change_page", self, "page_changed")
 	Signals.connect("tab_button_pressed", self, "tab_button_pressed")
 	Signals.connect("image_import_finished", self, "refresh_page")

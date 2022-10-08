@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://scripts/organization.gd" type="Script" id=1]
 [ext_resource path="res://scripts/search_buttons.gd" type="Script" id=2]
+[ext_resource path="res://scenes/custom_nodes/TagEdit.gd" type="Script" id=3]
 
 [node name="organization" type="Control"]
 anchor_right = 1.0
@@ -88,6 +89,7 @@ clear_button_enabled = true
 placeholder_text = "[Include All] of these comma-separated tags..."
 caret_blink = true
 caret_blink_speed = 0.5
+script = ExtResource( 3 )
 
 [node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 30.0
@@ -97,6 +99,7 @@ clear_button_enabled = true
 placeholder_text = "[Include Any] of these comma-separated tags..."
 caret_blink = true
 caret_blink_speed = 0.5
+script = ExtResource( 3 )
 
 [node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 60.0
@@ -106,6 +109,7 @@ clear_button_enabled = true
 placeholder_text = "[Exclude All] of these comma-separated tags..."
 caret_blink = true
 caret_blink_speed = 0.5
+script = ExtResource( 3 )
 
 [node name="complex" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 90.0
@@ -113,6 +117,7 @@ margin_right = 1713.0
 margin_bottom = 116.0
 clear_button_enabled = true
 placeholder_text = "[Complex]"
+script = ExtResource( 3 )
 
 [node name="vbox3" type="VBoxContainer" parent="margin/vbox/search_buttons"]
 margin_left = 1802.0
@@ -134,12 +139,3 @@ margin_bottom = 116.0
 focus_mode = 2
 disabled = true
 text = "Advanced Search"
-
-[connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/include_all" to="margin/vbox/search_buttons" method="_on_include_all_text_changed"]
-[connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/include_all" to="margin/vbox/search_buttons" method="_on_include_all_text_entered"]
-[connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/include_any" to="margin/vbox/search_buttons" method="_on_include_any_text_changed"]
-[connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/include_any" to="margin/vbox/search_buttons" method="_on_include_any_text_entered"]
-[connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/exclude_all" to="margin/vbox/search_buttons" method="_on_exclude_all_text_changed"]
-[connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/exclude_all" to="margin/vbox/search_buttons" method="_on_exclude_all_text_entered"]
-[connection signal="text_changed" from="margin/vbox/search_buttons/vbox2/complex" to="margin/vbox/search_buttons" method="_on_complex_text_changed"]
-[connection signal="text_entered" from="margin/vbox/search_buttons/vbox2/complex" to="margin/vbox/search_buttons" method="_on_complex_text_entered"]

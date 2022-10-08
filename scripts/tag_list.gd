@@ -24,20 +24,13 @@ func _unhandled_input(event:InputEvent) -> void:
 	if event is InputEventKey:
 		if event.scancode == KEY_V:
 			_on_paste_selected_button_up()
-
-## if text is empty, releases focus so that thumbnail_list can receive L/R arrow key events again
-##		note: this code will need to be used for any instance of lineedit (the smart way would be
-##			to create an instance of lineedit that has a script attached that does anything relevant
-##			like this, then I can just instance that node anywhere I need a lineedit
-func _handle_arrow_keys(event:InputEvent) -> void:
-	if event is InputEventKey:
-		if event.scancode == KEY_LEFT or event.scancode == KEY_RIGHT:
-			if tag_entry.text == "": 
-				tag_entry.release_focus()
+		elif event.scancode == KEY_T:
+			tag_entry.grab_focus()
+		elif event.scancode == KEY_C:
+			_on_copy_selected_button_up()
 
 func _ready() -> void:
 	tag_entry.connect("text_entered", self, "tag_entered")
-	tag_entry.connect("gui_input", self, "_handle_arrow_keys")
 	delimiter_entry.connect("text_changed", self, "delimiter_changed")
 	Signals.connect("load_image_tags", self, "_load_tags")
 	Signals.connect("all_selected_items", self, "set_selection")
@@ -219,7 +212,7 @@ func _on_copy_selected_button_up() -> void:
 	var tags:String = ""
 	var delim:String = delimiter
 	for tag in selected_tags: tags += tag + delim
-	OS.set_clipboard(tags)
+	if tags != "": OS.set_clipboard(tags)
 
 func _on_select_all_button_up() -> void:
 	for tag in current_tags: 
