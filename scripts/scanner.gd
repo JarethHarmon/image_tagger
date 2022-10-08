@@ -133,5 +133,5 @@ func _on_begin_import_button_up() -> void:
 
 func _on_cancel_import_button_up() -> void:
 	reset()
-	ImageScanner.Clear()
+	ImageScanner.Cancel()
 	Signals.emit_signal("new_import_canceled")

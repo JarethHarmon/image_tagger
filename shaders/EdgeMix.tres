@@ -8,7 +8,7 @@ uniform float LineSize : hint_range(0, 100) = 0;
 uniform float Threshold : hint_range(0, 50) = 0;
 uniform float LineWeight : hint_range(0, 1) = 0.0;
 uniform float GradationSize : hint_range(0, 10) = 2.5;
-uniform float Weight : hint_range(0, 1) = 0.5;
+uniform float Weight : hint_range(0, 2) = 0.5;
 
 void fragment() {
 	float size = LineSize /10000.0;

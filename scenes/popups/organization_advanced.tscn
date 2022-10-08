@@ -1,0 +1,244 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://shaders/EdgeMix.tres" type="Material" id=1]
+[ext_resource path="res://scripts/organization_advanced.gd" type="Script" id=2]
+
+[node name="organization_advanced" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource( 2 )
+
+[node name="background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.25098 )
+
+[node name="blur" type="ColorRect" parent="."]
+material = ExtResource( 1 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.501961 )
+
+[node name="margin" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 50
+custom_constants/margin_top = 50
+custom_constants/margin_left = 50
+custom_constants/margin_bottom = 50
+
+[node name="panel" type="PanelContainer" parent="margin"]
+visible = false
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="margin/panel"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1813.0
+margin_bottom = 973.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin"]
+margin_left = 50.0
+margin_top = 50.0
+margin_right = 1870.0
+margin_bottom = 1030.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="tag_filters_section" type="PanelContainer" parent="margin/vbox"]
+margin_right = 1820.0
+margin_bottom = 281.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="vbox" type="VBoxContainer" parent="margin/vbox/tag_filters_section"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1813.0
+margin_bottom = 274.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="tag_filters_rtlabel" type="RichTextLabel" parent="margin/vbox/tag_filters_section/vbox"]
+margin_right = 1806.0
+margin_bottom = 15.0
+bbcode_enabled = true
+bbcode_text = "[b]Tag Filters[/b]"
+text = "Tag Filters"
+fit_content_height = true
+
+[node name="HSeparator" type="HSeparator" parent="margin/vbox/tag_filters_section/vbox"]
+margin_top = 19.0
+margin_right = 1806.0
+margin_bottom = 23.0
+
+[node name="scroll" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox"]
+margin_top = 27.0
+margin_right = 1806.0
+margin_bottom = 267.0
+rect_min_size = Vector2( 0, 240 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="vbox" type="VBoxContainer" parent="margin/vbox/tag_filters_section/vbox/scroll"]
+margin_right = 1806.0
+margin_bottom = 240.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="condition_global" type="HBoxContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox"]
+margin_right = 1806.0
+margin_bottom = 48.0
+rect_min_size = Vector2( 0, 48 )
+
+[node name="include_all" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_right = 595.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Global} Include All of these tags: "
+
+[node name="scroll_include_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_left = 599.0
+margin_right = 599.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global/scroll_include_all"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="include_any" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_left = 603.0
+margin_right = 1198.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Global} Include Any of these tags: "
+
+[node name="scroll_include_any" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_left = 1202.0
+margin_right = 1202.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global/scroll_include_any"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="exclude_all" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_left = 1206.0
+margin_right = 1801.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Global} Exclude All of these tags: "
+
+[node name="scroll_exclude_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
+margin_left = 1805.0
+margin_right = 1805.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global/scroll_exclude_all"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="condition_1" type="HBoxContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox"]
+margin_top = 52.0
+margin_right = 1806.0
+margin_bottom = 100.0
+rect_min_size = Vector2( 0, 48 )
+
+[node name="include_all" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_right = 595.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Condition_1} Include All of these tags: "
+
+[node name="scroll_include_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_left = 599.0
+margin_right = 599.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1/scroll_include_all"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="include_any" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_left = 603.0
+margin_right = 1198.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Condition_1} Include Any of these tags: "
+
+[node name="scroll_include_any" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_left = 1202.0
+margin_right = 1202.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1/scroll_include_any"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="exclude_all" type="LineEdit" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_left = 1206.0
+margin_right = 1801.0
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clear_button_enabled = true
+placeholder_text = "  {Condition_1} Exclude All of these tags: "
+
+[node name="scroll_exclude_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
+margin_left = 1805.0
+margin_right = 1805.0
+margin_bottom = 48.0
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1/scroll_exclude_all"]
+margin_bottom = 48.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="add_condition" type="Button" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox"]
+margin_top = 104.0
+margin_right = 1806.0
+margin_bottom = 124.0
+text = "  +  "

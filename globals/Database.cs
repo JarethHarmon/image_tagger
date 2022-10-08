@@ -26,6 +26,8 @@ public class Database : Node
 
 	/* may eventually reduce and merge these (especially merging dbGroups with dbTags) */
 	private LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
+	//private LiteDatabase[] dbThumbnails = new LiteDatabas[256]; // FF=255, 00=0, 7F=128	(7*16+F=8*16=128)
+	
 	private ILiteCollection<HashInfo> colHashes;
 	private ILiteCollection<ImportInfo> colImports;
 	private ILiteCollection<ImportProgress> colProgress;
@@ -567,7 +569,6 @@ public class Database : Node
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
-
 			else if (sort == (int)Sort.RANDOM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
 			// need a way to handle this that allows custom user ratings
 			else if (sort == (int)Sort.RATING_QUALITY) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Quality"]) : query.OrderByDescending(x => x.ratings["Quality"]);
@@ -577,10 +578,6 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 			
-			/* only current hope for supporting tags formatted as
-					[[A,B],[C,D]]  :ie:  (A && B) || (C && D) 
-				is PredicateBuilder (which is slower I believe) */
-
 			var list = query.Offset(offset).Limit(count).ToList();
 			return list;
 		} 
@@ -599,32 +596,6 @@ public class Database : Node
 		public string perceptualHash { get; set; }
 	}
 
-	/*public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
-	{
-		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
-		
-		if (similarityMode == (int)Similarity.AVERAGE)
-			foreach (SimilarityQueryResult result in result1)
-				result.similarity = (ColorSimilarity(result.colorHash, colorHash) + (float)DifferenceSimilarity(result.differenceHash, differenceHash)) / 2f;
-		else if (similarityMode == (int)Similarity.COLOR)
-			foreach (SimilarityQueryResult result in result1)
-				result.similarity = ColorSimilarity(result.colorHash, colorHash);
-		else
-			foreach (SimilarityQueryResult result in result1)
-				result.similarity = (float)DifferenceSimilarity(result.differenceHash, differenceHash);
-		
-		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
-		result1 = null;
-		
-		var result3 = new List<HashInfo>();
-		foreach (SimilarityQueryResult result in result2)
-			result3.Add(colHashes.FindById(result.imageHash));
-	
-		result2 = null;
-
-		return result3.ToList();
-	}*/
-	
 	public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, string perceptualHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);

@@ -20,13 +20,21 @@ public class ImageScanner : Node
 	private HashSet<(string,string,long,long)> pathListTempFiles = new HashSet<(string,string,long,long)>();
 	private HashSet<(string,string,long,long)> returnedTempFiles = new HashSet<(string,string,long,long)>();
 	
+	private bool cancel = false;
+	public void Cancel() { 
+		cancel = true;
+		Clear();
+	}
+
 	public int ScanFiles(string[] filePaths, string importId)
 	{
 		pathListTempFiles.Clear();
+		cancel = false;
 		int imageCount = 0;
 		try {
 			lastImportId = importId;
 			foreach (string path in filePaths) {
+				if (cancel) return 0;
 				var fileInfo = new System.IO.FileInfo(@path);
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) { 
 					string dir = fileInfo.Directory.FullName.Replace("\\", "/");
@@ -40,6 +48,7 @@ public class ImageScanner : Node
 					imageCount++;
 				} 
 			}
+			if (cancel) return 0;
 			return imageCount;
 		}
 		catch (Exception ex) { GD.Print("ImageScanner::ScanFiles() : ", ex); return imageCount; }
@@ -48,9 +57,11 @@ public class ImageScanner : Node
 	public int ScanDirectories(string path, bool recursive, string importId)
 	{
 		try {
+			cancel = false;
 			lastImportId = importId;
 			var dirInfo = new System.IO.DirectoryInfo(@path);
 			int imageCount = _ScanDirectories(dirInfo, recursive, importId);
+			if (cancel) return 0;
 			return imageCount;
 		}
 		catch (Exception ex) { GD.Print("ImageScanner::ScanDirectories() : ", ex); return 0; }
@@ -60,8 +71,10 @@ public class ImageScanner : Node
 	{
 		int imageCount = 0;
 		try {	
+			cancel = false;
 			var _paths = new HashSet<string>();
 			foreach (System.IO.FileInfo fileInfo in dirInfo.GetFiles()) {
+				if (cancel) return 0;
 				if (extensionsToImport.Contains(fileInfo.Extension.ToUpperInvariant())) {
 					_paths.Add(fileInfo.Name);
 					pathListTempFiles.Add((fileInfo.FullName, fileInfo.Extension, fileInfo.CreationTimeUtc.Ticks, fileInfo.Length));
@@ -74,6 +87,7 @@ public class ImageScanner : Node
 			
 			var enumeratedDirectories = dirInfo.EnumerateDirectories();
 			foreach (System.IO.DirectoryInfo dir in enumeratedDirectories) {
+				if (cancel) return 0;
 				if (!dir.FullName.Contains(" ")) { // U+00A0 (this symbol really breaks things for some reason)
 					foreach (string folder in blacklistedFolders)
 						if (dir.FullName.Contains(folder)) // maybe change to only check current folder and use == / .Equals()
@@ -81,6 +95,7 @@ public class ImageScanner : Node
 					imageCount += _ScanDirectories(dir, recursive, importId);
 				}
 			}
+			if (cancel) return 0;
 			return imageCount;
 		} 
 		catch (Exception ex) { GD.Print("ImageScanner::_ScanDirectories() : ", ex); return imageCount; }

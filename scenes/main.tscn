@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=2]
+[gd_scene load_steps=23 format=2]
 
 [ext_resource path="res://themes/dark_sharp (arial).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
@@ -10,7 +10,7 @@
 [ext_resource path="res://scripts/hsplit.gd" type="Script" id=8]
 [ext_resource path="res://scenes/organization.tscn" type="PackedScene" id=9]
 [ext_resource path="res://scenes/core_buttons.tscn" type="PackedScene" id=10]
-[ext_resource path="res://scenes/scanner.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scenes/popups/scanner.tscn" type="PackedScene" id=11]
 [ext_resource path="res://scripts/popups.gd" type="Script" id=12]
 [ext_resource path="res://scenes/import_info.tscn" type="PackedScene" id=13]
 [ext_resource path="res://assets/icon.png" type="Texture" id=14]
@@ -19,6 +19,7 @@
 [ext_resource path="res://scenes/path_list.tscn" type="PackedScene" id=17]
 [ext_resource path="res://scenes/import_display.tscn" type="PackedScene" id=18]
 [ext_resource path="res://scripts/recent_tags.gd" type="Script" id=19]
+[ext_resource path="res://scenes/organization2.tscn" type="PackedScene" id=20]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
@@ -129,6 +130,13 @@ margin_right = 751.0
 margin_bottom = 138.0
 rect_min_size = Vector2( 0, 138 )
 
+[node name="organization2" parent="margin/vbox/hsplit/left" instance=ExtResource( 20 )]
+visible = false
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_right = 751.0
+margin_bottom = 489.0
+
 [node name="vsplit" type="VSplitContainer" parent="margin/vbox/hsplit/left"]
 margin_top = 142.0
 margin_right = 751.0
@@ -165,13 +173,13 @@ margin_bottom = 982.0
 rect_clip_content = true
 size_flags_horizontal = 3
 size_flags_vertical = 3
-split_offset = 480
+split_offset = 300
 
 [node name="preview" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 4 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_right = 1151.0
-margin_bottom = 967.0
+margin_bottom = 787.0
 camera = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Camera2D")
 viewport = NodePath("../../../../../../preview_container/ViewportContainer/Viewport")
 color_grading = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/ColorGrading")
@@ -183,26 +191,26 @@ normal_parent = NodePath("..")
 fullscreen_parent = NodePath("../../../../../../fullscreen")
 
 [node name="hsplit" type="HSplitContainer" parent="margin/vbox/hsplit/right/vsplit"]
-margin_top = 975.0
+margin_top = 795.0
 margin_right = 1151.0
 margin_bottom = 982.0
 mouse_filter = 1
 size_flags_horizontal = 3
 size_flags_vertical = 3
-split_offset = -500
+split_offset = -400
 
 [node name="section_tabs" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 15 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 71.0
-margin_bottom = 7.0
+margin_right = 171.0
+margin_bottom = 187.0
 
 [node name="tag_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 3 )]
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_left = 79.0
+margin_left = 179.0
 margin_right = 1151.0
-margin_bottom = 7.0
+margin_bottom = 187.0
 
 [node name="path_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 17 )]
 visible = false
