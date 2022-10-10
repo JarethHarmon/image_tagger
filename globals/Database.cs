@@ -228,40 +228,6 @@ public class Database : Node
 		return colHashes.FindById(imageHash);
 	}
 	
-	public bool IsIgnored(string importId, string imageHash)
-	{
-		var hashInfo = GetHashInfo(importId, imageHash);
-		if (hashInfo == null) return false;
-		if (hashInfo.imports == null) return false;
-		if (hashInfo.imports.Contains(importId)) return true;
-		return false;
-	}
-	
-	public bool IsDuplicate(string importId, string imageHash)
-	{
-		foreach (string iid in tempHashInfo.Keys)
-			if (!iid.Equals(importId))
-				if (GetHashInfo(iid, imageHash) != null)
-					return true;
-		var temp = colHashes.FindById(imageHash);
-		if (temp != null)
-			if (temp.imports != null)
-				if (!temp.imports.Contains(importId))
-					return true;
-		return false;		
-	}
-
-	public HashInfo GetDictHashInfo(string imageHash)
-	{
-		if (dictHashes.ContainsKey(imageHash)) return dictHashes[imageHash];
-		return null;
-	}
-
-	public void UpsertDictHashInfo(string imageHash, HashInfo hashInfo)
-	{
-		dictHashes[imageHash] = hashInfo;
-	}
-
 /*==============================================================================*/
 /*                                  Hash Database                               */
 /*==============================================================================*/
