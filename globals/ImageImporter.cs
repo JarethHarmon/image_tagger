@@ -222,7 +222,11 @@ public class ImageImporter : Node
 			var info = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImageInfo(imagePath) : new MagickImageInfo(LoadFile(imagePath));
 			string format = info.Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG");
 			return (format, info.Width, info.Height);
-		} catch (Exception ex) { GD.Print("ImageImporter::_GetImageInfo() : ", ex); return ("", 0, 0); }
+		} 
+		catch (Exception ex) { 
+			GD.Print("ImageImporter::_GetImageInfo() : ", ex); 
+			return ("", 0, 0); 
+		}
 	}
 	// for loading images besides bmp/jpg/png (or bmp/jpg/png that have some sort of issue)
 	private static Godot.Image _LoadUnsupportedImage(MagickImage magickImage, long imageSize)

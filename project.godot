@@ -43,6 +43,7 @@ Signals="*res://globals/Signals.gd"
 ImageImporter="*res://globals/ImageImporter.cs"
 ImageScanner="*res://globals/ImageScanner.cs"
 Storage="*res://globals/Storage.cs"
+Inputs="*res://globals/Inputs.gd"
 
 [debug]
 

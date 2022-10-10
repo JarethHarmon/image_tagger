@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://shaders/EdgeMix.tres" type="Material" id=1]
 [ext_resource path="res://scripts/organization_advanced.gd" type="Script" id=2]
+[ext_resource path="res://scenes/custom_nodes/TagEdit.gd" type="Script" id=3]
 
 [node name="organization_advanced" type="Control"]
 anchor_right = 1.0
@@ -120,6 +121,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Global} Include All of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_include_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
 margin_left = 599.0
@@ -140,6 +142,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Global} Include Any of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_include_any" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
 margin_left = 1202.0
@@ -160,6 +163,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Global} Exclude All of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_exclude_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_global"]
 margin_left = 1805.0
@@ -185,6 +189,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Condition_1} Include All of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_include_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
 margin_left = 599.0
@@ -205,6 +210,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Condition_1} Include Any of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_include_any" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
 margin_left = 1202.0
@@ -225,6 +231,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 clear_button_enabled = true
 placeholder_text = "  {Condition_1} Exclude All of these tags: "
+script = ExtResource( 3 )
 
 [node name="scroll_exclude_all" type="ScrollContainer" parent="margin/vbox/tag_filters_section/vbox/scroll/vbox/condition_1"]
 margin_left = 1805.0

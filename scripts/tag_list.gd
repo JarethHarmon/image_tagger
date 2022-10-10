@@ -37,6 +37,12 @@ func _ready() -> void:
 	Signals.connect("tab_button_pressed", self, "clear_selection")
 	Signals.connect("toggle_tag_section", self, "_toggle_tag_section")
 	Globals.current_visible_tab_section = self
+	
+	#Inputs.connect("copy_tags", self, "_on_copy_selected_button_up")
+	#Inputs.connect("paste_tags", self, "_on_paste_selected_button_up")
+	#Inputs.connect("grab_focus_tag_entry", self, "_grab_focus_tag_entry")
+
+#func _grab_focus_tag_entry() -> void: tag_entry.grab_focus()
 
 func _toggle_tag_section(_visible:bool) -> void: 
 	if not Globals.current_visible_tab_section == self: return

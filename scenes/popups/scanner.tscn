@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://scripts/scanner.gd" type="Script" id=1]
 [ext_resource path="res://scripts/path_list.gd" type="Script" id=2]
+[ext_resource path="res://scenes/custom_nodes/TagEdit.gd" type="Script" id=3]
 
 [node name="scanner" type="Control"]
 anchor_right = 1.0
@@ -214,6 +215,7 @@ margin_bottom = 32.0
 rect_min_size = Vector2( 240, 0 )
 clear_button_enabled = true
 placeholder_text = "Enter a Name for the Import ..."
+script = ExtResource( 3 )
 
 [node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
 margin_left = 250.0
