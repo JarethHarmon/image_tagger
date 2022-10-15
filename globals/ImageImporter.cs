@@ -14,7 +14,7 @@ using CoenM.ImageHash;
 using CoenM.ImageHash.HashAlgorithms;
 using ImageMagick;
 using Data;
-using Python.Runtime;	// pythonnet v3.0.0-rc5
+using Python.Runtime;	// pythonnet v3.0.0
 
 namespace Importer {
 public class PythonInterop : Node
@@ -390,7 +390,6 @@ public class ImageImporter : Node
 		signals.Call("emit_signal", "finish_animation", imagePath);
 	}
 
-
 /*=========================================================================================
 									   Hashing
 =========================================================================================*/
@@ -538,6 +537,7 @@ public class ImageImporter : Node
 		return true;
 	}
 
+	private long totalTimePythonReturn = 0, totalTimePythonSave = 0;
 	private int thumbnailSize = 256;
 	private int _ImportImage(string importId, string progressId, string path)
 	{
@@ -550,6 +550,14 @@ public class ImageImporter : Node
 			long _size=fileInfo.Length;
 			string savePath = thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + ".thumb";
 			string _saveType = ((_size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg");
+
+			/// TEMP CODE
+			/*var now = DateTime.Now;
+			TestReturn(path, thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + "ZZ.thumb", _saveType, thumbnailSize);
+			totalTimePythonReturn += (DateTime.Now-now).Ticks;
+			//GD.Print("python return: ", DateTime.Now-now);
+			now = DateTime.Now;*/
+			/// TEMP CODE
 
 			// check if thumbnail exists; create it if not
 			if (FileDoesNotExist(savePath)) {
@@ -602,6 +610,13 @@ public class ImageImporter : Node
 				}
 			}
 
+			/// TEMP CODE
+			//GD.Print("python save: ", DateTime.Now-now);
+			//totalTimePythonSave += (DateTime.Now-now).Ticks;
+			//var label = (Label)GetNode("/root/main/Label");
+			//label.Text = "python return: " + (totalTimePythonReturn/10000).ToString() + "\npython save: " + (totalTimePythonSave/10000).ToString();
+			/// TEMP CODE
+
 			db.StoreTempHashInfo(importId, progressId, _hashInfo);
 			return result;
 		}
@@ -625,6 +640,106 @@ public class ImageImporter : Node
 			catch (Exception ex) { GD.Print(ex); }
 		}
 		return result;
+	}
+
+	public void TestReturn(string imPath, string svPath, string svType, int svSize)
+	{
+		//var now = DateTime.Now;
+		string pyScript = @"pil_save_thumbnail";
+		string result = "";
+		using (Py.GIL()) {
+			try {
+				dynamic script = Py.Import(pyScript);
+				dynamic result_str = script.create_thumbnail(imPath, svType, svSize);
+				result = (string)result_str;
+			}
+			catch (PythonException pex) { GD.Print(pex.Message); }
+			catch (Exception ex) { GD.Print(ex); }
+		}
+		//GD.Print("python interop: ", DateTime.Now-now);
+		//now = DateTime.Now;
+
+		if (result.Equals("")) return;
+		string[] parts = result.Split(new string[1]{"?"}, StringSplitOptions.None);
+		if (parts.Length != 2) return;
+		string s_thumbnailType = parts[0], thumbnailBase64 = parts[1];
+		if (s_thumbnailType.Equals("-1")) return;
+		if (thumbnailBase64.Equals("")) return;
+
+		//GD.Print("safety checks: ", DateTime.Now-now);
+		//now = DateTime.Now;
+
+		int thumbnailType = -1;
+		int.TryParse(s_thumbnailType, out thumbnailType);
+		if (thumbnailType < 0) return;
+
+		byte[] thumbnailData = System.Convert.FromBase64String(thumbnailBase64);
+		var image = new Godot.Image();
+		if (thumbnailType == (int)ImageType.JPG) image.LoadJpgFromBuffer(thumbnailData);
+		else image.LoadPngFromBuffer(thumbnailData);
+		var texture = new Godot.ImageTexture();
+		texture.CreateFromImage(image, 0);
+
+		//GD.Print("image creation: ", DateTime.Now-now);
+		//now = DateTime.Now;
+
+		var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(thumbnailData);
+		ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
+
+		//GD.Print("diff hash: ", DateTime.Now-now);
+		//now = DateTime.Now;
+
+		//MemoryStream stream = new MemoryStream(thumbnailData);
+		float[] colorHash = TestGetColorHash(diffImage);
+		//globals.Call("_print", "colo", colorHash);
+
+		//GD.Print("color hash: ", DateTime.Now-now);
+		//now = DateTime.Now;
+
+		var imm = new MagickImage(thumbnailData);
+		string percHash = imm.PerceptualHash().ToString();
+
+		//GD.Print("perc hash: ", DateTime.Now-now);
+		//now = DateTime.Now;
+		imm.Strip();
+		imm.Write(svPath);
+		// actual code will upload to the relevant thumbnail database here (which will likely be slower unfortunately)
+		//		main goals are: improve speed of backups, improve speed of moving metadata, make it easier to share thumbnails, and
+		//			load all thumbnails (for current page) from db at once (hopefully improving overall speed without taking too long to start showing thumbnails)
+		//		main downsides are: will likely increase time before first thumbnails show up for current page, 
+		//			will likely take up slightly more space, will likely take longer to save
+
+		//GD.Print("saving: ", DateTime.Now-now);
+		//now = DateTime.Now;
+	}
+
+	public float[] TestGetColorHash(SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32> bitmap, int bucketSize=16) 
+	{
+		int[] colors = new int[256/bucketSize];
+		int size = bitmap.Width * bitmap.Height;
+
+		bitmap.ProcessPixelRows(accessor => 
+		{
+			for (int h = 0; h < accessor.Height; h++) {
+				var row = accessor.GetRowSpan(h);
+				for (int w = 0; w < row.Length; w++) {
+					ref var pixel = ref row[w];
+					int min_color = Math.Min(pixel.B, Math.Min(pixel.R, pixel.G));
+					int max_color = Math.Max(pixel.B, Math.Max(pixel.R, pixel.G));
+					int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*bucketSize); 
+					int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
+					int color = (color1+color3)/2;
+					colors[color]++;
+				}
+			}
+		});
+
+		float[] hash = new float[256/bucketSize];
+		for (int color = 0; color < colors.Length; color++) {
+			hash[color] = 100 * (float)colors[color]/size;
+		}
+
+		return hash;
 	}
 }
 }

@@ -370,6 +370,7 @@ public class Database : Node
 			// image group
 			// tag
 			else if (tabType == (int)Tab.SIMILARITY) {
+				var now = DateTime.Now;
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
@@ -382,6 +383,7 @@ public class Database : Node
 					results.Add(hashInfo.imageHash);
 					dictHashes[hashInfo.imageHash] = hashInfo;
 				}
+				GD.Print(DateTime.Now-now);
 			}
 			return results.ToArray();
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
@@ -544,7 +546,17 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 			
-			var list = query.Offset(offset).Limit(count).ToList();
+			//GD.Print("query construction: ", DateTime.Now-now);
+			//now = DateTime.Now;
+			var enuma = query.ToEnumerable(); // save this somewhere
+			//GD.Print("query enumerable: ", DateTime.Now-now);
+			//now = DateTime.Now;
+			var list = enuma.Skip(offset).Take(count).ToList();
+			//GD.Print("query list: ", DateTime.Now-now);
+
+			//now = DateTime.Now;
+			//var list = query.Offset(offset).Limit(count).ToList();
+			//GD.Print("query list: ", DateTime.Now-now);
 			return list;
 		} 
 		catch (Exception ex) { 
@@ -584,16 +596,17 @@ public class Database : Node
 		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
 		result1 = null;
 		
-		var result3 = new List<HashInfo>();
-		foreach (SimilarityQueryResult result in result2)
-			result3.Add(colHashes.FindById(result.imageHash));
-	
+		var hashes = new HashSet<string>(result2.Select(x => x.imageHash)); 
+		var query = colHashes.Query();
+		query = query.Where(x => hashes.Contains(x.imageHash));
+		var result3 = query.ToList();
 		result2 = null;
-
-		return result3.ToList();
+		
+		return result3;
 	}
 
 	private List<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode)
+	//private IEnumerable<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode)
 	{
 		var query = colHashes.Query();
 
@@ -618,35 +631,36 @@ public class Database : Node
 				colorHash = x.colorHash,
 				differenceHash = x.differenceHash,
 				perceptualHash = x.perceptualHash,
-			}).ToList();
+			}).ToList();//.ToEnumerable();//
 		else if (similarityMode == (int)Similarity.COLOR)
 			return query.Select(x => new SimilarityQueryResult { 
 				imageHash = x.imageHash, 
 				colorHash = x.colorHash,
-			}).ToList();
+			}).ToList();//.ToEnumerable();//
 		else if (similarityMode == (int)Similarity.PERCEPTUAL)
 			return query.Select(x => new SimilarityQueryResult { 
 				imageHash = x.imageHash, 
 				perceptualHash = x.perceptualHash,
-			}).ToList(); 
+			}).ToList();//.ToEnumerable();//
 		else
 			return query.Select(x => new SimilarityQueryResult { 
 				imageHash = x.imageHash, 
 				differenceHash = x.differenceHash,
-			}).ToList();
+			}).ToList();//.ToEnumerable();//
 	}
 
 	public void BulkAddTags(string[] imageHashes, string[] tags)
 	{
 		try {
-			var list = new List<HashInfo>();
-			foreach (string imageHash in imageHashes) {
-				var tmp = colHashes.FindById(imageHash);
-				if (tmp == null) continue;
-				if (tmp.tags == null) tmp.tags = new HashSet<string>(tags);
-				else foreach (string tag in tags) tmp.tags.Add(tag);
-				if (dictHashes.ContainsKey(imageHash)) dictHashes[imageHash] = tmp;
-				list.Add(tmp);
+			var hs = new HashSet<string>(imageHashes);
+			var query = colHashes.Query();
+			query = query.Where(x => hs.Contains(x.imageHash));
+			var list = query.ToList();
+
+			foreach (HashInfo info in list) {
+				if (info.tags == null) info.tags = new HashSet<string>(tags);
+				else info.tags.UnionWith(tags);
+				if (dictHashes.ContainsKey(info.imageHash)) dictHashes[info.imageHash] = info;
 			}
 			colHashes.Update(list);
 		} 
@@ -732,12 +746,17 @@ public class Database : Node
 				listProgress.Add(importProgress);
 				importInfo.progressIds.Add(_progressId);
 			}
-			AddImport(_id, importInfo);
+			
+			/*AddImport(_id, importInfo);
 			dbImports.BeginTrans();
 			colImports.Insert(importInfo);
 			foreach (ImportProgress imp in listProgress)
 				colProgress.Insert(imp);
-			dbImports.Commit();
+			dbImports.Commit();*/
+
+			dictImports[_id] = importInfo;
+			colImports.Insert(importInfo);
+			colProgress.Insert(listProgress);
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::CreateImport() : ", ex); 
@@ -787,6 +806,7 @@ public class Database : Node
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
 			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
+			lock(tempHashInfo) tempHashInfo.Remove(importId);
 			string[] tabs = GetTabIDs(importId);
 			signals.Call("emit_signal", "finish_import_buttons", tabs);
 		}

@@ -12,7 +12,8 @@ namespace Data
 	public enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
 	public enum Similarity { AVERAGE, COLOR, DIFFERENCE, PERCEPTUAL }
 	public enum AnimationStatus { PLAYING, LOADING, STOPPING }
-
+	internal enum ExpressionType { ALL, ANY, NONE }
+	
 	public class HashInfo 
 	{
 		public string imageHash { get; set; }                 // the SHA256 hash of the image
@@ -40,6 +41,9 @@ namespace Data
 		public HashSet<string> groups { get; set; }           // the groups this imageHash is present in
 		public HashSet<string> paths { get; set; }            // the paths that this imageHash has been found at
 		public HashSet<string> tags { get; set; }             // the tags that have been applied to this imageHash
+
+		public int ratingSum { get; set; }
+		public int ratingAvg { get; set; }
 		public Dictionary<string, int> ratings { get; set; }  // the user-assigned ratings for this imageHash
 	}
 	
