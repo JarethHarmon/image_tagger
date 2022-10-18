@@ -143,7 +143,7 @@ func _on_settings_loaded() -> void:
 	_on_fxaa_toggled(Globals.settings.use_fxaa)
 	_on_edge_mix_toggled(Globals.settings.use_edge_mix)
 	_on_color_grading_toggled(Globals.settings.use_color_grading)
-	#_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
+	_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
 
 	create_current_image()
 	resize_current_image()

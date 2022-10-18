@@ -580,7 +580,12 @@ public class Database : Node
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
-			else if (sort == (int)Sort.RANDOM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
+			//else if (sort == (int)Sort.RANDOM) query = query.OrderBy(_ => Guid.NewGuid()); //query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
+			else if (sort == (int)Sort.RANDOM) {
+				// other (faster) method throws "System.Exception: LiteDB ENSURE: page type must be index page"
+				query = query.OrderBy("RANDOM()");
+				return query.ToEnumerable().Select(x => x.imageHash).Skip(offset).Take(count).ToArray();
+			}
 			// need a way to handle this that allows custom user ratings
 			else if (sort == (int)Sort.RATING_QUALITY) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Quality"]) : query.OrderByDescending(x => x.ratings["Quality"]);
 			else if (sort == (int)Sort.RATING_APPEAL) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Appeal"]) : query.OrderByDescending(x => x.ratings["Appeal"]);
