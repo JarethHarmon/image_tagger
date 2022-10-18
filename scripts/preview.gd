@@ -2,6 +2,7 @@ extends Control
 
 const smooth_pixel:Material = preload("res://shaders/SmoothPixel.tres")
 #const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
+const broken_icon:StreamTexture = preload("res://assets/icon-broken.png")
 
 export (NodePath) onready var camera = get_node(camera)
 export (NodePath) onready var viewport = get_node(viewport)
@@ -172,7 +173,7 @@ func create_threads(num_threads:int) -> void:
 		thread_status.append(status.INACTIVE)
 		_stop_threads = false
 
-func _load_full_image(image_hash:String, path:String) -> void:	
+func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:	
 	if current_hash == image_hash: return
 	image_mutex.lock()
 	current_path = path
@@ -204,6 +205,16 @@ func _load_full_image(image_hash:String, path:String) -> void:
 
 	remove_animations()
 	image_mutex.unlock()
+	
+	if not found:
+		var it = ImageTexture.new()
+		#print(broken_icon.get_data().get_width())
+		it.create_from_image(broken_icon.get_data(), 0)
+		it.set_meta("image_hash", "0")
+		current_image = it
+		#current_image = broken_icon
+		resize_current_image()
+		return
 	
 	if use_buffering_icon: 
 		buffering.show()
@@ -410,7 +421,6 @@ func resize_current_image(path:String="") -> void:
 	#image_grid.get_parent().rect_size = im_size
 
 	var temp_size:Vector2 = calc_size(current_image).round()
-
 	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
 	if temp_size != animation_size or (current_image.get_meta("image_hash") != preview.get_texture().get_meta("image_hash")):
 		animation_size = temp_size
@@ -462,7 +472,7 @@ func _on_filter_toggled(button_pressed:bool) -> void:
 	Globals.settings.use_filter = button_pressed
 	if button_pressed: smooth_pixel_button.disabled = false
 	else: smooth_pixel_button.disabled = true
-	_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
+	#_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
 	
 	change_filter()
 	#create_current_image()

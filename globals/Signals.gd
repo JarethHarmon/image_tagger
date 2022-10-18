@@ -14,7 +14,7 @@ signal sort_changed
 signal order_changed
 signal similarity_changed
 
-signal load_full_image(image_hash, path)
+signal load_full_image(image_hash, path, found)
 signal load_image_tags(image_hash, selected_items)
 signal create_path_buttons(image_hash, paths)
 signal create_import_buttons(image_hash, imports)

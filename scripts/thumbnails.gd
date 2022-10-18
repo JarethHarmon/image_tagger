@@ -409,22 +409,22 @@ func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	return tooltip
 
 func _set_metadata(image_hash:String) -> void:
-	var size:String = Database.GetFileSize(image_hash)
-	var image_name:String = Database.GetImageName(image_hash)
-	var diff_hash:String = Database.GetDiffHash(image_hash)
-	var color_hash:Array = Database.GetColorHash(image_hash)
-	var creation_time:String = Database.GetCreationTime(image_hash)
-	var paths:Array = Database.GetHashPaths(image_hash)# (create paths section again)
+	#var size:String = Database.GetFileSize(image_hash)
+	#var image_name:String = Database.GetImageName(image_hash)
+	#var diff_hash:String = Database.GetDiffHash(image_hash)
+	#var color_hash:Array = Database.GetColorHash(image_hash)
+	#var creation_time:String = Database.GetCreationTime(image_hash)
+	#var paths:Array = Database.GetHashPaths(image_hash)# (create paths section again)
 	th.lock()
 	# get dimensions too
 	var dict:Dictionary = {
 		"texture" : null,
-		"size" : size,
-		"image_name" : image_name,
-		"diff_hash" : diff_hash,
-		"color_hash" : color_hash,
-		"creation_time" : creation_time,
-		"paths" : paths
+	#	"size" : size,
+	#	"image_name" : image_name,
+	#	"diff_hash" : diff_hash,
+	#	"color_hash" : color_hash,
+	#	"creation_time" : creation_time,
+	#	"paths" : paths
 	}
 	thumb_history[image_hash] = dict
 	th.unlock()
@@ -458,17 +458,23 @@ func select_items() -> void:
 	#color_all()
 	
 	var image_hash:String = current_hashes[last_index]
+	Database.LoadCurrentHashInfo(image_hash)
+	#print(image_hash)
 	var paths:Array = Database.GetHashPaths(image_hash)
 	var imports = Database.GetImportIdsFromHash(image_hash)
+	Signals.emit_signal("load_image_tags", image_hash, selected_items)
+	Signals.emit_signal("create_path_buttons", image_hash, paths)
+	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
+	
 	if not paths.empty():
 		var f:File = File.new()
+		var found:bool = false
 		for path in paths:
 			if f.file_exists(path):
 				Signals.emit_signal("load_full_image", image_hash, path)
-				Signals.emit_signal("load_image_tags", image_hash, selected_items)
-				Signals.emit_signal("create_path_buttons", image_hash, paths)
-				if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
+				found = true
 				break
+		if not found: Signals.emit_signal("load_full_image", image_hash, "", false)
 	called_already = false
 
 func select_all_items() -> void: 
