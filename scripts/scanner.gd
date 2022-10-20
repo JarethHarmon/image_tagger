@@ -109,6 +109,7 @@ func _files_selected(files:Array) -> void:
 func create_item_lists(paths_sizes:Array) -> void:
 	for path_size in paths_sizes:
 		var parts:Array = path_size.split("?", false)
+		#print(parts)
 		indices.add_item("  " + String(index))
 		paths.add_item("  " + parts[0])
 		types.add_item("  " + parts[0].get_extension())

@@ -37,7 +37,6 @@ public class Database : Node
 
 	/* for thread safety, it might be better to make all of these into concurrent dictionaries */
 	private HashInfo currentHashInfo = new HashInfo();
-	//private Dictionary<string, HashInfo> dictHashes = new Dictionary<string, HashInfo>();
 	private ConcurrentDictionary<string, ImportInfo> dictImports = new ConcurrentDictionary<string, ImportInfo>();
 	private Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
 	private Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
@@ -225,7 +224,6 @@ public class Database : Node
 				if (tempHashInfo[importId].ContainsKey(imageHash))
 					return tempHashInfo[importId][imageHash]; 
 		}
-		//if (dictHashes.ContainsKey(imageHash)) return dictHashes[imageHash];
 		return colHashes.FindById(imageHash);
 	}
 	
@@ -238,29 +236,14 @@ public class Database : Node
 	public void AddRating(string imageHash, string ratingName, int ratingValue)
 	{
 		try {
-			/*if (dictHashes.ContainsKey(imageHash)) {
-				if (dictHashes[imageHash].ratings == null) 
-					dictHashes[imageHash].ratings = new Dictionary<string, int>();
-				dictHashes[imageHash].ratings[ratingName] = ratingValue;
-			}*/
 			if (currentHashInfo.ratings == null) currentHashInfo.ratings = new Dictionary<string, int>();
 			currentHashInfo.ratings[ratingName] = ratingValue;
+		
+			int sum = 0;
+			foreach (string _name in currentHashInfo.ratings.Keys)
+				sum += currentHashInfo.ratings[_name];
 			
-			/*var hashInfo = colHashes.FindById(imageHash);
-			if (hashInfo == null) return;
-			if (hashInfo.ratings == null) 
-				hashInfo.ratings =	new Dictionary<string, int>();
-			hashInfo.ratings[ratingName] = ratingValue;*/
-			int sum = 0;//, count = 0;
-			foreach (string _name in currentHashInfo.ratings.Keys) {
-				//if (!_name.Equals("Sum") && !_name.Equals("Average")) {
-					sum += currentHashInfo.ratings[_name];
-				//	count++;
-				//}
-			}
-			//hashInfo.ratings["Sum"] = sum;
 			currentHashInfo.ratingSum = sum;
-			//hashInfo.ratings["Average"] = (int)Math.Round((double)sum/count);
 			currentHashInfo.ratingAvg = (int)Math.Round((double)sum/Math.Max(1, currentHashInfo.ratings.Count));
 
 			colHashes.Update(currentHashInfo);
@@ -273,10 +256,6 @@ public class Database : Node
 				if (currentHashInfo.ratings != null)
 					if (currentHashInfo.ratings.ContainsKey(ratingName))
 						return currentHashInfo.ratings[ratingName];
-			/*if (dictHashes.ContainsKey(imageHash)) 
-				if (dictHashes[imageHash].ratings != null)
-					return (dictHashes[imageHash].ratings.ContainsKey(ratingName)) ?
-						dictHashes[imageHash].ratings[ratingName] : 0;*/
 			return 0;
 		} catch (Exception ex) { GD.Print("Database::GetRating() : ", ex); return 0; }	
 	}
@@ -294,20 +273,11 @@ public class Database : Node
 		} catch (Exception ex) { GD.Print("Database::PopulateDictHashes(): ", ex); return; }
 	}*/
 
-	public int GetFileType(string imageHash) 
-	{
-		return colHashes.FindById(imageHash).thumbnailType; // note: not ideal, still likely faster overall, but I need to probably store at least the thumbnail type for now
-		// instead of just the hashes	
-
-		//return currentHashInfo.thumbnailType;
-		//return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].thumbnailType : -1;
-	}
 	// returning long would be better, but godot does not marshal long into its 64bit integer type for some reason
 	// instead return as string, convert with .to_int() and convert to size with String.humanize_size(int)
 	public string GetFileSize(string imageHash) 
 	{
 		return currentHashInfo.size.ToString();
-		//return dictHashes.ContainsKey(imageHash) ? dictHashes[imageHash].size.ToString() : "";
 	}
 	
 	public string[] GetHashPaths(string imageHash)
@@ -315,8 +285,6 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return currentHashInfo.paths.ToArray();
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return dictHashes[imageHash].paths.ToArray();
 			var result = colHashes.FindById(imageHash);
 			if (result == null) return new string[0];
 			return result.paths.ToArray();
@@ -328,12 +296,21 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return currentHashInfo.imageName;
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return (dictHashes[imageHash].imageName == null) ? "" : dictHashes[imageHash].imageName;
 			var result = colHashes.FindById(imageHash);
 			if (result == null) return "";
 			return (result.imageName == null) ? "" : result.imageName;
 		} catch (Exception ex) { return ""; }
+	}
+
+	public int GetImageFormat(string imageHash)
+	{
+		try {
+			if (currentHashInfo.imageHash.Equals(imageHash))
+				return currentHashInfo.imageType;
+			var result = colHashes.FindById(imageHash);
+			if (result == null) return -1;
+			return result.imageType;
+		} catch (Exception ex) { return -1; }
 	}
 
 	public string[] GetTags(string imageHash)
@@ -341,8 +318,6 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return currentHashInfo.tags.ToArray();
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return dictHashes[imageHash].tags.ToArray();
 			var result = colHashes.FindById(imageHash);
 			if (result == null) return new string[0];
 			return result.tags.ToArray();
@@ -361,8 +336,6 @@ public class Database : Node
 	public string GetDiffHash(string imageHash)
 	{
 		try {
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return dictHashes[imageHash].differenceHash.ToString();
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return currentHashInfo.differenceHash.ToString();
 			return string.Empty;
@@ -373,8 +346,6 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return currentHashInfo.colorHash;
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return dictHashes[imageHash].colorHash;
 			return new float[0];
 		} catch { GD.Print("ERR"); return new float[0]; }
 	}
@@ -383,8 +354,6 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return new DateTime(currentHashInfo.creationTime).ToString();
-			//if (dictHashes.ContainsKey(imageHash))
-			//	return  new DateTime(dictHashes[imageHash].creationTime).ToString();
 			return string.Empty;
 		} catch { return string.Empty; }
 	}
@@ -392,17 +361,10 @@ public class Database : Node
 	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
 		try {			
-			//dictHashes.Clear();
 			var results = new List<string>();
 			int tabType = GetTabType(tabId);
 			if (tabType == (int)Tab.IMPORT_GROUP) {
 				string importId = GetImportId(tabId);
-				/*var hashInfos = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, tagsComplex, sort, order, countResults);
-				if (hashInfos == null) return new string[0];
-				foreach (HashInfo hashInfo in hashInfos) {
-					results.Add(hashInfo.imageHash);
-					dictHashes[hashInfo.imageHash] = hashInfo;
-				}*/
 				var hashes = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, tagsComplex, sort, order, countResults);
 				return hashes.ToArray();
 			}
@@ -413,21 +375,11 @@ public class Database : Node
 				string imageHash = GetSimilarityHash(tabId);
 				var temp = colHashes.FindById(imageHash);
 				if (temp == null) return new string[0];
-				//var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
-				//var hashInfos = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, temp.perceptualHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
 				var hashes = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, temp.perceptualHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
 				GD.Print(DateTime.Now-now);
 				return hashes.ToArray();
-				/*if (hashInfos == null) return new string[0];
-
-				foreach (HashInfo hashInfo in hashInfos) {
-					results.Add(hashInfo.imageHash);
-					//dictHashes[hashInfo.imageHash] = hashInfo;
-				}
-				*/
 			}
 			return Array.Empty<string>();
-			//return results.ToArray();
 		} catch (Exception ex) { GD.Print("Database::QueryDatabase() : ", ex); return new string[0]; }
 	}
 
@@ -580,7 +532,6 @@ public class Database : Node
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
-			//else if (sort == (int)Sort.RANDOM) query = query.OrderBy(_ => Guid.NewGuid()); //query = (order == (int)Order.ASCENDING) ? query.OrderBy(_ => Guid.NewGuid()) : query.OrderByDescending(_ => Guid.NewGuid());
 			else if (sort == (int)Sort.RANDOM) {
 				// other (faster) method throws "System.Exception: LiteDB ENSURE: page type must be index page"
 				query = query.OrderBy("RANDOM()");
@@ -594,38 +545,10 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 			
-			//GD.Print("query construction: ", DateTime.Now-now);
-			//now = DateTime.Now;
-			/*var enuma = query.ToEnumerable(); // save this somewhere
-			//GD.Print("query enumerable: ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			var list = enuma.Skip(offset).Take(count).ToList();
-			GD.Print("hashinfo: ", DateTime.Now-now); // .77s
-
-			now = DateTime.Now;
-			List<string> list1 = enuma.Skip(offset).Take(count).Select(x => x.imageHash).ToList();
-			GD.Print("hash linq, after: ", DateTime.Now-now); // .08s
-
-			now = DateTime.Now;
-			List<string> list2 = enuma.Select(x => x.imageHash).Skip(offset).Take(count).ToList();
-			GD.Print("hash linq, before: ", DateTime.Now-now); // .08s
-
-			now = DateTime.Now;
-			List<string> list3 = query.Select(x => x.imageHash).Offset(offset).Limit(count).ToList();
-			GD.Print("hash litedb, before: ", DateTime.Now-now); // .007s
-
-			//now = DateTime.Now;
-			//var list = query.Offset(offset).Limit(count).ToList();
-			//GD.Print("query list: ", DateTime.Now-now);
-			//return list;
-			return list;*/
-
 			return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();
 		} 
 		catch (Exception ex) { 
 			GD.Print("Database::_QueryDatabase() : ", ex); 
-			//return null; 
 			return Enumerable.Empty<string>();
 		}
 	}
@@ -663,13 +586,6 @@ public class Database : Node
 		result1 = null;
 		
 		return result2.Select(x => x.imageHash);
-		/*var hashes = new HashSet<string>(result2.Select(x => x.imageHash)); 
-		var query = colHashes.Query();
-		query = query.Where(x => hashes.Contains(x.imageHash));
-		var result3 = query.ToList();
-		result2 = null;
-		
-		return result3;*/
 	}
 
 	private List<SimilarityQueryResult> _QueryFilteredSimilarity(string importId, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode)
@@ -734,7 +650,6 @@ public class Database : Node
 			foreach (HashInfo info in list) {
 				if (info.tags == null) info.tags = new HashSet<string>(tags);
 				else info.tags.UnionWith(tags);
-				//if (dictHashes.ContainsKey(info.imageHash)) dictHashes[info.imageHash] = info;
 			}
 			colHashes.Update(list);
 		} 
@@ -827,13 +742,6 @@ public class Database : Node
 				listProgress.Add(importProgress);
 				importInfo.progressIds.Add(_progressId);
 			}
-			
-			/*AddImport(_id, importInfo);
-			dbImports.BeginTrans();
-			colImports.Insert(importInfo);
-			foreach (ImportProgress imp in listProgress)
-				colProgress.Insert(imp);
-			dbImports.Commit();*/
 
 			dictImports[_id] = importInfo;
 			colImports.Insert(importInfo);
@@ -886,7 +794,7 @@ public class Database : Node
 			importInfo.importFinish = DateTime.Now.Ticks;
 			AddImport(importId, importInfo);
 			colImports.Update(importInfo);
-			dictImports[importId] = importInfo; // forgot to update dictionary which was causing issues
+			dictImports[importId] = importInfo;
 			lock(tempHashInfo) tempHashInfo.Remove(importId);
 			string[] tabs = GetTabIDs(importId);
 			signals.Call("emit_signal", "finish_import_buttons", tabs);
@@ -1125,8 +1033,6 @@ public class Database : Node
 
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)
 	{
-		//var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
-		//var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
@@ -1137,8 +1043,6 @@ public class Database : Node
 
 	public float GetColorSimilarityTo(string compareHash, string imageHash)
 	{
-		//var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
-		//var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
 		return ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
@@ -1146,8 +1050,6 @@ public class Database : Node
 
 	public float GetDifferenceSimilarityTo(string compareHash, string imageHash)
 	{
-		//var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
-		//var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
 		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
@@ -1156,8 +1058,6 @@ public class Database : Node
 
 	public float GetPerceptualSimilarityTo(string compareHash, string imageHash)
 	{
-		//var hashInfo1 = (dictHashes.ContainsKey(compareHash)) ? dictHashes[compareHash] : colHashes.FindById(compareHash);
-		//var hashInfo2 = (dictHashes.ContainsKey(imageHash)) ? dictHashes[imageHash] : colHashes.FindById(imageHash);
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
 		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);

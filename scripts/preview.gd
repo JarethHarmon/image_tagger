@@ -241,7 +241,7 @@ func start_manager() -> void:
 
 func start_one(_current_hash:String, _current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	var actual_format:int = ImageImporter.GetActualFormat(_current_path)
+	var actual_format:int = Database.GetImageFormat(_current_hash)#ImageImporter.GetActualFormat(_current_path) # this should call the database method instead
 	if actual_format == Globals.ImageType.APNG or actual_format == Globals.ImageType.GIF:
 		animation_mutex.lock()
 		animation_status[_current_path] = a_status.LOADING
@@ -271,7 +271,6 @@ func _manager_done() -> void:
 	if manager_thread.is_active() or manager_thread.is_alive():
 		manager_thread.wait_to_finish()
 
-# not consistent at calling FinishImport (I think)
 func _thread(args:Array) -> void:
 	var image_hash:String = args[0]
 	var path:String = args[1]
@@ -314,6 +313,29 @@ func _thread(args:Array) -> void:
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
+		if e != OK: 
+			print_debug(e, " :: ", path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return 
+			i = ImageImporter.LoadUnsupportedImage(path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
+				call_deferred("_done", thread_id, path)
+				return
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return
+		create_current_image(thread_id, i, path, image_hash)
+	elif actual_format == Globals.ImageType.WEBP:
+		var f:File = File.new()
+		var e:int = f.open(path, File.READ)
+		var b:PoolByteArray = f.get_buffer(f.get_len())
+		f.close()
+		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
+			call_deferred("_done", thread_id, path)
+			return	
+		var i:Image = Image.new()
+		e = i.load_webp_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
 			if _stop_threads or thread_status[thread_id] == status.CANCELED: 

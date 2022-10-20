@@ -150,60 +150,14 @@ public class ImageImporter : Node
 		} catch (Exception ex) { GD.Print("ImageImporter::IsImageCorrupt() : ", ex); return true; }
 	}
 	
-	public int SaveThumbnail(string imagePath, string savePath, long imageSize)
-	{
-		// in general need to remove invalid paths whenver they are iterated
-		return _SaveThumbnail(imagePath, savePath, imageSize);
-	}
-	private int _SaveThumbnail(string imagePath, string thumbPath, long imageSize)
-	{
-		try {
-			int result = (int)ImageType.JPG; // 0 == JPG, 1 == PNG, -1 == ERR  (used to set HashInfo.thumbnailType in the Database)
-			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
-			im.Strip();
-			if (imageSize > AVG_THUMBNAIL_SIZE) {
-				// need to test if resizing to 4,4 is actually relevant for monoColor images (especially if I also convert it to png)
-				if (im.IsOpaque) im.Format = MagickFormat.Jpg;
-				else {
-					result = (int)ImageType.PNG;
-					im.Format = MagickFormat.Png; // if image has transparency convert it to png
-				}
-				if (im.TotalColors == 1) im.Resize(4,4); // if mono-color image, save space
-				else im.Resize(256, 256);
-				im.Quality = 70; // was 50, increasing results in ~+20% file size & about ~+40% thumbnail quality
-				im.Write(thumbPath);
-				new ImageOptimizer().Compress(thumbPath);
-			} else {
-				im.Format = MagickFormat.Png;
-				result = (int)ImageType.PNG;
-				im.Write(thumbPath);
-				new ImageOptimizer().LosslessCompress(thumbPath);
-			}
-			return result;
-		} catch (Exception ex) { GD.Print("ImageImporter::_SaveThumbnail() : ", ex); return (int)ImageType.ERROR; }
-	}
-	
-	public int GetNumColors(string imagePath)
+	/*public int GetNumColors(string imagePath)
 	{
 		try {
 			var im = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImage(imagePath) : new MagickImage(LoadFile(imagePath));
 			return im.TotalColors;
 		}
 		catch (Exception ex) { GD.Print("ImageImporter::GetNumColors() : ", ex); return 0; }
-	}
-
-	// create a version of this that can call is_apng with a string of bytes
-	// should take into account path length
-	public int GetActualFormat(string imagePath)
-	{
-		(string sformat, int width, int height) = _GetImageInfo(imagePath);
-		int format = (int)ImageType.OTHER;
-		if ((bool) globals.Call("is_apng", imagePath)) format = (int)ImageType.APNG;
-		else if (sformat == "JPG") format = (int)ImageType.JPG;
-		else if (sformat == "PNG") format = (int)ImageType.PNG;
-		else if (sformat == "GIF") format = (int)ImageType.GIF;
-		return format;
-	}
+	}*/
 	
 	public (int, int, int) GetImageInfo(string imagePath)
 	{
@@ -213,6 +167,7 @@ public class ImageImporter : Node
 		else if (sformat == "JPG") format = (int)ImageType.JPG;
 		else if (sformat == "PNG") format = (int)ImageType.PNG;
 		else if (sformat == "GIF") format = (int)ImageType.GIF;
+		else if (sformat == "WEBP") format = (int)ImageType.WEBP;
 
 		return (format, width, height);
 	}
@@ -393,45 +348,6 @@ public class ImageImporter : Node
 /*=========================================================================================
 									   Hashing
 =========================================================================================*/
-	public string SHA256Hash(string path) 
-	{
-		return (string)globals.Call("get_sha256", path);
-	}
-	public string SHA512Hash(string path)
-	{
-		return (string)globals.Call("get_sha512", path);
-	}
-	public string KomiHash(string path) 
-	{
-		return (string)globals.Call("get_komi_hash", path);
-	}
-	public ulong GetDifferenceHash(string path)
-	{
-		try {
-			var stream = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(@path);
-			var algo = new CoenM.ImageHash.HashAlgorithms.DifferenceHash(); // PerceptualHash, DifferenceHash, AverageHash
-			ulong result = algo.Hash(stream);
-			stream.Dispose();
-			return result;
-		} catch (Exception ex) { 
-			GD.Print("Database::DifferenceHash() : ", ex); 
-			var label = (Label)GetNode("/root/main/Label");
-			label.Text = ex.ToString();
-			return 777; 
-		}
-	}
-
-	public string GetPerceptualHash(string path)
-	{
-		try {
-			var im = (path.Length() < MAX_PATH_LENGTH) ? new MagickImage(path) : new MagickImage(LoadFile(path));
-			string result = im.PerceptualHash().ToString();
-			im.Dispose();
-			return result;
-		}
-		catch (Exception ex) { GD.Print("Database::GetPerceptualHash() : ", ex); return ""; }
-	}
-
 	private string GetRandomID(int num_bytes)
 	{
 		try{
@@ -448,32 +364,6 @@ public class ImageImporter : Node
 	public string CreateTabID() { return "T" + GetRandomID(8); }	
 	public string CreateGroupID() { return "G" + GetRandomID(8); }
 	public string CreateProgressID() { return "P" + GetRandomID(8); }
-	
-	public float[] GetColorHash(string path, int bucketSize=16) 
-	{
-		int[] colors = new int[256/bucketSize];
-		var bitmap = new Bitmap(@path, true);
-		int size = bitmap.Width * bitmap.Height;
-		for (int w = 0; w < bitmap.Width; w++) {
-			for (int h = 0; h < bitmap.Height; h++) {
-				var pixel = bitmap.GetPixel(w, h);
-				int min_color = Math.Min(pixel.B, Math.Min(pixel.R, pixel.G));
-				int max_color = Math.Max(pixel.B, Math.Max(pixel.R, pixel.G));
-				int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*bucketSize); 
-				int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
-				int color = (color1+color3)/2;
-				colors[color]++;
-			}
-		}
-		bitmap.Dispose();
-
-		float[] hash = new float[256/bucketSize];
-		for (int color = 0; color < colors.Length; color++) {
-			hash[color] = 100 * (float)colors[color]/size;
-		}
-
-		return hash;
-	}
 	
 /*=========================================================================================
 									   Importing
@@ -537,7 +427,6 @@ public class ImageImporter : Node
 		return true;
 	}
 
-	private long totalTimePythonReturn = 0, totalTimePythonSave = 0;
 	private int thumbnailSize = 256;
 	private int _ImportImage(string importId, string progressId, string path)
 	{
@@ -546,23 +435,16 @@ public class ImageImporter : Node
 			string fileHash = (string) globals.Call("get_sha256", path);
 			// filter hashes here
 
-			int _imageType=(int)ImageType.ERROR, _thumbnailType=(int)ImageType.ERROR, _width=0, _height=0, result=(int)ImportCode.FAILED;
+			int _imageType=(int)ImageType.ERROR, _thumbnailError=(int)ImageType.ERROR, _width=0, _height=0, result=(int)ImportCode.FAILED;
 			long _size=fileInfo.Length;
 			string savePath = thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + ".thumb";
 			string _saveType = ((_size < AVG_THUMBNAIL_SIZE) ? "png" : "jpeg");
 
-			/// TEMP CODE
-			/*var now = DateTime.Now;
-			TestReturn(path, thumbnailPath + fileHash.Substring(0,2) + "/" + fileHash + "ZZ.thumb", _saveType, thumbnailSize);
-			totalTimePythonReturn += (DateTime.Now-now).Ticks;
-			//GD.Print("python return: ", DateTime.Now-now);
-			now = DateTime.Now;*/
-			/// TEMP CODE
-
 			// check if thumbnail exists; create it if not
+			byte[] data = Array.Empty<byte>();
 			if (FileDoesNotExist(savePath)) {
 				(_imageType, _width, _height) = GetImageInfo(path);
-				_thumbnailType = SaveThumbnailPIL(path, savePath, _saveType, thumbnailSize);
+				(_thumbnailError, data) = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
 			}
 
 			var _hashInfo = db.GetHashInfo(importId, fileHash);
@@ -570,20 +452,26 @@ public class ImageImporter : Node
 				// for when the thumbnail already exists but the metadata doesn't
 				int h=0, w=0;
 				if (_imageType == (int)ImageType.ERROR) (_imageType, _width, _height) = GetImageInfo(path);
-				if (_thumbnailType == (int)ImageType.ERROR) (_thumbnailType, w, h) = GetImageInfo(savePath);
+				if (_thumbnailError == (int)ImageType.ERROR) (_thumbnailError, w, h) = GetImageInfo(savePath);
+
+				var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(data);
+				ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
+				float[] coloHash = CalcColorHash(diffImage);
+				diffImage.Dispose();
+				var imm = new MagickImage(data);
+				string percHash = imm.PerceptualHash().ToString();
 
 				_hashInfo = new HashInfo {
 					imageHash = fileHash,
 					imageName = (string)globals.Call("get_file_name", path),
 
-					differenceHash = GetDifferenceHash(savePath),
-					colorHash = GetColorHash(savePath),
-					perceptualHash = GetPerceptualHash(savePath),
+					differenceHash = diffHash,
+					colorHash = coloHash,
+					perceptualHash = percHash,
 
 					width = _width,
 					height = _height,
 					flags = 0,
-					thumbnailType = _thumbnailType,
 					imageType = _imageType,
 					size = _size,
 					creationTime = fileInfo.CreationTimeUtc.Ticks,
@@ -598,9 +486,23 @@ public class ImageImporter : Node
 				result = (int)ImportCode.SUCCESS;
 			}
 			else {
-				if (_hashInfo.differenceHash == 0) _hashInfo.differenceHash = GetDifferenceHash(savePath);
-				if (_hashInfo.colorHash == null) _hashInfo.colorHash = GetColorHash(savePath);
-				if (_hashInfo.perceptualHash == null) _hashInfo.perceptualHash = GetPerceptualHash(savePath);
+				if (_hashInfo.differenceHash == 0) {
+					var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(data);
+					ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
+					diffImage.Dispose();
+					_hashInfo.differenceHash = diffHash;
+				}
+				if (_hashInfo.colorHash == null) {
+					var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(data);
+					float[] coloHash = CalcColorHash(diffImage);
+					diffImage.Dispose();
+					_hashInfo.colorHash = coloHash;
+				}
+				if (_hashInfo.perceptualHash == null) {
+					var imm = new MagickImage(data);
+					string percHash = imm.PerceptualHash().ToString();
+					_hashInfo.perceptualHash = percHash;
+				}
 				_hashInfo.paths.Add(path);
 
 				if (_hashInfo.imports.Contains(importId)) result = (int)ImportCode.IGNORED;
@@ -609,13 +511,6 @@ public class ImageImporter : Node
 					result = (int)ImportCode.DUPLICATE;
 				}
 			}
-
-			/// TEMP CODE
-			//GD.Print("python save: ", DateTime.Now-now);
-			//totalTimePythonSave += (DateTime.Now-now).Ticks;
-			//var label = (Label)GetNode("/root/main/Label");
-			//label.Text = "python return: " + (totalTimePythonReturn/10000).ToString() + "\npython save: " + (totalTimePythonSave/10000).ToString();
-			/// TEMP CODE
 
 			db.StoreTempHashInfo(importId, progressId, _hashInfo);
 			return result;
@@ -626,94 +521,37 @@ public class ImageImporter : Node
 		}
 	}
 
-	private int SaveThumbnailPIL(string imPath, string svPath, string svType, int svSize)
+	private (int, byte[]) SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
 	{
-		string pyScript = @"pil_save_thumbnail";
-		int result = (int)ImageType.OTHER;
+		string pyScript = @"pil_save_thumbnail"; // need to make all of these into (const?static?readonly?) whichever avoids heap allocation
+		string results = String.Empty;
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);
-				dynamic image_type = script.save_thumbnail(imPath, svPath, svType, svSize);
-				result = (int)image_type;
+				dynamic result = script.create_webp(imPath, svPath, svType, svSize);
+				results = (string)result;
 			}
 			catch (PythonException pex) { GD.Print(pex.Message); }
 			catch (Exception ex) { GD.Print(ex); }
 		}
-		return result;
+
+		if (results.Equals(String.Empty)) return (-1, Array.Empty<byte>());
+		string[] parts = results.Split(new string[1]{"?"}, StringSplitOptions.None);
+		if (parts.Length != 2) return (-1, Array.Empty<byte>());
+
+		string thumbType = parts[0], base64Other = parts[1];
+		if (thumbType.Equals("-1")) return (-1, Array.Empty<byte>());
+		if (base64Other.Equals(String.Empty)) return (-1, Array.Empty<byte>());
+
+		int thumbnailError = -1;
+		int.TryParse(thumbType, out thumbnailError);
+		if (thumbnailError < 0) return (thumbnailError, Array.Empty<byte>());
+		byte[] otherData = System.Convert.FromBase64String(base64Other);
+
+		return (thumbnailError, otherData);
 	}
 
-	public void TestReturn(string imPath, string svPath, string svType, int svSize)
-	{
-		//var now = DateTime.Now;
-		string pyScript = @"pil_save_thumbnail";
-		string result = "";
-		using (Py.GIL()) {
-			try {
-				dynamic script = Py.Import(pyScript);
-				dynamic result_str = script.create_thumbnail(imPath, svType, svSize);
-				result = (string)result_str;
-			}
-			catch (PythonException pex) { GD.Print(pex.Message); }
-			catch (Exception ex) { GD.Print(ex); }
-		}
-		//GD.Print("python interop: ", DateTime.Now-now);
-		//now = DateTime.Now;
-
-		if (result.Equals("")) return;
-		string[] parts = result.Split(new string[1]{"?"}, StringSplitOptions.None);
-		if (parts.Length != 2) return;
-		string s_thumbnailType = parts[0], thumbnailBase64 = parts[1];
-		if (s_thumbnailType.Equals("-1")) return;
-		if (thumbnailBase64.Equals("")) return;
-
-		//GD.Print("safety checks: ", DateTime.Now-now);
-		//now = DateTime.Now;
-
-		int thumbnailType = -1;
-		int.TryParse(s_thumbnailType, out thumbnailType);
-		if (thumbnailType < 0) return;
-
-		byte[] thumbnailData = System.Convert.FromBase64String(thumbnailBase64);
-		var image = new Godot.Image();
-		if (thumbnailType == (int)ImageType.JPG) image.LoadJpgFromBuffer(thumbnailData);
-		else image.LoadPngFromBuffer(thumbnailData);
-		var texture = new Godot.ImageTexture();
-		texture.CreateFromImage(image, 0);
-
-		//GD.Print("image creation: ", DateTime.Now-now);
-		//now = DateTime.Now;
-
-		var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(thumbnailData);
-		ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
-
-		//GD.Print("diff hash: ", DateTime.Now-now);
-		//now = DateTime.Now;
-
-		//MemoryStream stream = new MemoryStream(thumbnailData);
-		float[] colorHash = TestGetColorHash(diffImage);
-		//globals.Call("_print", "colo", colorHash);
-
-		//GD.Print("color hash: ", DateTime.Now-now);
-		//now = DateTime.Now;
-
-		var imm = new MagickImage(thumbnailData);
-		string percHash = imm.PerceptualHash().ToString();
-
-		//GD.Print("perc hash: ", DateTime.Now-now);
-		//now = DateTime.Now;
-		imm.Strip();
-		imm.Write(svPath);
-		// actual code will upload to the relevant thumbnail database here (which will likely be slower unfortunately)
-		//		main goals are: improve speed of backups, improve speed of moving metadata, make it easier to share thumbnails, and
-		//			load all thumbnails (for current page) from db at once (hopefully improving overall speed without taking too long to start showing thumbnails)
-		//		main downsides are: will likely increase time before first thumbnails show up for current page, 
-		//			will likely take up slightly more space, will likely take longer to save
-
-		//GD.Print("saving: ", DateTime.Now-now);
-		//now = DateTime.Now;
-	}
-
-	public float[] TestGetColorHash(SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32> bitmap, int bucketSize=16) 
+	public float[] CalcColorHash(SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32> bitmap, int bucketSize=16) 
 	{
 		int[] colors = new int[256/bucketSize];
 		int size = bitmap.Width * bitmap.Height;

@@ -336,22 +336,10 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 		return
 
 	if stop_threads: return
-	var file_type:int = Database.GetFileType(image_hash)
-	
-	if file_type == Globals.ImageType.FAIL:
-		_threadsafe_set_icon(image_hash, index, true)
-		return
 
-	if stop_threads: return
 	var i:Image = Image.new()
 	var b:PoolByteArray = f.get_buffer(f.get_len())
-	if file_type == Globals.ImageType.PNG: 
-		e = i.load_png_from_buffer(b)
-	elif file_type == Globals.ImageType.JPG: 
-		e = i.load_jpg_from_buffer(b)
-	else:
-		_threadsafe_set_icon(image_hash, index, true)
-		return
+	e = i.load_webp_from_buffer(b)
 
 	if stop_threads: return
 	var it:ImageTexture = ImageTexture.new()

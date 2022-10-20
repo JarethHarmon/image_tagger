@@ -6,7 +6,7 @@ namespace Data
 {
 	public enum ErrorCodes { OK, ERROR }
 	public enum ImportCode { SUCCESS, DUPLICATE, IGNORED, FAILED }
-	public enum ImageType { JPG, PNG, APNG, GIF, OTHER=7, ERROR=-1 }  
+	public enum ImageType { JPG, PNG, APNG, GIF, WEBP, OTHER=7, ERROR=-1 }  
 	public enum Sort { SHA256, PATH, NAME, SIZE, UPLOAD_TIME, CREATION_TIME, EDIT_TIME, DIMENSIONS, TAG_COUNT, RANDOM, IMAGE_COLOR, RATING_QUALITY, RATING_APPEAL, RATING_ART_STYLE, RATING_SUM, RATING_AVERAGE }
 	public enum Order { ASCENDING, DESCENDING }
 	public enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
@@ -28,7 +28,7 @@ namespace Data
 		public int width { get; set; }                        // the width of the image in pixels
 		public int height { get; set; }                       // the height of the image in pixels
 		public int flags { get; set; }                        // the flags of the image (currently used only for filter toggling)
-		public int thumbnailType { get; set; }                // the type (png/jpg/?) of the thumbnail
+		//public int thumbnailType { get; set; }                // the type (png/jpg/?) of the thumbnail
 		public int imageType { get; set; }                    // the type (png/jpg/apng/etc) of the full image
 		public long size { get; set; }                        // the size of the image in bytes
 		public long creationTime { get; set; }                // the UTC time that the image was created
