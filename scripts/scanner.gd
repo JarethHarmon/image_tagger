@@ -31,6 +31,7 @@ func _ready() -> void:
 	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list
 	Signals.connect("folder_selected", self, "_folder_selected")
 	reset()
+	#recursively.pressed = true
 
 func reset() -> void:
 	index = 0
@@ -48,10 +49,12 @@ func _files_dropped(file_paths:Array, _screen:int) -> void:
 	# then do the same things this function currently does (just with recursion defined by the popup instead of the checkbox)
 	var d:Directory = Directory.new()
 	var files:Array = []
+	var folders:Array = []
 	for file in file_paths:
-		if d.dir_exists(file): _folder_selected(file)
+		if d.dir_exists(file): folders.append(file)
 		else: files.append(file)
 	_files_selected(files)
+	for folder in folders: _folder_selected(folder)
 	if file_paths.size() > 0: 
 		Signals.emit_signal("show_import_menu")
 
