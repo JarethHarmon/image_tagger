@@ -670,12 +670,12 @@ public class Database : Node
 			if (hs.Contains(currentHashInfo.imageHash))
 				if (currentHashInfo.tags != null) 
 					if (currentHashInfo.tags.Count > 0)
-						currentHashInfo.tags.Except(tags);
+						currentHashInfo.tags.ExceptWith(tags);
 
 			foreach (HashInfo info in list) {
 				if (info == null) continue;
 				if (info.tags == null) continue;
-				info.tags.Except(tags);
+				info.tags.ExceptWith(tags);
 				if (info.tags.Count == 0) info.tags = null;
 			}
 
