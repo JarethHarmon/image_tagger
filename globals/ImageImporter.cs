@@ -187,21 +187,20 @@ public class ImageImporter : Node
 	private static Godot.Image _LoadUnsupportedImage(MagickImage magickImage, long imageSize)
 	{
 		try {
-			if (imageSize > AVG_THUMBNAIL_SIZE) {
-				magickImage.Format = MagickFormat.Jpg;
-				magickImage.Quality = 95;
-				byte[] data = magickImage.ToByteArray();
-				var image = new Godot.Image();
-				image.LoadJpgFromBuffer(data);
-				return image;
-			} else {
+			// this is to prevent issues where the problem that caused Godot to fail to load the image
+			//	persists through the creation of an ImageMagick image; basically just convert it to another format
+			//	so that only the pixel data is carried over, with the header information being newly created
+			// 	(might be a more efficient way to recreate extra data; need to check docs)
+			if (magickImage.Format == MagickFormat.Jpeg || magickImage.Format == MagickFormat.Jpg) 
 				magickImage.Format = MagickFormat.Png;
+			else {
+				magickImage.Format = MagickFormat.Jpeg;
 				magickImage.Quality = 95;
-				byte[] data = magickImage.ToByteArray();
-				var image = new Godot.Image();
-				image.LoadPngFromBuffer(data);
-				return image;
 			}
+			byte[] data = magickImage.ToByteArray();
+			var image = new Godot.Image();
+			image.LoadPngFromBuffer(data);
+			return image;
 		} catch (Exception ex) { GD.Print("ImageImporter::_LoadUnsupportedImage() : ", ex); return null; }		
 	}
 	public static Godot.Image LoadUnsupportedImage(string imagePath)
@@ -399,6 +398,7 @@ public class ImageImporter : Node
 			if (failCount > 0) {
 				var importInfo = db.GetImport(importId);
 				importInfo.failed += failCount;
+				importInfo.processed += failCount;
 				db.AddImport(importId, importInfo);
 			}
 
@@ -446,6 +446,9 @@ public class ImageImporter : Node
 				(_imageType, _width, _height) = GetImageInfo(path);
 				//(_thumbnailError, data) = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
 				_thumbnailError = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
+				// need to test if faster to return base64 string from python, or just read from disk
+				// also need to check if they have fixed the issue causing byte[] returns from python to be extremely slow
+				//	if so, would be better to avoid the pointless base64 conversions
 				data = LoadFile(savePath);
 			}
 

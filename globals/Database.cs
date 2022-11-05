@@ -871,6 +871,7 @@ public class Database : Node
 			else if (result == (int)ImportCode.DUPLICATE) importInfo.duplicate++;
 			else if (result == (int)ImportCode.IGNORED) importInfo.ignored++;
 			else importInfo.failed++;
+			importInfo.processed++;
 
 			AddImport("All", allInfo);
 			AddImport(importId, importInfo);

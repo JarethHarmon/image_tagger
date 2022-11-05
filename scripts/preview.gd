@@ -293,6 +293,7 @@ func _thread(args:Array) -> void:
 			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path)
 				return 
+			print("error ", e, ": ", path)
 			i = ImageImporter.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path)
