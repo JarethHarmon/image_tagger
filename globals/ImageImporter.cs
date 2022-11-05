@@ -324,7 +324,6 @@ public class ImageImporter : Node
 	public void LoadAPng(string imagePath, string imageHash)
 	{	
 		string pyScript = @"pil_load_animation"; // "/lib/python-3.10.7-embed-amd64/pil_load_animation.py"
-		int frameCount=0;
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);

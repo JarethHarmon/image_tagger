@@ -60,6 +60,8 @@ def get_apng_frames(path, im_hash):
     csharp.SendFrameCount(frame_count)
     is_png = has_transparency(im)
     csharp.SetAnimatedImageType(is_png)
+
+    if is_png: im.convert('RGBA')
     
     for i in range(0, frame_count):
         if csharp.StopLoading(path): break
