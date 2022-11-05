@@ -445,7 +445,8 @@ public class ImageImporter : Node
 			if (FileDoesNotExist(savePath)) {
 				(_imageType, _width, _height) = GetImageInfo(path);
 				//(_thumbnailError, data) = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
-				_thumbnailError = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
+				//data = SaveThumbnailWebp(path, savePath, thumbnailSize);
+				_thumbnailError = SaveThumbnailWebp(path, savePath, thumbnailSize);
 				// need to test if faster to return base64 string from python, or just read from disk
 				// also need to check if they have fixed the issue causing byte[] returns from python to be extremely slow
 				//	if so, would be better to avoid the pointless base64 conversions
@@ -527,38 +528,37 @@ public class ImageImporter : Node
 		}
 	}
 
-	//private (int, byte[]) SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
-	private int SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
+	//private byte[] SaveThumbnailWebp(string imPath, string svPath, int svSize)
+	private int SaveThumbnailWebp(string imPath, string svPath, int svSize)
 	{
 		string pyScript = @"pil_save_thumbnail"; // need to make all of these into (const?static?readonly?) whichever avoids heap allocation
 		//string results = String.Empty;
-		int _result = (int)ImageType.ERROR;
+		int _result = -1;
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);
-				dynamic result = script.create_webp(imPath, svPath, svType, svSize);
+				dynamic result = script.create_webp(imPath, svPath, svSize);
 				//results = (string)result;
 				_result = (int)result;
 			}
 			catch (PythonException pex) { GD.Print(pex.Message); }
 			catch (Exception ex) { GD.Print(ex); }
 		}
-
 		return _result;
-		/*if (results.Equals(String.Empty)) return (-1, Array.Empty<byte>());
+		/*if (results.Equals(String.Empty)) return Array.Empty<byte>();
 		string[] parts = results.Split(new string[1]{"?"}, StringSplitOptions.None);
-		if (parts.Length != 2) return (-1, Array.Empty<byte>());
+		if (parts.Length != 2) return Array.Empty<byte>();
 
 		string thumbType = parts[0], base64Other = parts[1];
-		if (thumbType.Equals("-1")) return (-1, Array.Empty<byte>());
-		if (base64Other.Equals(String.Empty)) return (-1, Array.Empty<byte>());
+		if (thumbType.Equals("-1")) return Array.Empty<byte>();
+		if (base64Other.Equals(String.Empty)) return Array.Empty<byte>();
 
 		int thumbnailError = -1;
 		int.TryParse(thumbType, out thumbnailError);
-		if (thumbnailError < 0) return (thumbnailError, Array.Empty<byte>());
-		byte[] otherData = System.Convert.FromBase64String(base64Other);
+		if (thumbnailError < 0) return Array.Empty<byte>();
+		byte[] webpData = System.Convert.FromBase64String(base64Other);
 
-		return (thumbnailError, otherData);*/
+		return webpData;*/
 	}
 
 	public float[] CalcColorHash(SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32> bitmap, int bucketSize=16) 

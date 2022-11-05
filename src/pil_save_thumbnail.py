@@ -56,24 +56,18 @@ def create_thumbnail(im_path, sv_type, sv_size):
     except:
         return f'-1?'
 
-def create_webp(im_path, sv_path, sv_type, sv_size):
+def create_webp(im_path, sv_path, sv_size):
     try:
         im = Image.open(im_path)
-        if sv_type == 'jpeg': 
-            if has_transparency(im): 
-                if im.mode != 'RGBA': im.convert('RGBA')
-                sv_type = 'png'
-            elif im.mode != 'RGB': im = im.convert('RGB')  
-            
         im.thumbnail((sv_size, sv_size))
         im.save(sv_path, 'webp')
-        
+        return 0
         bi = io.BytesIO()
-        im.save(bi, sv_type)
+        im.save(bi, 'webp')
         base64_str = str(base64.b64encode(bi.getvalue()))
         base64_str = base64_str.replace('\'', '')
         base64_str = base64_str[1:len(base64_str)]
-        if sv_type == 'png': return f'1?{base64_str}'
         return f'0?{base64_str}'
     except:
-        return f'-1?'
+        return -1
+        return '-1?'
