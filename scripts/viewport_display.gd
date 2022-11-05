@@ -18,8 +18,8 @@ func initialize(cam:Camera2D) -> void:
 	
 # zoom
 var zoom_to_point:bool = true
-var zoom_in_max:float = 0.005
-var zoom_out_max:float = 7.0
+var zoom_in_max:float = 0.0005
+var zoom_out_max:float = 15.0
 var zoom_step:float = 0.05
 
 # scroll

@@ -444,7 +444,9 @@ public class ImageImporter : Node
 			byte[] data = Array.Empty<byte>();
 			if (FileDoesNotExist(savePath)) {
 				(_imageType, _width, _height) = GetImageInfo(path);
-				(_thumbnailError, data) = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
+				//(_thumbnailError, data) = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
+				_thumbnailError = SaveThumbnailWebp(path, savePath, _saveType, thumbnailSize);
+				data = LoadFile(savePath);
 			}
 
 			var _hashInfo = db.GetHashInfo(importId, fileHash);
@@ -453,6 +455,7 @@ public class ImageImporter : Node
 				int h=0, w=0;
 				if (_imageType == (int)ImageType.ERROR) (_imageType, _width, _height) = GetImageInfo(path);
 				if (_thumbnailError == (int)ImageType.ERROR) (_thumbnailError, w, h) = GetImageInfo(savePath);
+				if (data.Length == 0) data = LoadFile(savePath);
 
 				var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(data);
 				ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
@@ -521,21 +524,25 @@ public class ImageImporter : Node
 		}
 	}
 
-	private (int, byte[]) SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
+	//private (int, byte[]) SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
+	private int SaveThumbnailWebp(string imPath, string svPath, string svType, int svSize)
 	{
 		string pyScript = @"pil_save_thumbnail"; // need to make all of these into (const?static?readonly?) whichever avoids heap allocation
-		string results = String.Empty;
+		//string results = String.Empty;
+		int _result = (int)ImageType.ERROR;
 		using (Py.GIL()) {
 			try {
 				dynamic script = Py.Import(pyScript);
 				dynamic result = script.create_webp(imPath, svPath, svType, svSize);
-				results = (string)result;
+				//results = (string)result;
+				_result = (int)result;
 			}
 			catch (PythonException pex) { GD.Print(pex.Message); }
 			catch (Exception ex) { GD.Print(ex); }
 		}
 
-		if (results.Equals(String.Empty)) return (-1, Array.Empty<byte>());
+		return _result;
+		/*if (results.Equals(String.Empty)) return (-1, Array.Empty<byte>());
 		string[] parts = results.Split(new string[1]{"?"}, StringSplitOptions.None);
 		if (parts.Length != 2) return (-1, Array.Empty<byte>());
 
@@ -548,7 +555,7 @@ public class ImageImporter : Node
 		if (thumbnailError < 0) return (thumbnailError, Array.Empty<byte>());
 		byte[] otherData = System.Convert.FromBase64String(base64Other);
 
-		return (thumbnailError, otherData);
+		return (thumbnailError, otherData);*/
 	}
 
 	public float[] CalcColorHash(SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32> bitmap, int bucketSize=16) 
