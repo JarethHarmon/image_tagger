@@ -208,11 +208,9 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	
 	if not found:
 		var it = ImageTexture.new()
-		#print(broken_icon.get_data().get_width())
 		it.create_from_image(broken_icon.get_data(), 0)
 		it.set_meta("image_hash", "0")
 		current_image = it
-		#current_image = broken_icon
 		resize_current_image()
 		return
 	
@@ -596,6 +594,7 @@ func update_animation(new_image:bool=false) -> void:
 		if Globals.settings.use_filter: tex.flags = 4
 		else: tex.flags = 0
 		preview.set_texture(tex)
+		resize_current_image(path)
 		animation_index = 1
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
