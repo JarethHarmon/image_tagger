@@ -476,8 +476,9 @@ func calc_size(it:ImageTexture) -> Vector2:
 	var xr:float = vr / ir												# ratio of viewport_display to image
 	var gr:float = image_grid_size.x / image_grid_size.y				# should be 16/9, but calculate just in case
 	
-	if vr > gr: size *= rz			# if ratio of viewport_display is > 16:9 ; multiply size by rz
+	if vr > gr: size.x *= rz
 	elif ir > vr: size.x *= xr		# image ratio is wider than viewport; reduce image size X
+	size.y = (size.x/image_size.x) * image_size.y
 	# if image ratio is narrower than the viewport's (and viewport ratio is <= 16:9); then image is already sized correctly
 	
 	return size 
