@@ -68,7 +68,7 @@ size_flags_vertical = 3
 
 [node name="viewport_display" type="TextureRect" parent="margin/vbox"]
 margin_right = 1910.0
-margin_bottom = 968.0
+margin_bottom = 988.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 expand = true
@@ -76,7 +76,7 @@ stretch_mode = 7
 script = ExtResource( 2 )
 
 [node name="hbox" type="HBoxContainer" parent="margin/vbox"]
-margin_top = 972.0
+margin_top = 992.0
 margin_right = 1910.0
 margin_bottom = 1012.0
 mouse_filter = 2
@@ -134,25 +134,26 @@ size_flags_vertical = 3
 
 [node name="flip_h" type="Button" parent="margin/vbox/hbox"]
 margin_right = 65.0
-margin_bottom = 40.0
+margin_bottom = 20.0
 text = "  Flip H  "
 
 [node name="flip_v" type="Button" parent="margin/vbox/hbox"]
 margin_left = 69.0
 margin_right = 132.0
-margin_bottom = 40.0
+margin_bottom = 20.0
 text = "  Flip V  "
 
 [node name="invert_size" type="CheckButton" parent="margin/vbox/hbox"]
+visible = false
 margin_left = 136.0
 margin_right = 300.0
 margin_bottom = 40.0
 text = "  Invert Size  "
 
 [node name="space" type="Control" parent="margin/vbox/hbox"]
-margin_left = 304.0
+margin_left = 136.0
 margin_right = 1910.0
-margin_bottom = 40.0
+margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

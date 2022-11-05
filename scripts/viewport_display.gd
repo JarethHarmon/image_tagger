@@ -90,6 +90,7 @@ func _on_viewport_display_gui_input(event:InputEvent) -> void:
 					if zoom_to_point: zoom_point(zoom_step, event.position)
 					else: camera.zoom += Vector2(zoom_step, zoom_step) # make lerp ?
 		elif event.button_index == BUTTON_RIGHT: # reset
+			if not event.is_pressed(): return
 			camera.position = default_camera_position
 			camera.zoom = default_camera_zoom
 			camera.offset = default_camera_offset

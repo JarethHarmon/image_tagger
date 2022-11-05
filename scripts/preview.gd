@@ -12,6 +12,7 @@ export (NodePath) onready var fxaa = get_node(fxaa)
 export (NodePath) onready var image_grid = get_node(image_grid)
 export (NodePath) onready var preview = get_node(preview)
 export (NodePath) onready var viewport_display = get_node(viewport_display)
+export (NodePath) onready var shaders = get_node(shaders)
 
 onready var display:TextureRect = $margin/vbox/viewport_display
 onready var smooth_pixel_button:CheckButton = $margin/vbox/flow/smooth_pixel
@@ -146,9 +147,7 @@ func _on_settings_loaded() -> void:
 	_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
 
 	create_current_image()
-	resize_current_image()
-	yield(get_tree(), "idle_frame")
-	get_node("/root/main/preview_container/ViewportContainer/Viewport/preview_viewport/image_grid/image_0").get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
+	preview.get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
 
 func clear_image_preview() -> void:
 	for child in image_grid.get_children():
@@ -178,7 +177,7 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	image_mutex.lock()
 	current_path = path
 	current_hash = image_hash
-
+	
 	if image_history.has(image_hash): 
 		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
 		#	instead of the first clicked) 
@@ -187,6 +186,7 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		var it:ImageTexture = image_history[image_hash]
 		preview.set_texture(it)
 		current_image = it
+		resize_current_image()
 		# need to call a function that gets a list of ratings instead
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
@@ -422,6 +422,7 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		#	return
 		pass
 	current_image = it	
+	preview.set_texture(current_image)
 
 func change_filter() -> void:
 	if preview.get_texture() == null: return
@@ -434,55 +435,54 @@ func change_filter() -> void:
 
 func resize_current_image(path:String="") -> void:
 	if current_image == null: return
-	if path != "" and path != current_path: pass#return # do not remember why I commented return here
-	
-	# new code (still erratic and incorrect)
-	#yield(get_tree(), "idle_frame")
-	#var im_size:Vector2 = Vector2(current_image.get_width(), current_image.get_height())
-	#Signals.emit_signal("calc_default_camera_zoom", im_size)
-	#image_grid.get_parent().rect_size = im_size
+	if path != "" and path != current_path: return # do not remember why I commented return here
 
 	var temp_size:Vector2 = calc_size(current_image).round()
 	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
 	if temp_size != animation_size or (current_image.get_meta("image_hash") != preview.get_texture().get_meta("image_hash")):
 		animation_size = temp_size
-		preview.set_texture(null)
-		if current_image == null: return
-		current_image.set_size_override(animation_size)
-		yield(get_tree(), "idle_frame")
-		if current_image == null: return
-		preview.set_texture(current_image)
+		
+		preview.rect_size = temp_size
+		preview.rect_position = (image_grid.rect_size-temp_size)/2
+		shaders.rect_size = temp_size
+		shaders.rect_position = (image_grid.rect_size-temp_size)/2
+
 	buffering.hide()
 
-# add a toggle button that inverts the calculations for portrait/landscape
-# this way the user can change the size of a tall vertical image to fit horizontally on the screen
-# also in general need to see if I can change to only moving the camera and not changing sizes at all 
-#	(would help especially with animated images)
+# need to figure out inversion (not like it actually worked before anyways)
 var invert:bool = false
 func calc_size(it:ImageTexture) -> Vector2:
-	var size_1:Vector2 = viewport_display.rect_size
-	var size_2:Vector2 = preview.rect_size
-	var size_i:Vector2 = Vector2(it.get_width(), it.get_height())
+	var viewport_display_size:Vector2 = viewport_display.rect_size
+	var image_grid_size:Vector2 = image_grid.rect_size
+	var image_size:Vector2 = Vector2(it.get_width(), it.get_height())
 	var size:Vector2 = Vector2.ZERO
 	
-	if size_i == Vector2.ZERO: return size_i # prevent /0 (still need to handle images that are too large somewhere else)
+	if image_size == Vector2.ZERO: return image_size # prevent /0 (still need to handle images that are too large somewhere else)
 	
-	var ratio_h:float = size_1.y / size_i.y # causes /0 crash when image is too large (fails to load and gives size of 0)
-	var ratio_w:float = size_1.x / size_i.x
-	var ratio_s:Vector2 = size_2 / size_1
+	var rh:float = image_grid_size.y / image_size.y
+	var rw:float = image_grid_size.x / image_size.x
 	
-	if (ratio_h < ratio_w and not invert) or (ratio_h > ratio_w and invert): # portrait or landscape+invert
-		size.y = size_1.y
-		size.x = (size_1.y / size_i.y) * size_i.x
-		if ratio_s.y < ratio_s.x: # portrait-shaped section
-			size *= ratio_s.y
-		else: size *= ratio_s.x
-	else: # landscape or square or portrait+invert
-		size.x = size_1.x
-		size.y = (size_1.x / size_i.x) * size_i.y
-		if ratio_s.y < ratio_s.x: size *= ratio_s.y
-		else: size *= ratio_s.x
-	return size
+	if rh < rw: # landscape image_size
+		size.y = image_grid_size.y
+		size.x = rh * image_size.x
+	else: # portrait or square image_size
+		size.x = image_grid_size.x
+		size.y = rw * image_size.y
+	
+	var rx:float = viewport_display_size.x/image_grid_size.x		# 
+	var ry:float = viewport_display_size.y/image_grid_size.y		#
+	var rz:float = min(rx/ry, ry/rx)								# 
+
+	var ir:float = size.x / size.y 										# aspect ratio of image
+	var vr:float = viewport_display_size.x / viewport_display_size.y	# aspect ratio of viewport_display
+	var xr:float = vr / ir												# ratio of viewport_display to image
+	var gr:float = image_grid_size.x / image_grid_size.y				# should be 16/9, but calculate just in case
+	
+	if vr > gr: size *= rz			# if ratio of viewport_display is > 16:9 ; multiply size by rz
+	elif ir > vr: size.x *= xr		# image ratio is wider than viewport; reduce image size X
+	# if image ratio is narrower than the viewport's (and viewport ratio is <= 16:9); then image is already sized correctly
+	
+	return size 
 
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
@@ -590,8 +590,6 @@ func update_animation(new_image:bool=false) -> void:
 	var delay:float = 0.0
 	if new_image:
 		animation_index = 0
-		animation_size = calc_size(animation_images[animation_index]).round()
-		animation_images[animation_index].set_size_override(animation_size)
 		current_image = animation_images[animation_index]
 		delay = animation_delays[animation_index]
 		var tex:ImageTexture = animation_images[animation_index]
@@ -605,7 +603,6 @@ func update_animation(new_image:bool=false) -> void:
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
-			animation_images[animation_index].set_size_override(animation_size)
 			delay = animation_delays[animation_index]
 			var tex:ImageTexture = animation_images[animation_index]
 			if Globals.settings.use_filter: tex.flags = 4
@@ -624,4 +621,5 @@ func _on_flip_h_button_up() -> void: preview.flip_h = not preview.flip_h
 func _on_flip_v_button_up() -> void: preview.flip_v = not preview.flip_v
 func _on_invert_size_toggled(button_pressed:bool) -> void:
 	invert = button_pressed
+	#preview.rect_size *= 0.5
 	resize_current_image()

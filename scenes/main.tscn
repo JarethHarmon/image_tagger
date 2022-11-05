@@ -46,11 +46,7 @@ previewer = NodePath("margin/vbox/hsplit/right/vsplit/preview")
 
 [node name="preview_container" parent="." instance=ExtResource( 5 )]
 margin_left = 3840.0
-margin_right = 3840.0
-
-[node name="image_0" parent="preview_container/ViewportContainer/Viewport/preview_viewport/image_grid" index="0"]
-margin_right = 3840.0
-margin_bottom = 2160.0
+margin_right = 5760.0
 
 [node name="background_color" type="TextureRect" parent="."]
 anchor_right = 1.0
@@ -182,11 +178,12 @@ margin_right = 1151.0
 margin_bottom = 787.0
 camera = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Camera2D")
 viewport = NodePath("../../../../../../preview_container/ViewportContainer/Viewport")
-color_grading = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/ColorGrading")
-edge_mix = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/EdgeMix")
-fxaa = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/FXAA")
+color_grading = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Shaders/ColorGrading")
+edge_mix = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Shaders/EdgeMix")
+fxaa = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Shaders/FXAA")
 image_grid = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/image_grid")
 preview = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/image_grid/image_0")
+shaders = NodePath("../../../../../../preview_container/ViewportContainer/Viewport/preview_viewport/Shaders")
 normal_parent = NodePath("..")
 fullscreen_parent = NodePath("../../../../../../fullscreen")
 
@@ -361,6 +358,3 @@ margin_bottom = 877.0
 [connection signal="index_pressed" from="popups/context_menu/pmenu_view" to="popups" method="_on_pmenu_view_context_index_pressed"]
 [connection signal="dir_selected" from="popups/FileDialog" to="popups" method="_on_FileDialog_dir_selected"]
 [connection signal="files_selected" from="popups/FileDialog" to="popups" method="_on_FileDialog_files_selected"]
-
-[editable path="preview_container"]
-[editable path="preview_container/ViewportContainer/Viewport/preview_viewport"]
