@@ -40,7 +40,8 @@ namespace Data
 		public HashSet<string> imports { get; set; }          // the imports this imageHash was present in
 		public HashSet<string> groups { get; set; }           // the groups this imageHash is present in
 		public HashSet<string> paths { get; set; }            // the paths that this imageHash has been found at
-		public HashSet<string> tags { get; set; }             // the tags that have been applied to this imageHash
+		//public HashSet<string> tags { get; set; }             // the tags that have been applied to this imageHash
+		public string[] tags { get; set; }
 
 		public int ratingSum { get; set; }
 		public int ratingAvg { get; set; }

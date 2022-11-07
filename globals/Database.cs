@@ -195,7 +195,7 @@ public class Database : Node
 		if (main.imports != null && sub.imports != null) MergeHashSets(main.imports, sub.imports);
 		else if (sub.imports != null) main.imports = sub.imports; 
 
-		if (main.tags != null && sub.tags != null) MergeHashSets(main.tags, sub.tags);
+		if (main.tags != null && sub.tags != null) main.tags = main.tags.Union(sub.tags).ToArray();//MergeHashSets(main.tags, sub.tags);
 		else if (sub.tags != null) main.tags = sub.tags; 
 
 		if (main.differenceHash == 0) main.differenceHash = sub.differenceHash;
@@ -317,10 +317,12 @@ public class Database : Node
 	{
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
-				return currentHashInfo.tags.ToArray();
+				return (currentHashInfo.tags is null) ? Array.Empty<string>() : currentHashInfo.tags;
+				//return currentHashInfo.tags.ToArray();
 			var result = colHashes.FindById(imageHash);
-			if (result == null) return new string[0];
-			return result.tags.ToArray();
+			if (result?.tags is null) return new string[0];
+			return result.tags;
+			//return result.tags.ToArray();
 		} catch (Exception ex) { return new string[0]; }
 	}
 	
@@ -357,6 +359,21 @@ public class Database : Node
 			return string.Empty;
 		} catch { return string.Empty; }
 	}
+
+	// Just noticed today that Sort.TagCount does not work correctly:
+	//		images that have 1 tag are not sorted any differently from images with 0 tags
+	//		if an image gets sorted to the top of the list, then even if you delete its tags
+	//		it will remain there (assuming that all images at the top have 0 or 1 tags anyways)
+
+	// The complete rewrite will hopefully fix these issues, and if not; I guess the tag count filter
+	//	will address them. This could probably be sidestepped by adding a default tag to every image,
+	//	but I would prefer to avoid doing that. I have no idea how I could have failed to notice this
+	//	issue before. Going to wait and see if it persists or if my computer is just being weird today.
+
+	// Also it is possible to sort directly on tags instead of tags.Count; but it seems to treat its internal
+	//	string[] as one big string and sorts them by the order they were added. IE when sorting by descending,
+	//	an image with the tag 'Z' would be sorted before an image with the tags 'A', 'B', 'C' even though it has
+	//	fewer tags.
 
 	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
@@ -529,7 +546,7 @@ public class Database : Node
 			else if (sort == (int)Sort.UPLOAD_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.uploadTime) : query.OrderByDescending(x => x.uploadTime);
 			else if (sort == (int)Sort.EDIT_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.lastWriteTime) : query.OrderByDescending(x => x.lastWriteTime);
 			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width*x.height) : query.OrderByDescending(x => x.width*x.height);
-			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Count) : query.OrderByDescending(x => x.tags.Count);
+			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Length) : query.OrderByDescending(x => x.tags.Length);
 			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
 			else if (sort == (int)Sort.RANDOM) {
@@ -545,6 +562,8 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 			
+			//GD.Print(query.GetPlan());
+
 			return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();
 		} 
 		catch (Exception ex) { 
@@ -642,14 +661,17 @@ public class Database : Node
 
 			if (hs.Contains(currentHashInfo.imageHash)) {
 				if (currentHashInfo.tags == null) 
-					currentHashInfo.tags = new HashSet<string>(tags);
+					//currentHashInfo.tags = new HashSet<string>(tags);
+					currentHashInfo.tags = tags;
 				else 
-					currentHashInfo.tags.UnionWith(tags);
+					//currentHashInfo.tags.UnionWith(tags);
+					currentHashInfo.tags = currentHashInfo.tags.Union(tags).ToArray();
 			}
 
 			foreach (HashInfo info in list) {
-				if (info.tags == null) info.tags = new HashSet<string>(tags);
-				else info.tags.UnionWith(tags);
+				//if (info.tags == null) info.tags = new HashSet<string>(tags);
+				if (info.tags == null) info.tags = tags;
+				else info.tags = info.tags.Union(tags).ToArray();//info.tags.UnionWith(tags);
 			}
 			colHashes.Update(list);
 		} 
@@ -669,14 +691,19 @@ public class Database : Node
 
 			if (hs.Contains(currentHashInfo.imageHash))
 				if (currentHashInfo.tags != null) 
-					if (currentHashInfo.tags.Count > 0)
-						currentHashInfo.tags.ExceptWith(tags);
+					//if (currentHashInfo.tags.Count > 0)
+					//	currentHashInfo.tags.ExceptWith(tags);
+					if (currentHashInfo.tags.Length > 0)
+						currentHashInfo.tags = currentHashInfo.tags.Except(tags).ToArray();
 
 			foreach (HashInfo info in list) {
 				if (info == null) continue;
 				if (info.tags == null) continue;
-				info.tags.ExceptWith(tags);
-				if (info.tags.Count == 0) info.tags = null;
+				if (info.tags.Length == 0) continue;
+				info.tags = info.tags.Except(tags).ToArray();
+				if (info.tags.Length == 0) info.tags = null;
+				//info.tags.ExceptWith(tags);
+				//if (info.tags.Count == 0) info.tags = null;
 			}
 
 			colHashes.Update(list);
