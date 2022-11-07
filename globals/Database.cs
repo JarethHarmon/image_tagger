@@ -90,7 +90,7 @@ public class Database : Node
 			//colHashes.EnsureIndex(x => x.numColors);
 			//colHashes.EnsureIndex(x => x.size);
 			//colHashes.EnsureIndex(x => x.width*x.height);
-			//colHashes.EnsureIndex(x => x.tags.Count);
+			//colHashes.EnsureIndex(x => x.tags.Length);
 			//colHashes.EnsureIndex(x => x.creationTime);
 			//colHashes.EnsureIndex(x => x.lastWriteTime);
 			//colHashes.EnsureIndex(x => x.imageName);
@@ -359,21 +359,6 @@ public class Database : Node
 			return string.Empty;
 		} catch { return string.Empty; }
 	}
-
-	// Just noticed today that Sort.TagCount does not work correctly:
-	//		images that have 1 tag are not sorted any differently from images with 0 tags
-	//		if an image gets sorted to the top of the list, then even if you delete its tags
-	//		it will remain there (assuming that all images at the top have 0 or 1 tags anyways)
-
-	// The complete rewrite will hopefully fix these issues, and if not; I guess the tag count filter
-	//	will address them. This could probably be sidestepped by adding a default tag to every image,
-	//	but I would prefer to avoid doing that. I have no idea how I could have failed to notice this
-	//	issue before. Going to wait and see if it persists or if my computer is just being weird today.
-
-	// Also it is possible to sort directly on tags instead of tags.Count; but it seems to treat its internal
-	//	string[] as one big string and sorts them by the order they were added. IE when sorting by descending,
-	//	an image with the tag 'Z' would be sorted before an image with the tags 'A', 'B', 'C' even though it has
-	//	fewer tags.
 
 	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
