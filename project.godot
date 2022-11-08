@@ -9,18 +9,12 @@
 config_version=4
 
 _global_script_classes=[ {
-"base": "Node",
-"class": "Gob",
-"language": "NativeScript",
-"path": "res://addons/gob/gob.gdns"
-}, {
 "base": "LineEdit",
 "class": "TagEdit",
 "language": "GDScript",
 "path": "res://scenes/custom_nodes/TagEdit.gd"
 } ]
 _global_script_class_icons={
-"Gob": "",
 "TagEdit": ""
 }
 
