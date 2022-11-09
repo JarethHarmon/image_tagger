@@ -175,7 +175,7 @@ public class ImageImporter : Node
 	{
 		try {
 			var info = (imagePath.Length() < MAX_PATH_LENGTH) ? new MagickImageInfo(imagePath) : new MagickImageInfo(LoadFile(imagePath));
-			string format = info.Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG");
+			string format = info.Format.ToString().ToUpperInvariant().Replace("JPEG", "JPG").Replace("JFIF", "JPG");
 			return (format, info.Width, info.Height);
 		} 
 		catch (Exception ex) { 

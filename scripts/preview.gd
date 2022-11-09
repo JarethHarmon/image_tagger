@@ -525,14 +525,14 @@ func _input(event:InputEvent) -> void:
 func _on_fullscreen_pressed(escape:bool=false) -> void:
 	if escape and not fullscreen: return
 	if fullscreen: 
-		fullscreen_button.text = "  [[  ]]  "
+		fullscreen_button.text = "  <<  >>  "
 		fullscreen_parent.remove_child(self)
 		normal_parent.add_child(self)
 		normal_parent.move_child(self, 0)
 		darker_background.hide()
 		fullscreen = false
 	else:
-		fullscreen_button.text = "    []    "
+		fullscreen_button.text = "  >>  <<  "
 		normal_parent.remove_child(self)
 		fullscreen_parent.add_child(self)
 		darker_background.show()

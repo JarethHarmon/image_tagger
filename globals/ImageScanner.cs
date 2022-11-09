@@ -12,7 +12,7 @@ using Alphaleonis.Win32.Filesystem;
 // need a way to interrupt the scan if the user cancels the import 
 public class ImageScanner : Node
 {
-	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG", ".APNG", ".GIF", ".BMP", ".WEBP"};
+	public HashSet<string> extensionsToImport = new HashSet<string>{".PNG", ".JPG", ".JPEG", ".JFIF", ".APNG", ".GIF", ".BMP", ".WEBP"};
 	public List<string> blacklistedFolders = new List<string>{"SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN"};
 	
 	private string lastImportId = "";
