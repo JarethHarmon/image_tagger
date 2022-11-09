@@ -10,6 +10,7 @@ extends Control
 
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
 onready var import_name:LineEdit = $margin/vsplit/panel2/margin/vbox/hbox1/import_name
+onready var currently_scanning_path:Label = $margin/vsplit/panel2/margin/vbox/hbox1/space/currently_scanning_path
 
 onready var indices:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices
 onready var paths:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/paths
@@ -26,6 +27,7 @@ var index:int = 0
 var dark_grey:Color = Color(0.14, 0.14, 0.14)
 
 func _ready() -> void:
+	ImageScanner.SetCurrentPathDisplay(currently_scanning_path.get_path())
 	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
 	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list

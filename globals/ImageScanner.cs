@@ -20,6 +20,12 @@ public class ImageScanner : Node
 	private HashSet<(string,string,long,long)> pathListTempFiles = new HashSet<(string,string,long,long)>();
 	private HashSet<(string,string,long,long)> returnedTempFiles = new HashSet<(string,string,long,long)>();
 	
+	private Godot.Label currentPathDisplay;
+	public void SetCurrentPathDisplay(string path)
+	{
+		currentPathDisplay = GetNode<Godot.Label>(@path);
+	}
+
 	private bool cancel = false;
 	public void Cancel() { 
 		cancel = true;
@@ -72,6 +78,7 @@ public class ImageScanner : Node
 		int imageCount = 0;
 		try {	
 			cancel = false;
+			this.CallDeferred(nameof(SetCurrentPathDisplayText), dirInfo.FullName);
 			var _paths = new HashSet<string>();
 			foreach (System.IO.FileInfo fileInfo in dirInfo.GetFiles()) {
 				if (cancel) return 0;
@@ -101,6 +108,17 @@ public class ImageScanner : Node
 		catch (Exception ex) { GD.Print("ImageScanner::_ScanDirectories() : ", ex); return imageCount; }
 	}
 	
+	private void SetCurrentPathDisplayText(string path)
+	{
+		try {
+			currentPathDisplay.Text = path;
+		}
+		catch (Exception ex) {
+			GD.Print(ex);
+			return;
+		}
+	}
+
 	public string[] GetPathsSizes()
 	{
 		var results = new List<string>();

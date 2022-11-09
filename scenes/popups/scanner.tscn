@@ -225,6 +225,12 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
+[node name="currently_scanning_path" type="Label" parent="margin/vsplit/panel2/margin/vbox/hbox1/space"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "W:/"
+valign = 1
+
 [node name="add_files" type="Button" parent="margin/vsplit/panel2/margin/vbox/hbox1"]
 margin_left = 1520.0
 margin_right = 1629.0
