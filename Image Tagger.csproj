@@ -4,7 +4,7 @@
     <RootNamespace>ImageTagger</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-	<PackageReference Include="Magick.NET-Q8-x64" Version="11.2.1" />
+	<PackageReference Include="Magick.NET-Q8-x64" Version="12.2.0" />
 	<PackageReference Include="AlphaFS" Version="2.2.6" />
 	<PackageReference Include="LiteDB" Version="5.0.12" />
 	<PackageReference Include="CoenM.ImageSharp.ImageHash" Version="1.2.30" />
