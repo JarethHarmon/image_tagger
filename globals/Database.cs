@@ -646,17 +646,14 @@ public class Database : Node
 
 			if (hs.Contains(currentHashInfo.imageHash)) {
 				if (currentHashInfo.tags == null) 
-					//currentHashInfo.tags = new HashSet<string>(tags);
 					currentHashInfo.tags = tags;
 				else 
-					//currentHashInfo.tags.UnionWith(tags);
 					currentHashInfo.tags = currentHashInfo.tags.Union(tags).ToArray();
 			}
 
 			foreach (HashInfo info in list) {
-				//if (info.tags == null) info.tags = new HashSet<string>(tags);
 				if (info.tags == null) info.tags = tags;
-				else info.tags = info.tags.Union(tags).ToArray();//info.tags.UnionWith(tags);
+				else info.tags = info.tags.Union(tags).ToArray();
 			}
 			colHashes.Update(list);
 		} 
@@ -676,8 +673,6 @@ public class Database : Node
 
 			if (hs.Contains(currentHashInfo.imageHash))
 				if (currentHashInfo.tags != null) 
-					//if (currentHashInfo.tags.Count > 0)
-					//	currentHashInfo.tags.ExceptWith(tags);
 					if (currentHashInfo.tags.Length > 0)
 						currentHashInfo.tags = currentHashInfo.tags.Except(tags).ToArray();
 
@@ -687,8 +682,6 @@ public class Database : Node
 				if (info.tags.Length == 0) continue;
 				info.tags = info.tags.Except(tags).ToArray();
 				if (info.tags.Length == 0) info.tags = null;
-				//info.tags.ExceptWith(tags);
-				//if (info.tags.Count == 0) info.tags = null;
 			}
 
 			colHashes.Update(list);
