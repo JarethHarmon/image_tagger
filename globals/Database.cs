@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography;
 using Alphaleonis.Win32.Filesystem;
@@ -412,7 +413,6 @@ public class Database : Node
 	private IEnumerable<string> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
 	{
 		try {
-			var now = DateTime.Now;
 			bool counted=false;
 
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && tagsComplex.Length == 0) {
@@ -549,6 +549,18 @@ public class Database : Node
 			
 			//GD.Print(query.GetPlan());
 
+			/*var result = query.Select(x => x.imageHash);
+
+			var now = DateTime.Now;
+			int count2 = result.Count();
+			GD.Print($"result.Count[{count2}]: ", DateTime.Now-now);
+
+			now = DateTime.Now;
+			int count1 = query.Count();
+			GD.Print($"query.Count[{count1}]: ", DateTime.Now-now);*/
+
+			GD.Print(unchecked((ulong)-6458626015914340928));
+			
 			return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();
 		} 
 		catch (Exception ex) { 
@@ -566,9 +578,59 @@ public class Database : Node
 		public string perceptualHash { get; set; }
 	}
 
+	internal static (double[], double[]) GetChannelPerceptualHash(string perceptualHash)
+	{
+		double[] srgbHash = new double[7], hclpHash = new double[7];
+		for (int i = 0; i < 14; i++)
+		{
+			// replace with ReadOnlySpan<char> for .net6+
+			if (!int.TryParse(perceptualHash.Substring(i * 5, 5), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int hex))
+				return (Array.Empty<double>(), Array.Empty<double>());
+
+			var value = (ushort)hex / Math.Pow(10.0, hex >> 17);
+			if ((hex & (1 << 16)) != 0)
+				value = -value;
+			if (i < 7)
+				srgbHash[i] = value;
+			else
+				hclpHash[i - 7] = value;
+		}
+		return (srgbHash, hclpHash);
+	}
+
 	//public List<HashInfo> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, string perceptualHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	public IEnumerable<string> _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, string perceptualHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
+		var now = DateTime.Now;
+		var query = colHashes.Query();
+
+		(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(perceptualHash.Substring(0, 70));
+		(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(perceptualHash.Substring(70, 70));
+		(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(perceptualHash.Substring(140, 70));
+
+		BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
+			arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
+			arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3),
+			arrColor = BsonMapper.Global.Serialize(colorHash);
+
+		string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash})";
+		string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
+		string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
+
+		var test = query
+			.OrderByDescending($"{difference} + {color} + {perceptual}")
+			//.OrderByDescending($"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash})")
+			//.OrderByDescending($"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)")
+			//.OrderByDescending($"SIMILARITY_COLOR($.colorHash, {arrColor})")
+			//.OrderByDescending($"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash}) + SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr2}, $.perceptualHash)")
+			//.OrderByDescending($"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash}) + SIMILARITY_COLOR() + SIMILARITY_PERCEPTUAL()")
+			.Select(x => x.imageName)
+			.ToArray();
+
+		GD.Print(DateTime.Now-now);
+		globals.Call("_print", "list", test);
+
+		now = DateTime.Now;
 		var result1 = _QueryFilteredSimilarity(importId, tagsAll, tagsAny, tagsNone, similarityMode);
 		
 		if (similarityMode == (int)Similarity.AVERAGE)
@@ -589,6 +651,7 @@ public class Database : Node
 		var result2 = result1.OrderByDescending(x => x.similarity).Skip(offset).Take(count);
 		result1 = null;
 		
+		GD.Print(DateTime.Now-now);
 		return result2.Select(x => x.imageHash);
 	}
 
