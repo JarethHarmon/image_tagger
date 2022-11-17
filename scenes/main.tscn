@@ -341,10 +341,10 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Label" type="Label" parent="."]
-margin_left = 97.0
-margin_top = 519.0
-margin_right = 601.0
-margin_bottom = 675.0
+margin_left = 437.0
+margin_top = 10.0
+margin_right = 941.0
+margin_bottom = 50.0
 
 [node name="Label2" type="Label" parent="."]
 margin_left = 193.0

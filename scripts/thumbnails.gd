@@ -367,6 +367,13 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	#if Globals.settings.show_thumbnail_tooltips:
 	#	var tooltip:String = _create_tooltip(image_hash, dict, index)
 	#	set_item_tooltip(index, tooltip)
+
+	# currently it calculates the similarity 1-by-1 while setting the thumbnail, which
+	#	means individual database calls to retrieve the hash info, and then similarity comparisons
+	# I could instead either:
+	#	A. query the hash info all at once, then re-iterate the thumbnails and update their labels
+	#	B. avoid querying the hash info at all, remove the concept of similarity labels, and instead
+	#		display the similarity percentage in the preview window on a per-image basis 
 	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
 		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
 		var similarity:float = 0.0
