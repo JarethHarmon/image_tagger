@@ -379,9 +379,9 @@ public class Database : Node
 			else if (tabType == (int)Tab.SIMILARITY) {
 				var now = DateTime.Now;
 				string imageHash = GetSimilarityHash(tabId);
-				var temp = colHashes.FindById(imageHash);
-				if (temp == null) return new string[0];
-				var hashes = _QueryBySimilarity("All", temp.colorHash, temp.differenceHash, temp.perceptualHash, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
+				var hashInfo = colHashes.FindById(imageHash);
+				if (hashInfo == null) return new string[0];
+				var hashes = _QueryBySimilarity("All", hashInfo, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
 				label.Text = (DateTime.Now-now).ToString();
 				return hashes;
 			}
@@ -572,14 +572,6 @@ public class Database : Node
 		}
 	}
 
-	private class SimilarityQueryResult
-	{
-		public string imageHash { get; set; }
-		public float[] colorHash { get; set; }
-		public ulong differenceHash { get; set; }
-		public float similarity { get; set; }
-		public string perceptualHash { get; set; }
-	}
 
 	internal static (double[], double[]) GetChannelPerceptualHash(string perceptualHash)
 	{
@@ -601,12 +593,14 @@ public class Database : Node
 		return (srgbHash, hclpHash);
 	}
 
-	public string[] _QueryBySimilarity(string importId, float[] colorHash, ulong differenceHash, string perceptualHash, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
+	public string[] _QueryBySimilarity(string importId, HashInfo hashInfo, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		var query = colHashes.Query();
+		int precision = 3;
+		double minSimilarity = 82.5;
 
 		bool counted=false;
-		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0) {
+		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && minSimilarity == 0.0 && precision < 0) {
 			_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
 			counted = true;
 		}
@@ -616,42 +610,65 @@ public class Database : Node
 		if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 
+		BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 > {hashInfo.bucket1} - {precision+1} AND $.bucket1 < {hashInfo.bucket1} + {precision+1}";
 		if (similarityMode == (int)Similarity.AVERAGE) {
-			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(perceptualHash.Substring(0, 70));
-			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(perceptualHash.Substring(70, 70));
-			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(perceptualHash.Substring(140, 70));
+			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
+			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
+			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
 
 			BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
 				arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
 				arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3),
-				arrColor = BsonMapper.Global.Serialize(colorHash);
+				arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
 
-			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash})";
+			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
 			string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
 			string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
 
-			query = query.OrderByDescending($"{difference} + {color} + {perceptual}");
+			BsonExpression similarityCondition = $"(({difference} + {color} + {perceptual})/3) >= {minSimilarity}";
+			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+			else if (precision >= 0) query = query.Where(preFilterCondition);
+			query = query.OrderByDescending($"({difference} + {color} + {perceptual})/3");
 		}
 		else if (similarityMode == (int)Similarity.COLOR) {
-			BsonValue arrColor = BsonMapper.Global.Serialize(colorHash);
+			BsonValue arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
 			string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
+			BsonExpression similarityCondition = $"{color} >= {minSimilarity}";
+			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+			else if (precision >= 0) query = query.Where(preFilterCondition);
 			query = query.OrderByDescending(color);
 		}			
 		else if (similarityMode == (int)Similarity.PERCEPTUAL) {
-			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(perceptualHash.Substring(0, 70));
-			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(perceptualHash.Substring(70, 70));
-			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(perceptualHash.Substring(140, 70));
+			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
+			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
+			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
 
 			BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
 				arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
 				arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3);
 			
 			string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
+			BsonExpression similarityCondition = $"{perceptual} >= {minSimilarity}";
+			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+			else if (precision >= 0) query = query.Where(preFilterCondition);
 			query = query.OrderByDescending(perceptual);
 		}			
 		else {
-			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)differenceHash})";
+			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
+			BsonExpression similarityCondition = $"{difference} >= {minSimilarity}";
+			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+			else if (precision >= 0) query = query.Where(preFilterCondition);
 			query = query.OrderByDescending(difference);
+		}
+
+		if (minSimilarity > 0.0 && precision >= 0) {
+			var results = query.Select(x => x.imageHash).Limit(count).ToArray();
+			_lastQueriedCount = results.Length;
+			return results;
 		}
 
 		if (!counted) _lastQueriedCount = query.Count();

@@ -20,6 +20,8 @@ namespace Data
 		public string internalPath { get; set; }              // the new path of the image if user allows copying/moving images to a central location
 		public string imageName { get; set; }                 // the displayed name of the image, also used for sorting (can be manually set or can cycle through paths)  
 
+		public int bucket1 { get; set; }
+
 		public ulong differenceHash { get; set; }             // the CoenM difference hash of the image
 		public float[] colorHash { get; set; }                // the 'color hash' I made
 		public string perceptualHash { get; set; }

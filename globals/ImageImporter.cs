@@ -1,7 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Drawing.Drawing2D;	
 using System.Drawing.Imaging;
@@ -95,6 +95,20 @@ public class ImageImporter : Node
 
 	private Dictionary<string, HashSet<string>> importedHashes = new Dictionary<string, HashSet<string>>();
 	
+	[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
+	[SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1001:CommasMustBeSpacedCorrectly", Justification = "Reviewed. Suppression is OK here.")]
+	private static readonly byte[] _bitCounts =
+	{
+		0,1,1,2,1,2,2,3, 1,2,2,3,2,3,3,4, 1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5,
+		1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+		1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+		2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+		1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+		2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+		2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+		3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
+	};
+
 /*=========================================================================================
 									 Initialization
 =========================================================================================*/
@@ -462,6 +476,13 @@ public class ImageImporter : Node
 
 				var diffImage = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(data);
 				ulong diffHash = (new CoenM.ImageHash.HashAlgorithms.DifferenceHash()).Hash(diffImage);
+
+				int count = 0;
+				ulong temp = diffHash;
+				for (; temp > 0; temp >>= 8)
+					count += _bitCounts[temp & 0xFF];
+				
+
 				float[] coloHash = CalcColorHash(diffImage);
 				diffImage.Dispose();
 				var imm = new MagickImage(data);
@@ -470,6 +491,8 @@ public class ImageImporter : Node
 				_hashInfo = new HashInfo {
 					imageHash = fileHash,
 					imageName = (string)globals.Call("get_file_name", path),
+
+					bucket1 = count,
 
 					differenceHash = diffHash,
 					colorHash = coloHash,
