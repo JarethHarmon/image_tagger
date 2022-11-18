@@ -87,6 +87,7 @@ public class Database : Node
 			colHashes.EnsureIndex(x => x.tags);
 			colHashes.EnsureIndex(x => x.ratings["Sum"]);
 			colHashes.EnsureIndex(x => x.uploadTime);
+			colHashes.EnsureIndex(x => x.bucket1);
 
 			//colHashes.EnsureIndex(x => x.numColors);
 			//colHashes.EnsureIndex(x => x.size);
@@ -597,7 +598,7 @@ public class Database : Node
 	{
 		var query = colHashes.Query();
 		int precision = 3;
-		double minSimilarity = 82.5;
+		double minSimilarity = 84.0;
 
 		bool counted=false;
 		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && minSimilarity == 0.0 && precision < 0) {
@@ -665,7 +666,7 @@ public class Database : Node
 			query = query.OrderByDescending(difference);
 		}
 
-		if (minSimilarity > 0.0 && precision >= 0) {
+		if (minSimilarity > 0.0 || precision >= 0) {
 			var results = query.Select(x => x.imageHash).Limit(count).ToArray();
 			_lastQueriedCount = results.Length;
 			return results;
