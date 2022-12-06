@@ -88,6 +88,12 @@ public class Database : Node
 			colHashes.EnsureIndex(x => x.ratings["Sum"]);
 			colHashes.EnsureIndex(x => x.uploadTime);
 			colHashes.EnsureIndex(x => x.bucket1);
+			//colHashes.EnsureIndex("$.buckets[*]");
+			//colHashes.EnsureIndex("$.colorHash[*]");
+			colHashes.EnsureIndex(x => x.colorBucket);
+
+			//BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 > {hashInfo.bucket1} - {precision+1} AND $.bucket1 < {hashInfo.bucket1} + {precision+1}";
+			
 
 			//colHashes.EnsureIndex(x => x.numColors);
 			//colHashes.EnsureIndex(x => x.size);
@@ -551,20 +557,6 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
 			
-			//GD.Print(query.GetPlan());
-
-			/*var result = query.Select(x => x.imageHash);
-
-			var now = DateTime.Now;
-			int count2 = result.Count();
-			GD.Print($"result.Count[{count2}]: ", DateTime.Now-now);
-
-			now = DateTime.Now;
-			int count1 = query.Count();
-			GD.Print($"query.Count[{count1}]: ", DateTime.Now-now);*/
-
-			//GD.Print(unchecked((ulong)-6458626015914340928));
-			
 			return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();
 		} 
 		catch (Exception ex) { 
@@ -598,6 +590,7 @@ public class Database : Node
 	{
 		var query = colHashes.Query();
 		int precision = 3;
+		float colorPrecision = 13f;
 		double minSimilarity = 84.0;
 
 		bool counted=false;
@@ -611,7 +604,10 @@ public class Database : Node
 		if (tagsAny.Length > 0) query = query.Where("$.tags ANY IN @0", BsonMapper.Global.Serialize(tagsAny));
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 
-		BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 > {hashInfo.bucket1} - {precision+1} AND $.bucket1 < {hashInfo.bucket1} + {precision+1}";
+		//BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 = {hashInfo.bucket1}";
+		BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 >= {hashInfo.bucket1 - precision} AND $.bucket1 <= {hashInfo.bucket1 + precision}";
+		preFilterCondition = Query.And(preFilterCondition, (BsonExpression)$"$.colorBucket < {hashInfo.colorBucket+colorPrecision} AND $.colorBucket > {hashInfo.colorBucket-colorPrecision}");
+
 		if (similarityMode == (int)Similarity.AVERAGE) {
 			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
 			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));

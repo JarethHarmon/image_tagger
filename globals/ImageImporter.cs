@@ -492,6 +492,7 @@ public class ImageImporter : Node
 					imageHash = fileHash,
 					imageName = (string)globals.Call("get_file_name", path),
 
+					colorBucket = coloHash[0] + coloHash[7] + coloHash[8] + coloHash[15],
 					bucket1 = count,
 
 					differenceHash = diffHash,
