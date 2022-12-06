@@ -1,7 +1,6 @@
 extends Node
 
 signal settings_loaded
-
 signal resize_preview_image
 
 signal change_page
@@ -69,6 +68,7 @@ signal import_info_load_finished
 signal add_files
 signal add_folders
 signal tab_button_pressed(tab_id)
+signal default_pressed
 signal clear_pressed
 
 signal set_rating(rating_name, rating_value)
@@ -78,3 +78,9 @@ signal rating_set(rating_name, rating_value)
 signal set_animation_info(total_frames, fps)
 signal add_animation_texture(texture, path, delay, new_image)
 signal finish_animation(path)
+
+# ui
+signal update_main_horizontal_offset(value)
+signal update_thumbnails_vertical_offset(value)
+signal update_horizontal_metadata_offset(value)
+signal update_vertical_metadata_offset(value)

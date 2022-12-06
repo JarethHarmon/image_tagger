@@ -70,7 +70,8 @@ func _ready() -> void:
 	Signals.connect("deselect_all_pressed", self, "deselect_all")
 	Signals.connect("toggle_thumbnail_tooltips", self, "_toggle_thumbnail_tooltips")
 	self.get_v_scroll().connect("scrolling", self, "_scrolling")
-	self.get_v_scroll().connect("value_changed", self, "_scrolling")
+	self.get_v_scroll().connect("value_changed", self, "_scrolling")	
+
 #-----------------------------------------------------------------------#
 #					Querying and Loading Thumbnails						#
 #-----------------------------------------------------------------------#
@@ -571,11 +572,13 @@ func _on_thumbnail_size_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size_entry.value = value
+	Globals.settings.thumbnail_width = value
 	
 func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size.value = value
+	Globals.settings.thumbnail_width = value
 
 func _toggle_thumbnail_tooltips() -> void:
 	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips

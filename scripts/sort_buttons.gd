@@ -18,6 +18,11 @@ func _input(event:InputEvent) -> void:
 func _ready() -> void: 
 	Signals.connect("settings_loaded", self, "_apply_settings")
 	Signals.connect("switch_sort_buttons", self, "_switch_sort_buttons")
+	Signals.connect("settings_loaded", self, "apply_settings")
+
+func apply_settings() -> void:
+	$thumbnail_size.value = Globals.settings.thumbnail_width
+	$thumbnail_size_entry.value = Globals.settings.thumbnail_width
 
 func _switch_sort_buttons(swap:bool) -> void:
 	sortby_options.visible = not swap

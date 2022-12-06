@@ -43,6 +43,7 @@ margin_bottom = 20.0
 text = "  File  "
 
 [node name="edit_button" type="Button" parent="margin/flow"]
+visible = false
 margin_left = 56.0
 margin_right = 108.0
 margin_bottom = 20.0
@@ -50,29 +51,44 @@ disabled = true
 text = "  Edit  "
 
 [node name="view_button" type="Button" parent="margin/flow"]
-margin_left = 113.0
-margin_right = 171.0
+margin_left = 56.0
+margin_right = 114.0
 margin_bottom = 20.0
 text = "  View  "
 
 [node name="help_button" type="Button" parent="margin/flow"]
-margin_left = 176.0
-margin_right = 234.0
+visible = false
+margin_left = 119.0
+margin_right = 177.0
 margin_bottom = 20.0
 disabled = true
 text = "  Help  "
 
-[node name="SPACE" type="Control" parent="margin/flow"]
-margin_left = 239.0
-margin_right = 1854.0
+[node name="SPACE1" type="Control" parent="margin/flow"]
+margin_left = 119.0
+margin_right = 981.0
+margin_bottom = 20.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="query_time" type="Label" parent="margin/flow"]
+margin_left = 986.0
+margin_top = 3.0
+margin_right = 986.0
+margin_bottom = 17.0
+align = 1
+
+[node name="SPACE2" type="Control" parent="margin/flow"]
+margin_left = 991.0
+margin_right = 1853.0
 margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="version" type="Label" parent="margin/flow"]
-margin_left = 1859.0
+margin_left = 1858.0
 margin_top = 3.0
-margin_right = 1910.0
+margin_right = 1909.0
 margin_bottom = 17.0
 text = "v0.9.7.0"
 

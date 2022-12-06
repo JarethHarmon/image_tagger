@@ -19,5 +19,16 @@ public class organization : Control
 		globals.Call("toggle_parent_visibility_from_children", this);
 		globals.Call("toggle_parent_visibility_from_children", this.GetParent());
 	}
-
+	
+	private void _on_clear_all_pressed()
+	{
+		signals.Call("emit_signal", "clear_pressed");
+	}
+	private void _on_default_pressed()
+	{
+		signals.Call("emit_signal", "default_pressed");
+	}
 }
+
+
+

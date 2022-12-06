@@ -33,9 +33,9 @@ func _notification(what) -> void:
 func _ready() -> void:	
 	randomize()
 	get_viewport().transparent_bg = true
-	Signals.connect("settings_loaded", self, "_begin")
+	Globals.initialize()
+	Signals.emit_signal("settings_loaded")
 
-func _begin() -> void:
  # make and set default metadata folder
 	var dir:Directory = Directory.new()
 	var err:int = dir.make_dir_recursive(Globals.settings.metadata_path)

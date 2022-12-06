@@ -63,28 +63,29 @@ size_flags_vertical = 3
 [node name="clear_all" type="Button" parent="margin/vbox/search_buttons/vbox1"]
 margin_right = 81.0
 margin_bottom = 92.0
+hint_tooltip = "Clears all 4 search bars and queries the database (refreshes displayed images)."
 size_flags_vertical = 3
-disabled = true
 text = "  Clear All  "
 
 [node name="default" type="Button" parent="margin/vbox/search_buttons/vbox1"]
 margin_top = 96.0
 margin_right = 81.0
 margin_bottom = 116.0
-disabled = true
+hint_tooltip = "Clears all 4 search bars, does not refresh images."
 text = "  Default  "
 
 [node name="vbox2" type="VBoxContainer" parent="margin/vbox/search_buttons"]
 margin_left = 85.0
-margin_right = 1798.0
+margin_right = 1836.0
 margin_bottom = 116.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="include_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
-margin_right = 1713.0
+margin_right = 1751.0
 margin_bottom = 26.0
+hint_tooltip = "Images must possess ALL of these tags in order to be shown in list."
 clear_button_enabled = true
 placeholder_text = "[Include All] of these comma-separated tags..."
 caret_blink = true
@@ -93,8 +94,9 @@ script = ExtResource( 3 )
 
 [node name="include_any" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 30.0
-margin_right = 1713.0
+margin_right = 1751.0
 margin_bottom = 56.0
+hint_tooltip = "Images must possess AT LEAST ONE of these tags to be shown in list."
 clear_button_enabled = true
 placeholder_text = "[Include Any] of these comma-separated tags..."
 caret_blink = true
@@ -103,8 +105,9 @@ script = ExtResource( 3 )
 
 [node name="exclude_all" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 60.0
-margin_right = 1713.0
+margin_right = 1751.0
 margin_bottom = 86.0
+hint_tooltip = "Images must NOT possess ANY of these tags to be shown in list."
 clear_button_enabled = true
 placeholder_text = "[Exclude All] of these comma-separated tags..."
 caret_blink = true
@@ -113,29 +116,44 @@ script = ExtResource( 3 )
 
 [node name="complex" type="LineEdit" parent="margin/vbox/search_buttons/vbox2"]
 margin_top = 90.0
-margin_right = 1713.0
+margin_right = 1751.0
 margin_bottom = 116.0
+hint_tooltip = "? separates conditions
+% separates sections of a condition (ALL/ANY/NONE)
+, (comma) separates tags for a section
+
+If you want to search for all images that have the tags (\"Orange\" and \"Black\") or (\"Yellow\" and \"Blue\") and exclude any image with the tag \"Purple\":
+    Orange,Black%%Purple?Yellow,Blue%%Purple
+
+Alternatively, you could just put \"Purple\" into the \"Exclude ALL\" search bar, and then construct the \"Complex\" bar like this:
+    Orange,Black%%?Yellow,Blue%%
+	
+-- There will be a dedicated UI for this in v2.0"
 clear_button_enabled = true
 placeholder_text = "[Complex]"
 script = ExtResource( 3 )
 
 [node name="vbox3" type="VBoxContainer" parent="margin/vbox/search_buttons"]
-margin_left = 1802.0
+margin_left = 1840.0
 margin_right = 1910.0
 margin_bottom = 116.0
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="search" type="Button" parent="margin/vbox/search_buttons/vbox3"]
-margin_right = 108.0
-margin_bottom = 98.0
+margin_right = 70.0
+margin_bottom = 116.0
 size_flags_vertical = 3
 text = "  Search  "
 
 [node name="advanced_search" type="LinkButton" parent="margin/vbox/search_buttons/vbox3"]
+visible = false
 margin_top = 102.0
 margin_right = 108.0
 margin_bottom = 116.0
 focus_mode = 2
 disabled = true
 text = "Advanced Search"
+
+[connection signal="pressed" from="margin/vbox/search_buttons/vbox1/clear_all" to="." method="_on_clear_all_pressed"]
+[connection signal="pressed" from="margin/vbox/search_buttons/vbox1/default" to="." method="_on_default_pressed"]

@@ -365,7 +365,7 @@ public class Database : Node
 	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
 	{
 		try {
-			var label = GetNode<Label>("/root/main/Label");
+			var label = GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time");
 			var results = new List<string>();
 			int tabType = GetTabType(tabId);
 			if (tabType == (int)Tab.IMPORT_GROUP) {

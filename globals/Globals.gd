@@ -63,6 +63,7 @@ var settings:Dictionary = {
 
   # Images
 	"images_to_store" : 10,
+	"thumbnail_width" : 240,
 
   # Shaders
 	"use_smooth_pixel" : true,
@@ -72,9 +73,11 @@ var settings:Dictionary = {
 	"use_edge_mix" : false,
 
   # UI
-	"hsplit_offset" : -175,
-	"left_offset" : -160,
-	"right_offset" : 240,
+	# might make some default offsets for various resolutions and try to automatically apply them
+	"main_horizontal_offset" : -200,
+	"thumbnails_vertical_offset" : -360,
+	"metadata_horizontal_offset" : -250,
+	"metadata_vertical_offset" : 150,
 	"use_fullscreen" : false,
 	"use_colored_backgrounds" : true,
 	"use_rounded_buttons" : true,
@@ -95,13 +98,13 @@ func _input(_event:InputEvent) -> void:
 	if Input.is_action_just_released("ctrl"): ctrl_pressed = false
 	if Input.is_action_just_released("shift"): shift_pressed = false
 
-func _ready() -> void:
+func initialize() -> void:
 	settings.default_metadata_path = ProjectSettings.globalize_path("user://metadata/")
 	settings.default_thumbnail_path = ProjectSettings.globalize_path("user://metadata/thumbnails/")
 	load_settings()
+	
 	if settings.thumbnail_path == "": settings.thumbnail_path = settings.default_thumbnail_path
 	if settings.metadata_path == "": settings.metadata_path = settings.default_metadata_path
-	Signals.call_deferred("emit_signal", "settings_loaded")
 	ImageImporter.SetExecutableDirectory(_get_program_directory())
 	ImageImporter.StartPython()
 
@@ -118,6 +121,10 @@ func load_settings() -> void:
 				settings[setting] = temp_settings[setting]
 	f.close()
 	Storage.SetMaxStoredPages(settings.pages_to_store)
+	Signals.emit_signal("update_main_horizontal_offset", settings.main_horizontal_offset)
+	Signals.emit_signal("update_thumbnails_vertical_offset", settings.thumbnails_vertical_offset)
+	Signals.emit_signal("update_horizontal_metadata_offset", settings.metadata_horizontal_offset)
+	Signals.emit_signal("update_vertical_metadata_offset", settings.metadata_vertical_offset)
 
 func create_settings_comparison_array(settings_dict:Dictionary) -> Array:
 	var result:Array = []
@@ -130,6 +137,7 @@ func create_settings_comparison_array(settings_dict:Dictionary) -> Array:
 
 func save_settings() -> void:
 	if (create_settings_comparison_array(settings) == last_settings): return	# don't waste time if no changes made since settings were loaded
+	print_debug("saving settings")
 
 	var f:File = File.new()
 	var e:int = f.open(settings_path, File.WRITE)

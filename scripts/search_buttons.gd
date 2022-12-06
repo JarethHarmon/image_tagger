@@ -27,6 +27,7 @@ func _ready() -> void:
 	Signals.connect("tab_button_pressed", self, "tab_button_pressed")
 	Signals.connect("image_import_finished", self, "refresh_page")
 	Signals.connect("clear_pressed", self, "clear_pressed")
+	Signals.connect("default_pressed", self, "default_pressed")
 	Signals.connect("sort_changed", self, "search_pressed")
 	Signals.connect("order_changed", self, "search_pressed")
 	Signals.connect("similarity_changed", self, "search_pressed")
@@ -49,7 +50,8 @@ func page_changed(new_page:int=1) -> void: Signals.emit_signal("search_pressed",
 func refresh_page(tab_id:String) -> void: 
 	if tab_id == "": return
 	if tab_id == Globals.current_tab_id: page_changed()
-func clear_pressed() -> void: 
+
+func default_pressed() -> void:
 	tags_all.clear()
 	tags_any.clear()
 	tags_none.clear()
@@ -58,6 +60,9 @@ func clear_pressed() -> void:
 	include_any.text = ""
 	exclude_all.text = ""
 	complex.text = ""
+
+func clear_pressed() -> void: 
+	default_pressed()
 	search_pressed()
 
 func _on_complex_text_changed(new_text:String) -> void: tags_complex = new_text.split("?", false) # condition strings tag1,tag2%tag4,tag7%tag5 = all:1,2 any:4,7 none:5
