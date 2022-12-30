@@ -66,11 +66,22 @@ public class PythonInterop : Node
 		else importer.setAnimatedImageType((int)ImageType.JPG);
 	}
 
-	public bool StopLoading(dynamic d_path)
+	public bool StopLoadingAnimatedImage(dynamic d_hash)
 	{
-		string imagePath = (string)d_path;
-		if (importer.GetAnimationStatus(imagePath)) return true;
-		return false;
+		string hash = (string)d_hash;
+		return importer.StopLoadingAnimatedImage(hash);
+	}
+
+	public bool StopLoadingLargeImage(dynamic d_hash)
+	{
+		string hash = (string)d_hash;
+		return importer.StopLoadingLargeImage(hash);
+	}
+
+	public void SendPartialImage(dynamic d_base64_str)
+	{
+		string base64_str = (string)d_base64_str;
+		importer.SendPartialImage(base64_str);
 	}
 }
 
@@ -230,18 +241,9 @@ public class ImageImporter : Node
 		}
 	}
 
-	public Dictionary<string, int> animationStatus = new Dictionary<string, int>();
-	public void AddOrUpdateAnimationStatus(string path, int status) 
+	public bool StopLoadingAnimatedImage(string hash)
 	{
-		lock (animationStatus)
-			animationStatus[path] = status;
-	}
-	public bool GetAnimationStatus(string path)
-	{
-		lock (animationStatus) {
-			if (animationStatus[path] == (int)AnimationStatus.STOPPING) return true;
-			return false;
-		}
+		return db.IncorrectImage(hash);
 	}
 
 	private int animatedImageType = (int)ImageType.JPG;
@@ -286,7 +288,7 @@ public class ImageImporter : Node
 		string[] sections = base64_str.Split('?');
 		string imageHash = sections[0];
 		string imagePath = sections[1];
-		if (GetAnimationStatus(imagePath)) return;
+		if (StopLoadingAnimatedImage(imageHash)) return;
 
 		float delay;
 		int temp;
@@ -302,8 +304,8 @@ public class ImageImporter : Node
 		var texture = new ImageTexture();
 		texture.CreateFromImage(image, animatedFlags);
 		texture.SetMeta("image_hash", imageHash);
-		if (GetAnimationStatus(imagePath)) return;
-		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
+		if (StopLoadingAnimatedImage(imageHash)) return;
+		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, frameOne);
 		//if (frameOne)
 		//	label.Text += "\nframe_one : " + (DateTime.Now-time).ToString();
 		frameOne = false;
@@ -313,7 +315,7 @@ public class ImageImporter : Node
 		string[] sections = base64_str.Split('?');
 		string imageHash = sections[0];
 		string imagePath = sections[1];
-		if (GetAnimationStatus(imagePath)) return;
+		if (StopLoadingAnimatedImage(imageHash)) return;
 
 		float delay;
 		int temp;
@@ -329,9 +331,9 @@ public class ImageImporter : Node
 		var texture = new ImageTexture();
 		texture.CreateFromImage(image, animatedFlags);
 		texture.SetMeta("image_hash", imageHash);
-		if (GetAnimationStatus(imagePath)) return;
+		if (StopLoadingAnimatedImage(imageHash)) return; // should probably change GetAnimationStatus to take a hash instead of a path
 
-		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, (frameOne) ? true : false);
+		signals.Call("emit_signal", "add_animation_texture", texture, imagePath, delay, frameOne);
 		frameOne = false;
 	}
 
@@ -344,19 +346,77 @@ public class ImageImporter : Node
 				script.get_apng_frames(@imagePath, imageHash);
 			}
 			catch (PythonException pex) { 
-				GD.Print(pex.Message); 
+				GD.Print("pex: ", pex.Message); 
 				signals.Call("emit_signal", "finish_animation", imagePath);
 				return;
 			}
 			catch (Exception ex) { 
-				GD.Print(ex); 
+				GD.Print("ex: ", ex); 
 				signals.Call("emit_signal", "finish_animation", imagePath);
 				return;
 			}
 		}
 		signals.Call("emit_signal", "finish_animation", imagePath);
 	}
+/*=========================================================================================
+									  Large Images
+=========================================================================================*/
+	public bool StopLoadingLargeImage(string hash)
+	{
+		return db.IncorrectImage(hash);
+	}
 
+	// receiving end of signal will need to check if hash still matches the current image, and then add it to the first open imagetexture in the grid
+	// order should be irrelevant since this is still single-threaded, so left >> right, top >> bottom fill in the gaps
+	// still need to also write the code that calls the python function if the image is above a certain size (16384 x or y by default)
+	public void SendPartialImage(string base64_str)
+	{
+		string[] sections = base64_str.Split('?');
+		string type = sections[0], imageHash = sections[1], base64_image = sections[2];
+		if (StopLoadingLargeImage(imageHash)) return;
+
+		//string path = @"W:\temp\";
+		//System.IO.File.WriteAllText($"{path}{currentGridIndex}.txt", base64_image);
+
+		byte[] data = System.Convert.FromBase64String(base64_image);
+		var image = new Godot.Image();
+		if (type.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) image.LoadJpgFromBuffer(data);
+		else image.LoadPngFromBuffer(data);
+		if (StopLoadingLargeImage(imageHash)) return;
+
+		var texture = new ImageTexture();
+		texture.CreateFromImage(image, 0);
+		texture.SetMeta("image_hash", imageHash);
+		if (StopLoadingLargeImage(imageHash)) return;
+
+		signals.Call("emit_signal", "add_large_image_section", texture, imageHash, currentGridIndex);
+		//GD.Print(currentGridIndex);
+		currentGridIndex++;
+	}
+
+	private int currentGridIndex = 0;
+	public void LoadLargeImage(string imagePath, string imageHash, int columns, int rows)
+	{
+		string pyScript = @"pil_load_large_image";
+		using (Py.GIL()) {
+			try {
+				currentGridIndex = 0;
+				dynamic script = Py.Import(pyScript);
+				script.load_large_image(imagePath, imageHash, columns, rows);
+			}
+			catch (PythonException pex) {
+				GD.Print("pex: ", pex.Message); 
+				signals.Call("emit_signal", "finish_large_image", imageHash);
+				return;
+			}
+			catch (Exception ex) {
+				GD.Print("ex: ", ex); 
+				signals.Call("emit_signal", "finish_large_image", imageHash);
+				return;
+			}
+		}
+		signals.Call("emit_signal", "finish_large_image", imageHash);
+	}
 /*=========================================================================================
 									   Hashing
 =========================================================================================*/
@@ -597,9 +657,12 @@ public class ImageImporter : Node
 					ref var pixel = ref row[w];
 					int min_color = Math.Min(pixel.B, Math.Min(pixel.R, pixel.G));
 					int max_color = Math.Max(pixel.B, Math.Max(pixel.R, pixel.G));
-					int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766*bucketSize); 
+					int color1 = ((min_color/Math.Max(max_color, 1)) * (pixel.R+pixel.G+pixel.B) * pixel.A)/(766 * bucketSize); 
 					int color3 = (pixel.R+pixel.G+pixel.B)/(3*bucketSize);
-					int color = (color1+color3)/2;
+					int color4 = (pixel.R+pixel.G+pixel.B+pixel.A)/(4*bucketSize);
+					int color2 = (pixel.A * (Math.Abs(Math.Abs(pixel.R - pixel.G) - pixel.B))) / (256 * bucketSize);
+					//int color = (color1+color3+color2)/3;
+					int color = color4; // so far this is technically most accurate
 					colors[color]++;
 				}
 			}

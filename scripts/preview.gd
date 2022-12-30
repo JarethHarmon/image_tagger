@@ -3,14 +3,16 @@ extends Control
 const smooth_pixel:Material = preload("res://shaders/SmoothPixel.tres")
 #const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
 const broken_icon:StreamTexture = preload("res://assets/icon-broken.png")
+const display_image:PackedScene = preload("res://scenes/display_image.tscn")
 
 export (NodePath) onready var camera = get_node(camera)
 export (NodePath) onready var viewport = get_node(viewport)
 export (NodePath) onready var color_grading = get_node(color_grading)
 export (NodePath) onready var edge_mix = get_node(edge_mix)
 export (NodePath) onready var fxaa = get_node(fxaa)
-export (NodePath) onready var image_grid = get_node(image_grid)
-export (NodePath) onready var preview = get_node(preview)
+export (NodePath) onready var single_image = get_node(single_image)
+export (NodePath) onready var preview_image = get_node(preview_image)
+export (NodePath) onready var tiled_image = get_node(tiled_image)
 export (NodePath) onready var viewport_display = get_node(viewport_display)
 export (NodePath) onready var shaders = get_node(shaders)
 
@@ -30,6 +32,7 @@ enum a_status { PLAYING, LOADING, STOPPING }
 var current_image:Texture
 var current_path:String
 var current_hash:String
+var large_image:bool = false
 
 onready var manager_thread:Thread = Thread.new()
 onready var image_mutex:Mutex = Mutex.new()
@@ -37,6 +40,7 @@ onready var rating_thread:Thread = Thread.new()
 onready var rating_queue_mutex:Mutex = Mutex.new()
 onready var animation_mutex:Mutex = Mutex.new()
 
+var max_size:int = 16384
 var max_threads:int = 3
 var active_threads:int = 0
 var _stop_threads:bool = false
@@ -68,12 +72,13 @@ func _ready() -> void:
 	display.fxaa = fxaa
 	display.initialize(camera)
 	
-	Signals.connect("resize_preview_image", self, "resize_current_image")
+	Signals.connect("resize_preview_image", self, "resize_current_image1")
 	Signals.connect("load_full_image", self, "_load_full_image")
 	Signals.connect("rating_set", self, "_rating_set")
 	Signals.connect("set_animation_info", self, "set_frames")
 	Signals.connect("add_animation_texture", self, "add_animation_texture")
 	Signals.connect("finish_animation", self, "remove_status")
+	Signals.connect("add_large_image_section", self, "add_large_image_section")
 
 	create_threads(max_threads)
 	rating_thread.start(self, "_rating_thread")
@@ -84,6 +89,9 @@ func _ready() -> void:
 	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
 	
 	timer.connect("timeout", self, "update_animation")
+
+func resize_current_image1() -> void:
+	 resize_current_image(Database.GetCurrentHash())
 
 func _toggle_preview_section(_visible:bool) -> void: 
 	self.visible = _visible
@@ -147,10 +155,10 @@ func _on_settings_loaded() -> void:
 	_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
 
 	create_current_image()
-	preview.get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
+	preview_image.get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
 
 func clear_image_preview() -> void:
-	for child in image_grid.get_children():
+	for child in single_image.get_children():
 		child.texture = null
 	current_image = null
 
@@ -177,6 +185,12 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	image_mutex.lock()
 	current_path = path
 	current_hash = image_hash
+	#large_image = false
+	
+	animation_mutex.lock()
+	for child in tiled_image.get_children():
+		child.queue_free()
+	animation_mutex.unlock()
 	
 	if image_history.has(image_hash): 
 		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
@@ -184,9 +198,9 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		image_queue.erase(image_hash)
 		image_queue.push_back(image_hash)
 		var it:ImageTexture = image_history[image_hash]
-		preview.set_texture(it)
+		preview_image.set_texture(it)
 		current_image = it
-		resize_current_image()
+		resize_current_image(image_hash)
 		# need to call a function that gets a list of ratings instead
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
@@ -200,7 +214,6 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	animation_mutex.lock()
 	for path in animation_status:
 		animation_status[path] = a_status.STOPPING
-		ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
 	animation_mutex.unlock()
 
 	remove_animations()
@@ -211,7 +224,7 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		it.create_from_image(broken_icon.get_data(), 0)
 		it.set_meta("image_hash", "0")
 		current_image = it
-		resize_current_image()
+		#resize_current_image()
 		return
 	
 	if use_buffering_icon: 
@@ -244,7 +257,6 @@ func start_one(_current_hash:String, _current_path:String, thread_id:int) -> voi
 		animation_mutex.lock()
 		animation_status[_current_path] = a_status.LOADING
 		animation_mutex.unlock()
-		ImageImporter.AddOrUpdateAnimationStatus(_current_path, a_status.LOADING)
 	thread_pool[thread_id].start(self, "_thread", [_current_hash, _current_path, thread_id, actual_format])
 	active_threads += 1
 
@@ -274,32 +286,91 @@ func _thread(args:Array) -> void:
 	var path:String = args[1]
 	var thread_id:int = args[2]
 	var actual_format:int = args[3]
+	
+	if Database.IncorrectImage(image_hash): return
+	
+	var dimensions:Vector2 = Database.GetDimensions(image_hash)
 
-	if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-		call_deferred("_done", thread_id, path)
+	if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		call_deferred("_done", thread_id, path, image_hash)
 		return
+	
+	# or they are above the user-set maximum size
+	if dimensions.x > max_size or dimensions.y > max_size:
+		preview_image.hide()
+		tiled_image.show()
+		resize_current_image(image_hash)
+		var size:Vector2 = single_image.rect_size
+		#large_image = true
+		# need to create the individual piece of the grid (texturerect nodes) and align them correctly
+		# they should all be children of another node, in correct order, so that I can just iterate them to add pieces
+		var num_columns:int = (width / max_size) + 1
+		var num_rows:int = (height / max_size) + 1
+		
+		# need to resize and reposition image_0
+		var im_width:int = size.x / num_columns
+		var im_height:int = size.y / num_rows
+		#var im_width:int = single_image.rect_size.x / num_columns
+		#var im_height:int = single_image.rect_size.y / num_rows
+		var im_dimensions:Vector2 = Vector2(im_width, im_height)
+
+		var rx:int = width % num_columns
+		var ry:int = height % num_rows
+		
+		var nrows:int = num_rows
+		var ncols:int = num_columns
+		
+		if rx > 0: ncols += 1
+		if ry > 0: nrows += 1
+		
+		for y in nrows:
+			for x in ncols:
+				var _dimensions:Vector2 = im_dimensions
+				if rx > 0 and x == ncols - 1:
+					_dimensions.x = rx
+				if ry > 0 and y == nrows - 1:
+					_dimensions.y = ry
+					
+				var ima = display_image.instance()
+				tiled_image.add_child(ima)
+				ima.rect_size = _dimensions
+				# - x and - y shift the images over by 1*(x || y) pixel to prevent godot's rendering issues from causing gaps
+				# (neither gpu pixel snap nor snap controls to pixels fixes this)
+				# that being said, this is a work-around for images that are very large, so losing a couple pixels is 
+				# not a major point of concern
+				ima.rect_position = Vector2((im_width * x) - x, (im_height * y) - y)
+				
+		ImageImporter.LoadLargeImage(path, image_hash, num_columns, num_rows)
+		call_deferred("_done", thread_id, path, image_hash)
+		return
+	
+	else:
+		preview_image.show()
+		tiled_image.hide()
+
 	animation_mode = false
 	if actual_format == Globals.ImageType.JPG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
+
 		if e != OK: 
-			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			print("error ", e, ": ", path)
 			i = ImageImporter.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.PNG:
@@ -307,22 +378,22 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			i = ImageImporter.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.WEBP:
@@ -330,22 +401,22 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_webp_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			i = ImageImporter.LoadUnsupportedImage(path)
-			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
-				call_deferred("_done", thread_id, path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
@@ -355,21 +426,22 @@ func _thread(args:Array) -> void:
 		animation_mode = true
 		ImageImporter.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
-		if _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			call_deferred("_done", thread_id, path, image_hash)
 			return 
 		var i = ImageImporter.LoadUnsupportedImage(path)
 		if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path)
+			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)	
 	else: pass
 
-	call_deferred("_done", thread_id, path)
+	call_deferred("_done", thread_id, path, image_hash)
 
-func _done(thread_id:int, path:String) -> void:
+func _done(thread_id:int, path:String, image_hash:String) -> void:
 	_stop(thread_id)
-	resize_current_image(path)
+	buffering.hide()
+	resize_current_image(image_hash, path)
 
 func _stop(thread_id:int) -> void:
 	if thread_pool[thread_id].is_active() or thread_pool[thread_id].is_alive():
@@ -385,7 +457,7 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		if animation_mode:
 			im = animation_images[animation_index].get_data()
 		else:
-			var tex:Texture = preview.get_texture()
+			var tex:Texture = preview_image.get_texture()
 			if tex == null: return
 			im = tex.get_data()
 	
@@ -421,74 +493,49 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		#	return
 		pass
 	current_image = it	
-	preview.set_texture(current_image)
+	preview_image.set_texture(current_image)
 
 func change_filter() -> void:
-	if preview.get_texture() == null: return
+	if preview_image.get_texture() == null: return
 	var it:Texture
 	if animation_mode: it = animation_images[animation_index]
-	else: it = preview.get_texture()
+	else: it = preview_image.get_texture()
 	
 	if Globals.settings.use_filter: it.flags = 4
 	else: it.flags = 0	
 
-func resize_current_image(path:String="") -> void:
+func resize_current_image(image_hash:String, path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: return # do not remember why I commented return here
 
-	var temp_size:Vector2 = calc_size(current_image).round()
+	var dimensions:Vector2 = Database.GetDimensions(image_hash)
+	var temp_size:Vector2 = calc_relative_size(calc_relative_size(single_image.get_parent().rect_size, display.rect_size), dimensions)
 	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
-	if temp_size != animation_size or (current_image.get_meta("image_hash") != preview.get_texture().get_meta("image_hash")):
+	if temp_size != animation_size or current_image.get_meta("image_hash") != preview_image.get_texture().get_meta("image_hash"):
 		animation_size = temp_size
-		
-		preview.rect_size = temp_size
-		preview.rect_position = (image_grid.rect_size-temp_size)/2
-		shaders.rect_size = temp_size
-		shaders.rect_position = (image_grid.rect_size-temp_size)/2
+		single_image.rect_size = temp_size
+		single_image.rect_position = (single_image.get_parent().rect_size - temp_size)/2
 
-	buffering.hide()
-
-# need to figure out inversion (not like it actually worked before anyways)
 var invert:bool = false
-func calc_size(it:ImageTexture) -> Vector2:
-	var viewport_display_size:Vector2 = viewport_display.rect_size
-	var image_grid_size:Vector2 = image_grid.rect_size
-	var image_size:Vector2 = Vector2(it.get_width(), it.get_height())
+func calc_relative_size(size1:Vector2, size2:Vector2) -> Vector2:
+	if size2 == null or size2 == Vector2.ZERO: return Vector2(64, 64)
 	var size:Vector2 = Vector2.ZERO
+	var ratio:Vector2 = size1 / size2
 	
-	if image_size == Vector2.ZERO: return image_size # prevent /0 (still need to handle images that are too large somewhere else)
+	if ratio.y < ratio.x:
+		size.y = size1.y
+		size.x = size2.x * ratio.y
+	else:
+		size.x = size1.x
+		size.y = size2.y * ratio.x
 	
-	var rh:float = image_grid_size.y / image_size.y
-	var rw:float = image_grid_size.x / image_size.x
-	
-	if rh < rw: # landscape image_size
-		size.y = image_grid_size.y
-		size.x = rh * image_size.x
-	else: # portrait or square image_size
-		size.x = image_grid_size.x
-		size.y = rw * image_size.y
-	
-	var rx:float = viewport_display_size.x/image_grid_size.x		# 
-	var ry:float = viewport_display_size.y/image_grid_size.y		#
-	var rz:float = min(rx/ry, ry/rx)								# 
-
-	var ir:float = size.x / size.y 										# aspect ratio of image
-	var vr:float = viewport_display_size.x / viewport_display_size.y	# aspect ratio of viewport_display
-	var xr:float = vr / ir												# ratio of viewport_display to image
-	var gr:float = image_grid_size.x / image_grid_size.y				# should be 16/9, but calculate just in case
-	
-	if vr > gr: size.x *= rz
-	elif ir > vr: size.x *= xr		# image ratio is wider than viewport; reduce image size X
-	size.y = (size.x/image_size.x) * image_size.y
-	# if image ratio is narrower than the viewport's (and viewport ratio is <= 16:9); then image is already sized correctly
-	
-	return size 
+	return size
 
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
 	Globals.settings.use_smooth_pixel = button_pressed
-	if button_pressed and Globals.settings.use_filter: preview.set_material(smooth_pixel)
-	else: preview.set_material(null)
+	if button_pressed and Globals.settings.use_filter: preview_image.set_material(smooth_pixel)
+	else: preview_image.set_material(null)
 	
 func _on_filter_toggled(button_pressed:bool) -> void:
 	Globals.settings.use_filter = button_pressed
@@ -572,8 +619,18 @@ func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, n
 		animation_mutex.lock()
 		if animation_status.has(path): 
 			animation_status[path] = a_status.STOPPING
-			ImageImporter.AddOrUpdateAnimationStatus(path, a_status.STOPPING)
 		animation_mutex.unlock()
+
+func add_large_image_section(texture:ImageTexture, image_hash:String, grid_index:int) -> void:
+	if image_hash != current_hash: return
+	if tiled_image.get_child_count() <= grid_index: return
+
+	#print(grid_index, ": ", texture.get_width(), " x ", texture.get_height())
+
+	animation_mutex.lock()
+	var section:TextureRect = tiled_image.get_child(grid_index)
+	if section != null: section.texture = texture
+	animation_mutex.unlock()
 
 func update_animation(new_image:bool=false) -> void:
 	if not timer.is_stopped(): timer.stop()
@@ -595,8 +652,8 @@ func update_animation(new_image:bool=false) -> void:
 		var tex:ImageTexture = animation_images[animation_index]
 		if Globals.settings.use_filter: tex.flags = 4
 		else: tex.flags = 0
-		preview.set_texture(tex)
-		resize_current_image(path)
+		preview_image.set_texture(tex)
+		#resize_current_image(path)
 		animation_index = 1
 		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
 		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
@@ -608,7 +665,7 @@ func update_animation(new_image:bool=false) -> void:
 			var tex:ImageTexture = animation_images[animation_index]
 			if Globals.settings.use_filter: tex.flags = 4
 			else: tex.flags = 0
-			preview.set_texture(tex)
+			preview_image.set_texture(tex)
 			animation_index += 1
 	animation_mutex.unlock()
 	timer.start(delay if delay > 0.0 else animation_min_delay)
@@ -618,9 +675,9 @@ func remove_status(path:String) -> void:
 	animation_status[path] = a_status.PLAYING
 	animation_mutex.unlock()
 
-func _on_flip_h_button_up() -> void: preview.flip_h = not preview.flip_h
-func _on_flip_v_button_up() -> void: preview.flip_v = not preview.flip_v
+func _on_flip_h_button_up() -> void: preview_image.flip_h = not preview_image.flip_h
+func _on_flip_v_button_up() -> void: preview_image.flip_v = not preview_image.flip_v
 func _on_invert_size_toggled(button_pressed:bool) -> void:
 	invert = button_pressed
 	#preview.rect_size *= 0.5
-	resize_current_image()
+	#resize_current_image()

@@ -47,6 +47,12 @@ public class Database : Node
 	private Importer.ImageImporter importer;
 	private Node globals, signals;
 
+	public string GetCurrentHash()
+	{
+		if (currentHashInfo.imageHash is null) return "";
+		return currentHashInfo.imageHash;
+	}
+
 /*==============================================================================*/
 /*                                 Initialization                               */
 /*==============================================================================*/
@@ -115,7 +121,7 @@ public class Database : Node
 			return (int)ErrorCodes.ERROR; 
 		}
 	} 
-	
+
 	public void CreateAllInfo() 
 	{
 		try {
@@ -288,6 +294,16 @@ public class Database : Node
 		return currentHashInfo.size.ToString();
 	}
 	
+	public Godot.Vector2 GetDimensions(string imageHash)
+	{
+		return new Godot.Vector2(currentHashInfo.width, currentHashInfo.height);
+	}
+
+	public bool IncorrectImage(string imageHash)
+	{
+		return !imageHash.Equals(currentHashInfo.imageHash, StringComparison.InvariantCultureIgnoreCase);
+	}
+
 	public string[] GetHashPaths(string imageHash)
 	{
 		try {

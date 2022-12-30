@@ -56,6 +56,12 @@ margin_right = 114.0
 margin_bottom = 20.0
 text = "  View  "
 
+[node name="settings_button" type="Button" parent="margin/flow"]
+margin_left = 119.0
+margin_right = 198.0
+margin_bottom = 20.0
+text = "  Settings  "
+
 [node name="help_button" type="Button" parent="margin/flow"]
 visible = false
 margin_left = 119.0
@@ -65,21 +71,21 @@ disabled = true
 text = "  Help  "
 
 [node name="SPACE1" type="Control" parent="margin/flow"]
-margin_left = 119.0
-margin_right = 981.0
+margin_left = 203.0
+margin_right = 1023.0
 margin_bottom = 20.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="query_time" type="Label" parent="margin/flow"]
-margin_left = 986.0
+margin_left = 1028.0
 margin_top = 3.0
-margin_right = 986.0
+margin_right = 1028.0
 margin_bottom = 17.0
 align = 1
 
 [node name="SPACE2" type="Control" parent="margin/flow"]
-margin_left = 991.0
+margin_left = 1033.0
 margin_right = 1853.0
 margin_bottom = 20.0
 mouse_filter = 2
@@ -94,3 +100,4 @@ text = "v0.9.8.0"
 
 [connection signal="pressed" from="margin/flow/file_button" to="." method="_on_file_button_pressed"]
 [connection signal="button_up" from="margin/flow/view_button" to="." method="_on_view_button_button_up"]
+[connection signal="button_up" from="margin/flow/settings_button" to="." method="_on_settings_button_button_up"]

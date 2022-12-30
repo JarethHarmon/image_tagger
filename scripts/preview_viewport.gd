@@ -1,7 +1,7 @@
 extends Control
 
-onready var preview:TextureRect = $image_grid/image_0
-onready var shaders:Control = $Shaders
+onready var preview:TextureRect = $single_image/image_0
+onready var shaders:Control = $single_image/Shaders
 
 var ready:bool = false
 func _ready() -> void: ready = true

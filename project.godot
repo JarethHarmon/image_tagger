@@ -160,5 +160,4 @@ project/assembly_name="Image Tagger"
 
 [rendering]
 
-2d/snapping/use_gpu_pixel_snap=true
 environment/default_environment="res://misc/default_env.tres"

@@ -84,3 +84,7 @@ signal update_main_horizontal_offset(value)
 signal update_thumbnails_vertical_offset(value)
 signal update_horizontal_metadata_offset(value)
 signal update_vertical_metadata_offset(value)
+
+# large images
+signal finish_large_image(image_hash)
+signal add_large_image_section(texture, image_hash, grid_index)

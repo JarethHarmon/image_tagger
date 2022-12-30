@@ -32,7 +32,7 @@ var current_imports:Dictionary = {}		# the list of in-progress imports
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
 
-var settings_path:String = "user://settings.tres"
+var settings_path:String = "user://settings.txt"
 
 var last_settings:Array = []
 var settings:Dictionary = {
