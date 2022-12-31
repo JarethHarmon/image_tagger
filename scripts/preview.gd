@@ -304,8 +304,8 @@ func _thread(args:Array) -> void:
 		#large_image = true
 		# need to create the individual piece of the grid (texturerect nodes) and align them correctly
 		# they should all be children of another node, in correct order, so that I can just iterate them to add pieces
-		var num_columns:int = (width / max_size) + 1
-		var num_rows:int = (height / max_size) + 1
+		var num_columns:int = (dimensions.x / max_size) + 1
+		var num_rows:int = (dimensions.y / max_size) + 1
 		
 		# need to resize and reposition image_0
 		var im_width:int = size.x / num_columns
@@ -314,8 +314,8 @@ func _thread(args:Array) -> void:
 		#var im_height:int = single_image.rect_size.y / num_rows
 		var im_dimensions:Vector2 = Vector2(im_width, im_height)
 
-		var rx:int = width % num_columns
-		var ry:int = height % num_rows
+		var rx:int = dimensions.x as int % num_columns
+		var ry:int = dimensions.y as int % num_rows
 		
 		var nrows:int = num_rows
 		var ncols:int = num_columns
