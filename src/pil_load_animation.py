@@ -42,7 +42,7 @@ def get_gif_frames(path, im_hash):
     csharp.SetAnimatedImageType(False)
     
     for i in range(0, frame_count):
-        if csharp.StopLoading(path): break
+        if csharp.StopLoadingAnimatedImage(im_hash): break
         bi = io.BytesIO()
         im.seek(i)
         im.save(bi, 'jpeg', disposal=1, quality=95)
@@ -64,7 +64,7 @@ def get_apng_frames(path, im_hash):
     if is_png: im.convert('RGBA')
     
     for i in range(0, frame_count):
-        if csharp.StopLoading(path): break
+        if csharp.StopLoadingAnimatedImage(im_hash): break
         bi = io.BytesIO()
         im.seek(i)
         if is_png: im.save(bi, 'png', blend=1, compress_level=0) # 6 by default

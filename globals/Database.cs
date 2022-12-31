@@ -604,10 +604,11 @@ public class Database : Node
 
 	public string[] _QueryBySimilarity(string importId, HashInfo hashInfo, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
+		// SETTINGS
 		var query = colHashes.Query();
 		int precision = 3;
 		float colorPrecision = 13f;
-		double minSimilarity = 84.0;
+		double minSimilarity = 86.0;
 
 		bool counted=false;
 		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && minSimilarity == 0.0 && precision < 0) {
@@ -638,11 +639,11 @@ public class Database : Node
 			string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
 			string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
 
-			BsonExpression similarityCondition = $"(({difference} + {color} + {perceptual})/3) >= {minSimilarity}";
+			BsonExpression similarityCondition = $"((0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})) >= {minSimilarity}";
 			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
 			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
 			else if (precision >= 0) query = query.Where(preFilterCondition);
-			query = query.OrderByDescending($"({difference} + {color} + {perceptual})/3");
+			query = query.OrderByDescending($"(0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})");
 		}
 		else if (similarityMode == (int)Similarity.COLOR) {
 			BsonValue arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
@@ -1097,7 +1098,8 @@ public class Database : Node
 		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
 		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
 		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);
-		return (color+(float)perceptual+(float)difference)/3f;
+		return (float)((color * 0.25f) + (perceptual * 0.25f) + (difference * 0.5f));
+		//return (color+(float)perceptual+(float)difference)/3f;
 	}
 
 	public float GetColorSimilarityTo(string compareHash, string imageHash)
