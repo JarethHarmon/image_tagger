@@ -212,8 +212,8 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		if thread_status[i] == status.ACTIVE:
 			thread_status[i] = status.CANCELED
 	animation_mutex.lock()
-	for path in animation_status:
-		animation_status[path] = a_status.STOPPING
+	for image_hash in animation_status:
+		animation_status[image_hash] = a_status.STOPPING
 	animation_mutex.unlock()
 
 	remove_animations()
@@ -255,7 +255,7 @@ func start_one(_current_hash:String, _current_path:String, thread_id:int) -> voi
 	var actual_format:int = Database.GetImageFormat(_current_hash)#ImageImporter.GetActualFormat(_current_path) # this should call the database method instead
 	if actual_format == Globals.ImageType.APNG or actual_format == Globals.ImageType.GIF:
 		animation_mutex.lock()
-		animation_status[_current_path] = a_status.LOADING
+		animation_status[_current_hash] = a_status.LOADING
 		animation_mutex.unlock()
 	thread_pool[thread_id].start(self, "_thread", [_current_hash, _current_path, thread_id, actual_format])
 	active_threads += 1
@@ -602,8 +602,13 @@ func remove_animations() -> void:
 	animation_images.clear()
 	animation_mutex.unlock()
 
-func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, new_image:bool=false) -> void:
-	if path == current_path:
+func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=0.0, new_image:bool=false) -> void:
+	if Database.IncorrectImage(image_hash):
+		animation_mutex.lock()
+		if animation_status.has(image_hash): 
+			animation_status[image_hash] = a_status.STOPPING
+		animation_mutex.unlock()
+	else:
 		animation_mutex.lock()
 		if new_image:
 			animation_delays.clear()
@@ -613,13 +618,7 @@ func add_animation_texture(texture:ImageTexture, path:String, delay:float=0.0, n
 		if new_image:
 			animation_mutex.unlock()
 			update_animation(new_image)
-			#update_animation(path, new_image)
 		else: animation_mutex.unlock()
-	else: 
-		animation_mutex.lock()
-		if animation_status.has(path): 
-			animation_status[path] = a_status.STOPPING
-		animation_mutex.unlock()
 
 func add_large_image_section(texture:ImageTexture, image_hash:String, grid_index:int) -> void:
 	if image_hash != current_hash: return
@@ -634,12 +633,13 @@ func add_large_image_section(texture:ImageTexture, image_hash:String, grid_index
 
 func update_animation(new_image:bool=false) -> void:
 	if not timer.is_stopped(): timer.stop()
-	var path:String = current_path
+	var image_hash:String = current_hash
+	
 	animation_mutex.lock()
-	if not animation_status.has(path): 
+	if not animation_status.has(image_hash): 
 		animation_mutex.unlock()
 		return
-	if animation_status[path] == a_status.STOPPING: 
+	if animation_status[image_hash] == a_status.STOPPING: 
 		animation_mutex.unlock()
 		return
 	
@@ -670,9 +670,9 @@ func update_animation(new_image:bool=false) -> void:
 	animation_mutex.unlock()
 	timer.start(delay if delay > 0.0 else animation_min_delay)
 
-func remove_status(path:String) -> void:
+func remove_status(image_hash:String) -> void:
 	animation_mutex.lock()
-	animation_status[path] = a_status.PLAYING
+	animation_status[image_hash] = a_status.PLAYING
 	animation_mutex.unlock()
 
 func _on_flip_h_button_up() -> void: preview_image.flip_h = not preview_image.flip_h

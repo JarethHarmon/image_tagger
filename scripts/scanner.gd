@@ -42,7 +42,7 @@ func reset() -> void:
 	types.clear()
 	sizes.clear()
 	import_name.text = ""
-	import_id = ImageImporter.CreateImportID()
+	import_id = ImageImporter.CreateImportId()
 
 func _files_dropped(file_paths:Array, _screen:int) -> void:
 	# instead of how it works now:

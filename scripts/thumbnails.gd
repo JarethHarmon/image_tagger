@@ -267,7 +267,7 @@ func _set_thumbnails_from_history(query:Dictionary, image_hashes:Dictionary) -> 
 		var text:String = ""
 		if Globals.current_tab_type == Globals.Tab.SIMILARITY:
 			var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
-			var similarity:float = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+			var similarity:float = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
 			text = "%1.2f" % [similarity] + "%"
 		if query != current_query: return true
 		self.set_item_icon(idx, im_tex)
@@ -378,12 +378,12 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
 		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
 		var similarity:float = 0.0
-		if Globals.current_similarity == Globals.Similarity.AVERAGE:
+		if Globals.current_similarity == Globals.Similarity.AVERAGED:
+			similarity = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
+		elif Globals.current_similarity == Globals.Similarity.AVERAGE:
 			similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.Similarity.COLOR:
-			similarity = Database.GetColorSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.Similarity.PERCEPTUAL:
-			similarity = Database.GetPerceptualSimilarityTo(compare_hash, image_hash)
+		elif Globals.current_similarity == Globals.Similarity.WAVELET:
+			similarity = Database.GetWaveletSimilarityTo(compare_hash, image_hash)
 		else:
 			similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")

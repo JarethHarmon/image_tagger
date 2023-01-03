@@ -117,7 +117,7 @@ func create_tab_buttons() -> void:
 			var finished:bool = Database.GetFinished(import_id)
 			var processed_count:int = Database.GetProcessedCount(import_id)
 			var tab_name:String = Database.GetName(tab_id)
-			var progress_ids:Array = Database.GetProgressIds(import_id)
+			var progress_ids:Array = Database.GetSectionIds(import_id)
 			if not finished:
 				if progress_ids.empty():
 					Database.FinishImport(import_id)
@@ -157,7 +157,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	if import_id == "": return
 	if argument_queue.has(import_id): return
 
-	var tab_id:String = ImageImporter.CreateTabID()
+	var tab_id:String = ImageImporter.CreateTabId()
 
 	var b:Button = Button.new()
 	b.text = "  " + tab_name + " (0/" + String(count) + ")  "
@@ -176,7 +176,7 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "")
 	Database.CommitImport(import_id, tab_name)
 
-	var progress_ids:Array = Database.GetProgressIds(import_id)
+	var progress_ids:Array = Database.GetSectionIds(import_id)
 	for progress_id in progress_ids:
 		append_arg([import_id, progress_id])
 	
@@ -202,7 +202,7 @@ func create_similarity_tab(tab_id:String, image_hash:String) -> void:
 
 func create_new_similarity_tab(image_hash:String) -> void:
 	if image_hash == "": return
-	var tab_id:String = ImageImporter.CreateTabID()
+	var tab_id:String = ImageImporter.CreateTabId()
 	
 	var b:Button = Button.new()
 	b.text = "  " + image_hash.substr(0, 16) + "  "

@@ -12,11 +12,11 @@ extends Node
 #	o once the import finishes it should update the button to ' Import (success) ' ; but clicking on it would still show the full counts (success/fail/etc)
 
 
-enum SortBy { FileHash, FilePath, FileName, FileSize, FileUploadUtc, FileCreationUtc, FileEditTime, Dimensions, TagCount, Random, ImageColor, RatingQuality, RatingAppeal, RatingArtStyle, RatingSum, RatingAverage }
+enum SortBy { FileHash, FilePath, FileName, FileSize, FileUploadUtc, FileCreationUtc, FileEditTime, Dimensions, TagCount, Random, ImageColor, RatingQuality, RatingAppeal, RatingArtStyle, RatingSum, RatingAverage, RED, GREEN, BLUE, ALPHA, LIGHT, Dark }
 enum OrderBy { Ascending=0, Descending=1 }
 enum ImageType { JPG=0, PNG, APNG, GIF, WEBP, OTHER=7, FAIL=-1}
 enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
-enum Similarity { AVERAGE, COLOR, DIFFERENCE, PERCEPTUAL }
+enum Similarity { AVERAGED, AVERAGE, DIFFERENCE, WAVELET }
 
 var current_importing_ids:Dictionary = {}
 var current_importing_id:String = "" 	# stores import_id of the in-progress import (if there is one) 

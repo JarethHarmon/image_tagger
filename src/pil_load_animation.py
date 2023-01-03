@@ -19,52 +19,40 @@ def has_transparency(img):
             return True
     return False
 
-def load_gif(path):
-    im = Image.open(path)
-    frames = []
-    for i in range(0, im.n_frames):
-        bi = io.BytesIO()
-        im.seek(i)
-        im.save(bi, 'jpeg', disposal=1)
-        base64_str = str(base64.b64encode(bi.getvalue()))
-        base64_str = base64_str.replace('\'', '')
-        base64_str = base64_str[1:len(base64_str)]
-        base64_str = str(im.info['duration']) + '?' + base64_str
-        frames.append(base64_str)
-    return frames
-
 def get_gif_frames(path, im_hash):
     im = Image.open(path)
     frame_count = im.n_frames
+    
     csharp = PythonInterop()
     csharp.Setup()
     csharp.SendFrameCount(frame_count)
-    csharp.SetAnimatedImageType(False)
     
     for i in range(0, frame_count):
-        if csharp.StopLoadingAnimatedImage(im_hash): break
+        if csharp.StopLoading(im_hash): break
         bi = io.BytesIO()
         im.seek(i)
         im.save(bi, 'jpeg', disposal=1, quality=95)
         base64_str = str(base64.b64encode(bi.getvalue()))
         base64_str = base64_str.replace('\'', '')
         base64_str = base64_str[1:len(base64_str)]
-        base64_str = im_hash + '?' + path + '?' + str(im.info['duration']) + '?' + base64_str
-        csharp.SendFrame(base64_str)
+        duration = str(im.info['duration'])
+        base64_str = f'jpeg?{im_hash}?{duration}?{base64_str}'
+        csharp.SendAnimationFrame(base64_str)
 
-def get_apng_frames(path, im_hash):
-    im = Image.open(path)
+def get_apng_frames(im_path, im_hash):
+    im = Image.open(im_path)
     frame_count = im.n_frames
+    
     csharp = PythonInterop()
     csharp.Setup()
     csharp.SendFrameCount(frame_count)
+    
     is_png = has_transparency(im)
-    csharp.SetAnimatedImageType(is_png)
-
     if is_png: im.convert('RGBA')
+    im_type = 'png' if is_png else 'jpeg'
     
     for i in range(0, frame_count):
-        if csharp.StopLoadingAnimatedImage(im_hash): break
+        if csharp.StopLoading(im_hash): break
         bi = io.BytesIO()
         im.seek(i)
         if is_png: im.save(bi, 'png', blend=1, compress_level=0) # 6 by default
@@ -72,5 +60,6 @@ def get_apng_frames(path, im_hash):
         base64_str = str(base64.b64encode(bi.getvalue()))
         base64_str = base64_str.replace('\'', '')
         base64_str = base64_str[1:len(base64_str)]
-        base64_str = im_hash + '?' + path + '?' + str(im.info['duration']) + '?' + base64_str
-        csharp.SendAFrame(base64_str)
+        duration = str(im.info['duration'])
+        base64_str = f'{im_type}?{im_hash}?{duration}?{base64_str}'
+        csharp.SendAnimationFrame(base64_str)

@@ -1,26 +1,17 @@
 using Godot;
 using System;
-using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
-using System.Reflection;
-using System.Security.Cryptography;
-using Alphaleonis.Win32.Filesystem;
-using CoenM.ImageHash;
-using CoenM.ImageHash.HashAlgorithms;
 using LiteDB;
 using Data;
-using ImageMagick;
 
 public class Database : Node
 {
-/*==============================================================================*/
-/*                                   Variables                                  */
-/*==============================================================================*/
+	/*==============================================================================*/
+	/*                                   Variables                                  */
+	/*==============================================================================*/
 	private int progressSectionSize = 32;
 	private string metadataPath;
 	public void SetMetadataPath(string path) { metadataPath = path; }
@@ -28,19 +19,19 @@ public class Database : Node
 	/* may eventually reduce and merge these (especially merging dbGroups with dbTags) */
 	private LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
 	//private LiteDatabase[] dbThumbnails = new LiteDatabas[256]; // FF=255, 00=0, 7F=128	(7*16+F=8*16=128)
-	
+
 	private ILiteCollection<HashInfo> colHashes;
 	private ILiteCollection<ImportInfo> colImports;
 	private ILiteCollection<ImportProgress> colProgress;
-	private ILiteCollection<GroupInfo> colGroups;
-	private ILiteCollection<TagInfo> colTags;
+	//private ILiteCollection<GroupInfo> colGroups;
+	//private ILiteCollection<TagInfo> colTags;
 	private ILiteCollection<TabInfo> colTabs;
 
 	/* for thread safety, it might be better to make all of these into concurrent dictionaries */
 	private HashInfo currentHashInfo = new HashInfo();
 	private ConcurrentDictionary<string, ImportInfo> dictImports = new ConcurrentDictionary<string, ImportInfo>();
-	private Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
-	private Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
+	//private Dictionary<string, GroupInfo> dictGroups = new Dictionary<string, GroupInfo>();
+	//private Dictionary<string, TagInfo> dictTags = new Dictionary<string, TagInfo>();
 	private Dictionary<string, TabInfo> dictTabs = new Dictionary<string, TabInfo>();
 
 	private ImageScanner scanner;
@@ -53,15 +44,15 @@ public class Database : Node
 		return currentHashInfo.imageHash;
 	}
 
-/*==============================================================================*/
-/*                                 Initialization                               */
-/*==============================================================================*/
+	/*==============================================================================*/
+	/*                                 Initialization                               */
+	/*==============================================================================*/
 	public override void _Ready()
 	{
-		scanner = (ImageScanner) GetNode("/root/ImageScanner");
-		importer = (Importer.ImageImporter) GetNode("/root/ImageImporter");
-		globals = (Node) GetNode("/root/Globals");
-		signals = (Node) GetNode("/root/Signals");
+		scanner = GetNode<ImageScanner>("/root/ImageScanner");
+		importer = GetNode<Importer.ImageImporter>("/root/ImageImporter");
+		globals = GetNode<Node>("/root/Globals");
+		signals = GetNode<Node>("/root/Signals");
 	}
 
 	public int Create()
@@ -69,60 +60,37 @@ public class Database : Node
 		try {
 			dbHashes = new LiteDatabase(metadataPath + "hash_info.db");
 			dbImports = new LiteDatabase(metadataPath + "import_info.db");
-			dbGroups = new LiteDatabase(metadataPath + "group_info.db");
-			dbTags = new LiteDatabase(metadataPath + "tag_info.db");
+			//dbGroups = new LiteDatabase(metadataPath + "group_info.db");
+			//dbTags = new LiteDatabase(metadataPath + "tag_info.db");
 
 			BsonMapper.Global.Entity<HashInfo>().Id(x => x.imageHash);
 			BsonMapper.Global.Entity<ImportInfo>().Id(x => x.importId);
-			BsonMapper.Global.Entity<ImportProgress>().Id(x => x.progressId);
-			BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);
-			BsonMapper.Global.Entity<TagInfo>().Id(x => x.tagId);
+			BsonMapper.Global.Entity<ImportProgress>().Id(x => x.sectionId);
+			//BsonMapper.Global.Entity<GroupInfo>().Id(x => x.groupId);
+			//BsonMapper.Global.Entity<TagInfo>().Id(x => x.tagId);
 			BsonMapper.Global.Entity<TabInfo>().Id(x => x.tabId);
 
 			colHashes = dbHashes.GetCollection<HashInfo>("hashes");
 			colImports = dbImports.GetCollection<ImportInfo>("imports");
 			colProgress = dbImports.GetCollection<ImportProgress>("progress");
-			colGroups = dbGroups.GetCollection<GroupInfo>("groups");
-			colTags = dbTags.GetCollection<TagInfo>("tags");
+			//colGroups = dbGroups.GetCollection<GroupInfo>("groups");
+			//colTags = dbTags.GetCollection<TagInfo>("tags");
 			colTabs = dbImports.GetCollection<TabInfo>("tabs");
 
 			colHashes.EnsureIndex(x => x.imageHash);
-			colHashes.EnsureIndex(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			colHashes.EnsureIndex(x => x.imports);
 			colHashes.EnsureIndex(x => x.groups);
 			colHashes.EnsureIndex(x => x.tags);
-			colHashes.EnsureIndex(x => x.ratings["Sum"]);
-			colHashes.EnsureIndex(x => x.uploadTime);
-			colHashes.EnsureIndex(x => x.bucket1);
-			//colHashes.EnsureIndex("$.buckets[*]");
-			//colHashes.EnsureIndex("$.colorHash[*]");
-			colHashes.EnsureIndex(x => x.colorBucket);
-
-			//BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 > {hashInfo.bucket1} - {precision+1} AND $.bucket1 < {hashInfo.bucket1} + {precision+1}";
-			
-
-			//colHashes.EnsureIndex(x => x.numColors);
-			//colHashes.EnsureIndex(x => x.size);
-			//colHashes.EnsureIndex(x => x.width*x.height);
-			//colHashes.EnsureIndex(x => x.tags.Length);
-			//colHashes.EnsureIndex(x => x.creationTime);
-			//colHashes.EnsureIndex(x => x.lastWriteTime);
-			//colHashes.EnsureIndex(x => x.imageName);
-			//colHashes.EnsureIndex(x => x.paths.FirstOrDefault());
-			//colHashes.EnsureIndex(x => x.ratings["Quality"]);
-			//colHashes.EnsureIndex(x => x.ratings["Appeal"]);
-			//colHashes.EnsureIndex(x => x.ratings["Art"]);
-			//colHashes.EnsureIndex(x => x.ratings["Average"]);			
 
 			return (int)ErrorCodes.OK;
-		} 
-		catch (Exception ex) {
-			GD.Print("Database::Create() : ", ex); 
-			return (int)ErrorCodes.ERROR; 
 		}
-	} 
+		catch (Exception ex) {
+			GD.Print("Database::Create() : ", ex);
+			return (int)ErrorCodes.ERROR;
+		}
+	}
 
-	public void CreateAllInfo() 
+	public void CreateAllInfo()
 	{
 		try {
 			var allInfo = colImports.FindById("All");
@@ -143,15 +111,15 @@ public class Database : Node
 			if (tabInfo == null) {
 				tabInfo = new TabInfo {
 					tabId = "All",
-					tabType = 0, 
+					tabType = 0,
 					tabName = "All",
 					importId = "All",
 				};
 				colTabs.Insert(tabInfo);
 			}
 			dictTabs["All"] = tabInfo;
-		} 
-		catch(Exception ex) { 
+		}
+		catch (Exception ex) {
 			GD.Print("Database::CreateAllInfo() : ", ex);
 			return;
 		}
@@ -186,13 +154,13 @@ public class Database : Node
 	public void CheckpointGroupDB() { dbGroups.Checkpoint(); }
 	public void CheckpointTagDB() { dbTags.Checkpoint(); }
 
-/*==============================================================================*/
-/*                            Temporary Hash Storage                            */
-/*==============================================================================*/
+	/*==============================================================================*/
+	/*                            Temporary Hash Storage                            */
+	/*==============================================================================*/
 	// { importId : { imageHash : hashInfo }}
 	private Dictionary<string, Dictionary<string, HashInfo>> tempHashInfo = new Dictionary<string, Dictionary<string, HashInfo>>();
 	private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
-	
+
 	private void MergeHashSets(HashSet<string> main, HashSet<string> sub)
 	{
 		if (sub.Count == 0) return;
@@ -200,68 +168,68 @@ public class Database : Node
 		foreach (string member in sub)
 			main.Add(member);
 	}
-	
+
 	public void MergeHashInfo(HashInfo main, HashInfo sub)
 	{
 		if (main.paths != null && sub.paths != null) MergeHashSets(main.paths, sub.paths);
-		else if (sub.paths != null) main.paths = sub.paths; 
+		else if (sub.paths != null) main.paths = sub.paths;
 
 		if (main.imports != null && sub.imports != null) MergeHashSets(main.imports, sub.imports);
-		else if (sub.imports != null) main.imports = sub.imports; 
+		else if (sub.imports != null) main.imports = sub.imports;
 
 		if (main.tags != null && sub.tags != null) main.tags = main.tags.Union(sub.tags).ToArray();//MergeHashSets(main.tags, sub.tags);
-		else if (sub.tags != null) main.tags = sub.tags; 
+		else if (sub.tags != null) main.tags = sub.tags;
 
 		if (main.differenceHash == 0) main.differenceHash = sub.differenceHash;
-		if (main.colorHash == null) main.colorHash = sub.colorHash;
-		if (main.perceptualHash == null) main.perceptualHash = sub.perceptualHash;
+		if (main.averageHash == 0) main.averageHash = sub.averageHash;
+		if (main.waveletHash == 0) main.waveletHash = sub.waveletHash;
 	}
 
-	public void StoreTempHashInfo(string importId, string progressId, HashInfo hashInfo)
+	public void StoreTempHashInfo(string importId, string sectionId, HashInfo hashInfo)
 	{
 		lock (tempHashInfo) {
 			if (!tempHashInfo.ContainsKey(importId)) tempHashInfo[importId] = new Dictionary<string, HashInfo>();
-			if (!tempHashes.ContainsKey(progressId)) tempHashes[progressId] = new HashSet<string>();
+			if (!tempHashes.ContainsKey(sectionId)) tempHashes[sectionId] = new HashSet<string>();
 			if (tempHashInfo[importId].ContainsKey(hashInfo.imageHash)) {
 				var _hashInfo = tempHashInfo[importId][hashInfo.imageHash];
 				MergeHashInfo(hashInfo, _hashInfo);
 			}
 			tempHashInfo[importId][hashInfo.imageHash] = hashInfo;
-			tempHashes[progressId].Add(hashInfo.imageHash);
+			tempHashes[sectionId].Add(hashInfo.imageHash);
 		}
 	}
-	
+
 	public HashInfo GetHashInfo(string importId, string imageHash)
 	{
-		lock (tempHashInfo) { 
-			if (tempHashInfo.ContainsKey(importId)) 
+		lock (tempHashInfo) {
+			if (tempHashInfo.ContainsKey(importId))
 				if (tempHashInfo[importId].ContainsKey(imageHash))
-					return tempHashInfo[importId][imageHash]; 
+					return tempHashInfo[importId][imageHash];
 		}
 		return colHashes.FindById(imageHash);
 	}
-	
-/*==============================================================================*/
-/*                                  Hash Database                               */
-/*==============================================================================*/
+
+	/*==============================================================================*/
+	/*                                  Hash Database                               */
+	/*==============================================================================*/
 	private int _lastQueriedCount = 0;
 	public int GetLastQueriedCount() { return _lastQueriedCount; }
-	
+
 	public void AddRating(string imageHash, string ratingName, int ratingValue)
 	{
 		try {
 			if (currentHashInfo.ratings == null) currentHashInfo.ratings = new Dictionary<string, int>();
 			currentHashInfo.ratings[ratingName] = ratingValue;
-		
+
 			int sum = 0;
 			foreach (string _name in currentHashInfo.ratings.Keys)
 				sum += currentHashInfo.ratings[_name];
-			
+
 			currentHashInfo.ratingSum = sum;
-			currentHashInfo.ratingAvg = (int)Math.Round((double)sum/Math.Max(1, currentHashInfo.ratings.Count));
+			currentHashInfo.ratingAvg = (int)Math.Round((double)sum / Math.Max(1, currentHashInfo.ratings.Count));
 
 			colHashes.Update(currentHashInfo);
-		} catch (Exception ex) { GD.Print("Database::AddRating() : ", ex); return; }		
+		} catch (Exception ex) { GD.Print("Database::AddRating() : ", ex); return; }
 	}
 	public int GetRating(string imageHash, string ratingName)
 	{
@@ -271,29 +239,16 @@ public class Database : Node
 					if (currentHashInfo.ratings.ContainsKey(ratingName))
 						return currentHashInfo.ratings[ratingName];
 			return 0;
-		} catch (Exception ex) { GD.Print("Database::GetRating() : ", ex); return 0; }	
+		} catch (Exception ex) { GD.Print("Database::GetRating() : ", ex); return 0; }
 	}
-	
-	/*public void PopulateDictHashes(string[] imageHashes)
-	{
-		try {
-			//var now = DateTime.Now;
-			dictHashes.Clear();
-			foreach (string imageHash in imageHashes) {
-				var hashInfo = colHashes.FindById(imageHash);
-				dictHashes[imageHash] = hashInfo;
-			}
-			//GD.Print(DateTime.Now-now);
-		} catch (Exception ex) { GD.Print("Database::PopulateDictHashes(): ", ex); return; }
-	}*/
 
 	// returning long would be better, but godot does not marshal long into its 64bit integer type for some reason
 	// instead return as string, convert with .to_int() and convert to size with String.humanize_size(int)
-	public string GetFileSize(string imageHash) 
+	public string GetFileSize(string imageHash)
 	{
 		return currentHashInfo.size.ToString();
 	}
-	
+
 	public Godot.Vector2 GetDimensions(string imageHash)
 	{
 		return new Godot.Vector2(currentHashInfo.width, currentHashInfo.height);
@@ -314,7 +269,7 @@ public class Database : Node
 			return result.paths.ToArray();
 		} catch (Exception ex) { return new string[0]; }
 	}
-	
+
 	public string GetImageName(string imageHash)
 	{
 		try {
@@ -342,14 +297,14 @@ public class Database : Node
 		try {
 			if (currentHashInfo.imageHash.Equals(imageHash))
 				return (currentHashInfo.tags is null) ? Array.Empty<string>() : currentHashInfo.tags;
-				//return currentHashInfo.tags.ToArray();
+			//return currentHashInfo.tags.ToArray();
 			var result = colHashes.FindById(imageHash);
 			if (result?.tags is null) return new string[0];
 			return result.tags;
 			//return result.tags.ToArray();
 		} catch (Exception ex) { return new string[0]; }
 	}
-	
+
 	public void LoadCurrentHashInfo(string imageHash)
 	{
 		try {
@@ -367,14 +322,7 @@ public class Database : Node
 			return string.Empty;
 		} catch { return string.Empty; }
 	}
-	public float[] GetColorHash(string imageHash) 
-	{
-		try {
-			if (currentHashInfo.imageHash.Equals(imageHash))
-				return currentHashInfo.colorHash;
-			return new float[0];
-		} catch { GD.Print("ERR"); return new float[0]; }
-	}
+
 	public string GetCreationTime(string imageHash)
 	{
 		try {
@@ -384,7 +332,7 @@ public class Database : Node
 		} catch { return string.Empty; }
 	}
 
-	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false, int similarity=(int)Similarity.AVERAGE)
+	public string[] QueryDatabase(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort = (int)Sort.SHA256, int order = (int)Order.ASCENDING, bool countResults = false, int similarity = (int)Similarity.AVERAGE)
 	{
 		try {
 			var label = GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time");
@@ -394,7 +342,7 @@ public class Database : Node
 				var now = DateTime.Now;
 				string importId = GetImportId(tabId);
 				var hashes = _QueryImport(importId, offset, count, tagsAll, tagsAny, tagsNone, tagsComplex, sort, order, countResults);
-				label.Text = (DateTime.Now-now).ToString();
+				label.Text = (DateTime.Now - now).ToString();
 				return hashes;
 			}
 			// image group
@@ -404,8 +352,8 @@ public class Database : Node
 				string imageHash = GetSimilarityHash(tabId);
 				var hashInfo = colHashes.FindById(imageHash);
 				if (hashInfo == null) return new string[0];
-				var hashes = _QueryBySimilarity("All", hashInfo, offset, count, tagsAll, tagsAny, tagsNone, similarity); 
-				label.Text = (DateTime.Now-now).ToString();
+				var hashes = _QueryBySimilarity("All", hashInfo, offset, count, tagsAll, tagsAny, tagsNone, similarity);
+				label.Text = (DateTime.Now - now).ToString();
 				return hashes;
 			}
 			return Array.Empty<string>();
@@ -413,7 +361,7 @@ public class Database : Node
 	}
 
 	enum Types { ALL, ANY, NONE }
-		
+
 	private BsonExpression CreateCondition(string[] tags, int numTags, int type)
 	{
 		// NONE
@@ -423,7 +371,7 @@ public class Database : Node
 		// one ALL or ANY
 		if (numTags == 1)
 			return Query.Contains("$.tags[*] ANY", tags[0]);
-		
+
 		// multiple ALL or ANY 
 		var list = new List<BsonExpression>();
 		foreach (string tag in tags)
@@ -436,10 +384,10 @@ public class Database : Node
 	}
 
 	//private List<HashInfo> _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
-	private string[] _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort=(int)Sort.SHA256, int order=(int)Order.ASCENDING, bool countResults=false)
+	private string[] _QueryImport(string importId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex, int sort = (int)Sort.SHA256, int order = (int)Order.ASCENDING, bool countResults = false)
 	{
 		try {
-			bool counted=false;
+			bool counted = false;
 
 			if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && tagsComplex.Length == 0) {
 				_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
@@ -451,7 +399,7 @@ public class Database : Node
 
 			if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
 			//if (groupId != "") query = query.Where(x => x.groups.Contains(groupId));
-			
+
 			// this will eventually be handled automatically on the gdscript side (once the ui is replaced to something easier to take advantage of)
 			// there is also a lot of optimization to be done here
 			var tagArrays = new List<Dictionary<string, HashSet<string>>>();
@@ -477,12 +425,12 @@ public class Database : Node
 				var tempNone = new HashSet<string>();
 
 				foreach (string condition in tagsComplex) {
-					string[] sections = condition.Split(new string[1]{"%"}, StringSplitOptions.None);
+					string[] sections = condition.Split(new string[1] { "%" }, StringSplitOptions.None);
 
 					if (sections.Length < 3) { GD.Print("ERROR"); continue; }
-					string[] _all = sections[0].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
-					string[] _any = sections[1].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
-					string[] _none = sections[2].Split(new string[1]{","}, StringSplitOptions.RemoveEmptyEntries);
+					string[] _all = sections[0].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
+					string[] _any = sections[1].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
+					string[] _none = sections[2].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
 
 					foreach (string tag in _all) tempAll.Add(tag);
 					foreach (string tag in _any) tempAny.Add(tag);
@@ -556,11 +504,18 @@ public class Database : Node
 			else if (sort == (int)Sort.CREATION_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.creationTime) : query.OrderByDescending(x => x.creationTime);
 			else if (sort == (int)Sort.UPLOAD_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.uploadTime) : query.OrderByDescending(x => x.uploadTime);
 			else if (sort == (int)Sort.EDIT_TIME) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.lastWriteTime) : query.OrderByDescending(x => x.lastWriteTime);
-			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width*x.height) : query.OrderByDescending(x => x.width*x.height);
+			else if (sort == (int)Sort.DIMENSIONS) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.width * x.height) : query.OrderByDescending(x => x.width * x.height);
 			else if (sort == (int)Sort.TAG_COUNT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.tags.Length) : query.OrderByDescending(x => x.tags.Length);
-			else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
+			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]) : query.OrderByDescending(x => x.colorHash[0] + x.colorHash[15] + x.colorHash[7]);
 			//else if (sort == (int)Sort.IMAGE_COLOR) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.numColors) :  query.OrderByDescending(x => x.numColors);
-			else if (sort == (int)Sort.RANDOM) {
+			else if (sort == (int)Sort.RED) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.red) : query.OrderByDescending(x => x.red);
+            else if (sort == (int)Sort.GREEN) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.green) : query.OrderByDescending(x => x.green);
+            else if (sort == (int)Sort.BLUE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.blue) : query.OrderByDescending(x => x.blue);
+            else if (sort == (int)Sort.ALPHA) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.alpha) : query.OrderByDescending(x => x.alpha);
+            else if (sort == (int)Sort.LIGHT) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.light) : query.OrderByDescending(x => x.light);
+            else if (sort == (int)Sort.DARK) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.dark) : query.OrderByDescending(x => x.dark);
+            else if (sort == (int)Sort.RANDOM)
+			{
 				// other (faster) method throws "System.Exception: LiteDB ENSURE: page type must be index page"
 				query = query.OrderBy("RANDOM()");
 				return query.ToEnumerable().Select(x => x.imageHash).Skip(offset).Take(count).ToArray();
@@ -570,13 +525,13 @@ public class Database : Node
 			else if (sort == (int)Sort.RATING_APPEAL) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Appeal"]) : query.OrderByDescending(x => x.ratings["Appeal"]);
 			else if (sort == (int)Sort.RATING_ART_STYLE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Art"]) : query.OrderByDescending(x => x.ratings["Art"]);
 			else if (sort == (int)Sort.RATING_SUM) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Sum"]) : query.OrderByDescending(x => x.ratings["Sum"]);
-			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);			
+			else if (sort == (int)Sort.RATING_AVERAGE) query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.ratings["Average"]) : query.OrderByDescending(x => x.ratings["Average"]);
 			else query = (order == (int)Order.ASCENDING) ? query.OrderBy(x => x.imageHash) : query.OrderByDescending(x => x.imageHash);
-			
+
 			return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();
-		} 
-		catch (Exception ex) { 
-			GD.Print("Database::_QueryDatabase() : ", ex); 
+		}
+		catch (Exception ex) {
+			GD.Print("Database::_QueryDatabase() : ", ex);
 			return Array.Empty<string>();
 		}
 	}
@@ -602,13 +557,43 @@ public class Database : Node
 		return (srgbHash, hclpHash);
 	}
 
-	public string[] _QueryBySimilarity(string importId, HashInfo hashInfo, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
+	public sealed class SimilarityQueryResult
+	{
+		public string hash { get; set; }
+		public ulong color { get; set; }
+		public ulong difference { get; set; }
+		public ulong average { get; set; }
+		public ulong wavelet { get; set; }
+		public float similarity { get; set; }
+	}
+
+    private static readonly byte[] _bitCounts =
+    {
+        0,1,1,2,1,2,2,3, 1,2,2,3,2,3,3,4, 1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5,
+        1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+        1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+        2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+        1,2,2,3,2,3,3,4, 2,3,3,4,3,4,4,5, 2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6,
+        2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+        2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
+        3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
+    };
+    private float CalcSimilarity(ulong hash1, ulong hash2)
+    {
+        int hammingDistance = 0;
+        ulong temp = hash1 ^ hash2;
+        for (; temp > 0; temp >>= 8)
+            hammingDistance += _bitCounts[temp & 0xff];
+        return (64 - hammingDistance) * 1.5625f; // 100/64
+    }
+
+    public string[] _QueryBySimilarity(string importId, HashInfo hashInfo, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, int similarityMode=(int)Similarity.AVERAGE)
 	{
 		// SETTINGS
 		var query = colHashes.Query();
 		int precision = 3;
-		float colorPrecision = 13f;
-		double minSimilarity = 86.0;
+		//float colorPrecision = 13f;
+		double minSimilarity = 81.25f;
 
 		bool counted=false;
 		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && minSimilarity == 0.0 && precision < 0) {
@@ -622,75 +607,138 @@ public class Database : Node
 		if (tagsNone.Length > 0) foreach (string tag in tagsNone) query = query.Where(x => !x.tags.Contains(tag));
 
 		//BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 = {hashInfo.bucket1}";
-		BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 >= {hashInfo.bucket1 - precision} AND $.bucket1 <= {hashInfo.bucket1 + precision}";
-		preFilterCondition = Query.And(preFilterCondition, (BsonExpression)$"$.colorBucket < {hashInfo.colorBucket+colorPrecision} AND $.colorBucket > {hashInfo.colorBucket-colorPrecision}");
+		//BsonExpression preFilterCondition = (BsonExpression)$"$.bucket1 >= {hashInfo.bucket1 - precision} AND $.bucket1 <= {hashInfo.bucket1 + precision}";
+		//preFilterCondition = Query.And(preFilterCondition, (BsonExpression)$"$.colorBucket < {hashInfo.colorBucket+colorPrecision} AND $.colorBucket > {hashInfo.colorBucket-colorPrecision}");
 
-		if (similarityMode == (int)Similarity.AVERAGE) {
-			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
-			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
-			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
-
-			BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
-				arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
-				arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3),
-				arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
-
-			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
-			string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
-			string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
-
-			BsonExpression similarityCondition = $"((0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})) >= {minSimilarity}";
-			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
-			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
-			else if (precision >= 0) query = query.Where(preFilterCondition);
-			query = query.OrderByDescending($"(0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})");
+		var results = Enumerable.Empty<SimilarityQueryResult>();
+		//query = query.Where(preFilterCondition);
+		
+		if (similarityMode == (int)Similarity.AVERAGED)
+		{
+			results = query.Select(x => new SimilarityQueryResult
+			{
+				hash = x.imageHash,
+                wavelet = x.waveletHash,
+                average = x.averageHash,
+                difference = x.differenceHash,
+            }).ToArray();
+			foreach (var result in results)
+			{
+				float simi1 = CalcSimilarity(hashInfo.waveletHash, result.wavelet);
+				float simi2 = CalcSimilarity(hashInfo.averageHash, result.average);
+				float simi3 = CalcSimilarity(hashInfo.differenceHash, result.difference);
+				result.similarity = (simi1 + simi2 + simi3) / 3;
+			}
 		}
-		else if (similarityMode == (int)Similarity.COLOR) {
-			BsonValue arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
-			string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
-			BsonExpression similarityCondition = $"{color} >= {minSimilarity}";
-			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
-			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
-			else if (precision >= 0) query = query.Where(preFilterCondition);
-			query = query.OrderByDescending(color);
-		}			
-		else if (similarityMode == (int)Similarity.PERCEPTUAL) {
-			(double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
-			(double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
-			(double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
-
-			BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
-				arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
-				arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3);
-			
-			string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
-			BsonExpression similarityCondition = $"{perceptual} >= {minSimilarity}";
-			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
-			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
-			else if (precision >= 0) query = query.Where(preFilterCondition);
-			query = query.OrderByDescending(perceptual);
-		}			
-		else {
-			string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
-			BsonExpression similarityCondition = $"{difference} >= {minSimilarity}";
-			if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
-			else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
-			else if (precision >= 0) query = query.Where(preFilterCondition);
-			query = query.OrderByDescending(difference);
+		else if (similarityMode == (int)Similarity.AVERAGE)
+		{
+			results = query.Select(x => new SimilarityQueryResult
+			{
+				hash = x.imageHash,
+				average = x.averageHash,
+			}).ToArray();
+			foreach (var result in results)
+			{
+				float temp = CalcSimilarity(hashInfo.averageHash, result.average) / 100;
+				result.similarity = (float)Math.Pow(temp, 3) * 100;
+            }
 		}
-
-		if (minSimilarity > 0.0 || precision >= 0) {
-			var results = query.Select(x => x.imageHash).Limit(count).ToArray();
-			_lastQueriedCount = results.Length;
-			return results;
+        else if (similarityMode == (int)Similarity.WAVELET)
+        {
+            results = query.Select(x => new SimilarityQueryResult
+            {
+                hash = x.imageHash,
+                wavelet = x.waveletHash
+            }).ToArray();
+            foreach (var result in results)
+            {
+                result.similarity = CalcSimilarity(hashInfo.waveletHash, result.wavelet);
+            }
+        }
+        else if (similarityMode == (int)Similarity.DIFFERENCE)
+		{
+			results = query.Select(x => new SimilarityQueryResult
+			{
+				hash = x.imageHash,
+				difference = x.differenceHash,
+			}).ToArray();
+			foreach (var result in results)
+			{
+				result.similarity = CalcSimilarity(hashInfo.differenceHash, result.difference);
+			}
 		}
+		else return Array.Empty<string>();
 
-		if (!counted) _lastQueriedCount = query.Count();
+		var _results = results.Where(x => x.similarity > minSimilarity).OrderByDescending(x => x.similarity).Select(x => x.hash).Skip(offset).Take(count).ToArray();
+		_lastQueriedCount = _results.Length;
+		return _results;
 
-		return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();	
-	}
+       /*if (similarityMode == (int)Similarity.AVERAGE) {
+           (double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
+           (double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
+           (double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
 
-	public void BulkAddTags(string[] imageHashes, string[] tags)
+           BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
+               arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
+               arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3),
+               arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
+
+           string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
+           string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
+           string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
+
+           BsonExpression similarityCondition = $"((0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})) >= {minSimilarity}";
+           if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+           else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+           else if (precision >= 0) query = query.Where(preFilterCondition);
+           query = query.OrderByDescending($"(0.5 * {difference}) + (0.25 * {color}) + (0.25 * {perceptual})");
+       }
+       else if (similarityMode == (int)Similarity.COLOR) {
+           BsonValue arrColor = BsonMapper.Global.Serialize(hashInfo.colorHash);
+           string color = $"SIMILARITY_COLOR($.colorHash, {arrColor})";
+           BsonExpression similarityCondition = $"{color} >= {minSimilarity}";
+           if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+           else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+           else if (precision >= 0) query = query.Where(preFilterCondition);
+           query = query.OrderByDescending(color);
+       }			
+       else if (similarityMode == (int)Similarity.PERCEPTUAL) {
+           (double[] srgb1, double[] hclp1) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(0, 70));
+           (double[] srgb2, double[] hclp2) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(70, 70));
+           (double[] srgb3, double[] hclp3) = GetChannelPerceptualHash(hashInfo.perceptualHash.Substring(140, 70));
+
+           BsonValue arr1 = BsonMapper.Global.Serialize(srgb1), arr2 = BsonMapper.Global.Serialize(hclp1),
+               arr3 = BsonMapper.Global.Serialize(srgb2), arr4 = BsonMapper.Global.Serialize(hclp2),
+               arr5 = BsonMapper.Global.Serialize(srgb3), arr6 = BsonMapper.Global.Serialize(hclp3);
+
+           string perceptual = $"SIMILARITY_MAGICK_PERCEPTUAL({arr1}, {arr3}, {arr5}, {arr2}, {arr4}, {arr6}, $.perceptualHash)";
+           BsonExpression similarityCondition = $"{perceptual} >= {minSimilarity}";
+           if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+           else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+           else if (precision >= 0) query = query.Where(preFilterCondition);
+           query = query.OrderByDescending(perceptual);
+       }			
+       else {
+           string difference = $"SIMILARITY_COENM($.differenceHash, {(BsonValue)(long)hashInfo.differenceHash})";
+           BsonExpression similarityCondition = $"{difference} >= {minSimilarity}";
+           if (minSimilarity > 0.0 && precision >= 0) query = query.Where(Query.And(preFilterCondition, similarityCondition));
+           else if (minSimilarity > 0.0) query = query.Where(similarityCondition);
+           else if (precision >= 0) query = query.Where(preFilterCondition);
+           query = query.OrderByDescending(difference);
+       }*/
+
+        /* if (minSimilarity > 0.0 || precision >= 0) {
+             var results = query.Select(x => x.imageHash).Limit(count).ToArray();
+             _lastQueriedCount = results.Length;
+             return results;
+         }
+
+         if (!counted) _lastQueriedCount = query.Count();
+
+         return query.Select(x => x.imageHash).Offset(offset).Limit(count).ToArray();	*/
+    }
+
+    public void BulkAddTags(string[] imageHashes, string[] tags)
 	{
 		try {
 			var hs = new HashSet<string>(imageHashes);
@@ -770,7 +818,7 @@ public class Database : Node
 				importStart = DateTime.Now.Ticks,
 				importFinish = 0,
 				finished = false,
-				progressIds = new HashSet<string>(),
+                sectionIds = new HashSet<string>(),
 			};
 
 			int numSections = (int)Math.Ceiling((double)_total/progressSectionSize);
@@ -781,25 +829,25 @@ public class Database : Node
 				string[] __paths = new string[progressSectionSize];
 				Array.Copy(_paths, i * progressSectionSize, __paths, 0, progressSectionSize);
 
-				var _progressId = importer.CreateProgressID();
+				var _sectionId = importer.CreateSectionId();
 				var importProgress = new ImportProgress {
-					progressId = _progressId,
+                    sectionId = _sectionId,
 					paths = __paths,
 				};
 				listProgress.Add(importProgress);
-				importInfo.progressIds.Add(_progressId);
+				importInfo.sectionIds.Add(_sectionId);
 			}
 			if (lastSectionSize > 0) {
 				string[] __paths = new string[lastSectionSize];
 				Array.Copy(_paths, _total-lastSectionSize, __paths, 0, lastSectionSize);
 
-				var _progressId = importer.CreateProgressID();
+				var _sectionId = importer.CreateSectionId();
 				var importProgress = new ImportProgress {
-					progressId = _progressId,
+                    sectionId = _sectionId,
 					paths = __paths,
 				};
 				listProgress.Add(importProgress);
-				importInfo.progressIds.Add(_progressId);
+				importInfo.sectionIds.Add(_sectionId);
 			}
 
 			dictImports[_id] = importInfo;
@@ -830,10 +878,10 @@ public class Database : Node
 		}
 	}
 	
-	public string[] GetPaths(string progressId)
+	public string[] GetPaths(string sectionId)
 	{
 		try {
-			var importProgress = colProgress.FindById(progressId);
+			var importProgress = colProgress.FindById(sectionId);
 			if (importProgress == null) return new string[0];
 			if (importProgress.paths == null) return new string[0];
 			return importProgress.paths;
@@ -864,11 +912,21 @@ public class Database : Node
 		}
 	}
 
-	private static readonly object locker = new object();
-	public void FinishImportSection(string importId, string progressId)
+	public void DeleteImportSection(string sectionId)
 	{
-		if (!tempHashes.ContainsKey(progressId)) return;
-		string[] hashes = tempHashes[progressId].ToArray();
+        colProgress?.Delete(sectionId);
+    }
+
+	public void DeleteImport(string importId)
+	{
+		colImports?.Delete(importId);
+	}
+
+	private static readonly object locker = new object();
+	public void FinishImportSection(string importId, string sectionId)
+	{
+		if (!tempHashes.ContainsKey(sectionId)) return;
+		string[] hashes = tempHashes[sectionId].ToArray();
 		var hashInfoList = new List<HashInfo>();
 		foreach (string hash in hashes) {
 			HashInfo hashInfo = null;
@@ -886,14 +944,14 @@ public class Database : Node
 		lock (locker) {
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
-			importInfo.progressIds.Remove(progressId);
+			importInfo.sectionIds.Remove(sectionId);
 
 			colImports.Update(importInfo);
 			colImports.Update(allInfo);
-			colProgress.Delete(progressId);
-			tempHashes.Remove(progressId);
+			colProgress.Delete(sectionId);
+			tempHashes.Remove(sectionId);
 
-			if (importInfo.progressIds.Count == 0) FinishImport(importId);
+			if (importInfo.sectionIds.Count == 0) FinishImport(importId);
 		}
 
 		foreach (HashInfo hashInfo in hashInfoList) {
@@ -917,18 +975,18 @@ public class Database : Node
 		}
 	}
 
-	public void UpdateImportCount(string importId, int result)
+	public void UpdateImportCount(string importId, ImportCode result)
 	{
 		try {
 			var importInfo = GetImport(importId);
 			var allInfo = GetImport("All");
 
-			if (result == (int)ImportCode.SUCCESS) {
+			if (result == ImportCode.SUCCESS) {
 				allInfo.success++;
 				importInfo.success++;
 			}
-			else if (result == (int)ImportCode.DUPLICATE) importInfo.duplicate++;
-			else if (result == (int)ImportCode.IGNORED) importInfo.ignored++;
+			else if (result == ImportCode.DUPLICATE) importInfo.duplicate++;
+			else if (result == ImportCode.IGNORED) importInfo.ignored++;
 			else importInfo.failed++;
 			importInfo.processed++;
 
@@ -941,19 +999,17 @@ public class Database : Node
 		}
 	}
 
-	public ImportInfo GetImport(string importId)
+    public ImportInfo GetImport(string importId)
 	{
 		ImportInfo importInfo = null;
 		dictImports.TryGetValue(importId, out importInfo);
 		return importInfo;
 	}
 
-	public string[] GetProgressIds(string importId)
+	public string[] GetSectionIds(string importId)
 	{
 		var importInfo = GetImport(importId);
-		if (importInfo == null) return new string[0];
-		if (importInfo.progressIds == null) return new string[0];
-		return importInfo.progressIds.ToArray();
+		return importInfo?.sectionIds?.ToArray() ?? Array.Empty<string>();
 	}
 
 	public int GetSuccessOrDuplicateCount(string importId)
@@ -1061,69 +1117,36 @@ public class Database : Node
 /*==============================================================================*/
 /*                                   Similarity                                 */
 /*==============================================================================*/
-	public float ColorSimilarity(float[] h1, float[] h2)
+	public float GetAveragedSimilarityTo(string compareHash, string imageHash)
 	{
-		int numColors = h1.Length, same = 0;
-		float difference = 0f;
-		for (int color = 0; color < numColors; color++) {
-			float percent1 = h1[color], percent2 = h2[color];
-			difference += Math.Abs(percent1-percent2);
-			if (percent1 > 0 && percent2 > 0) same++;
-			else if (percent1 == percent2) same++;
-		}
-		
-		float p1 = 100f * (float)same/numColors;
-		float p2 = 100f-(difference/2f);
-
-		return 0.5f * (p1+p2);
-	}
-
-	public double DifferenceSimilarity(ulong h1, ulong h2)
-	{
-		return CompareHash.Similarity(h1, h2);
-	}
-	
-	public double PerceptualSimilarity(string h1, string h2)
-	{
-		var phash1 = new ImageMagick.PerceptualHash(h1);
-		var phash2 = new ImageMagick.PerceptualHash(h2);
-		double distance = phash1.SumSquaredDistance(phash2);
-		return (100.0 - Math.Sqrt(distance)); // seems to range from 0-10000 (so 0 would be 100% similar, 10000 would be 0% similar; 100 would be 68.4%)
-	}
+		var hashInfo1 = colHashes.FindById(compareHash);
+		var hashInfo2 = colHashes.FindById(imageHash);
+        float simi1 = CalcSimilarity(hashInfo1.waveletHash, hashInfo2.waveletHash);
+        float simi2 = CalcSimilarity(hashInfo1.averageHash, hashInfo2.averageHash);
+        float simi3 = CalcSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
+        return (simi1 + simi2 + simi3) / 3;
+    }
 
 	public float GetAverageSimilarityTo(string compareHash, string imageHash)
 	{
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
-		float color = ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
-		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
-		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);
-		return (float)((color * 0.25f) + (perceptual * 0.25f) + (difference * 0.5f));
-		//return (color+(float)perceptual+(float)difference)/3f;
-	}
-
-	public float GetColorSimilarityTo(string compareHash, string imageHash)
-	{
-		var hashInfo1 = colHashes.FindById(compareHash);
-		var hashInfo2 = colHashes.FindById(imageHash);
-		return ColorSimilarity(hashInfo1.colorHash, hashInfo2.colorHash);
-	}
+		return CalcSimilarity(hashInfo1.averageHash, hashInfo2.averageHash);
+    }
 
 	public float GetDifferenceSimilarityTo(string compareHash, string imageHash)
 	{
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
-		double difference = DifferenceSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
-		return (float)difference;
-	}
+        return CalcSimilarity(hashInfo1.differenceHash, hashInfo2.differenceHash);
+    }
 
-	public float GetPerceptualSimilarityTo(string compareHash, string imageHash)
+	public float GetWaveletSimilarityTo(string compareHash, string imageHash)
 	{
 		var hashInfo1 = colHashes.FindById(compareHash);
 		var hashInfo2 = colHashes.FindById(imageHash);
-		double perceptual = PerceptualSimilarity(hashInfo1.perceptualHash, hashInfo2.perceptualHash);
-		return (float) perceptual;
-	}
+        return CalcSimilarity(hashInfo1.waveletHash, hashInfo2.waveletHash);
+    }
 
 
 }

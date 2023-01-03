@@ -7,33 +7,35 @@ namespace Data
 	public enum ErrorCodes { OK, ERROR }
 	public enum ImportCode { SUCCESS, DUPLICATE, IGNORED, FAILED }
 	public enum ImageType { JPG, PNG, APNG, GIF, WEBP, OTHER=7, ERROR=-1 }  
-	public enum Sort { SHA256, PATH, NAME, SIZE, UPLOAD_TIME, CREATION_TIME, EDIT_TIME, DIMENSIONS, TAG_COUNT, RANDOM, IMAGE_COLOR, RATING_QUALITY, RATING_APPEAL, RATING_ART_STYLE, RATING_SUM, RATING_AVERAGE }
+	public enum Sort { SHA256, PATH, NAME, SIZE, UPLOAD_TIME, CREATION_TIME, EDIT_TIME, DIMENSIONS, TAG_COUNT, RANDOM, IMAGE_COLOR, RATING_QUALITY, RATING_APPEAL, RATING_ART_STYLE, RATING_SUM, RATING_AVERAGE, RED, GREEN, BLUE, ALPHA, LIGHT, DARK }
 	public enum Order { ASCENDING, DESCENDING }
 	public enum Tab { IMPORT_GROUP, IMAGE_GROUP, TAG, SIMILARITY }
-	public enum Similarity { AVERAGE, COLOR, DIFFERENCE, PERCEPTUAL }
+	public enum Similarity { AVERAGED, AVERAGE, DIFFERENCE, WAVELET }
 	public enum AnimationStatus { PLAYING, LOADING, STOPPING }
 	internal enum ExpressionType { ALL, ANY, NONE }
-	
-	public class HashInfo 
+
+	public class HashInfo
 	{
 		public string imageHash { get; set; }                 // the SHA256 hash of the image
-		public string internalPath { get; set; }              // the new path of the image if user allows copying/moving images to a central location
 		public string imageName { get; set; }                 // the displayed name of the image, also used for sorting (can be manually set or can cycle through paths)  
 
-		public float colorBucket { get; set; }
-		public int bucket1 { get; set; }
-
+		public ulong averageHash { get; set; }
+		public ulong waveletHash { get; set; }
 		public ulong differenceHash { get; set; }             // the CoenM difference hash of the image
-		public float[] colorHash { get; set; }                // the 'color hash' I made
-		public string perceptualHash { get; set; }
-		//public int numColors { get; set; }
 
-		public int width { get; set; }                        // the width of the image in pixels
+		public int bucket { get; set; }
+		public int red { get; set; }
+		public int green { get; set; }
+		public int blue { get; set; }
+		public int alpha { get; set; }
+		public int light { get; set; }
+		public int dark { get; set; }
+
+        public int width { get; set; }                        // the width of the image in pixels
 		public int height { get; set; }                       // the height of the image in pixels
-		public int flags { get; set; }                        // the flags of the image (currently used only for filter toggling)
-		//public int thumbnailType { get; set; }                // the type (png/jpg/?) of the thumbnail
 		public int imageType { get; set; }                    // the type (png/jpg/apng/etc) of the full image
 		public long size { get; set; }                        // the size of the image in bytes
+		
 		public long creationTime { get; set; }                // the UTC time that the image was created
 		public long lastWriteTime { get; set; }               // the UTC time that the image was last edited
 		public long uploadTime { get; set; }                  // the UTC time that this hashInfo was first uploaded to the database
@@ -43,7 +45,6 @@ namespace Data
 		public HashSet<string> imports { get; set; }          // the imports this imageHash was present in
 		public HashSet<string> groups { get; set; }           // the groups this imageHash is present in
 		public HashSet<string> paths { get; set; }            // the paths that this imageHash has been found at
-		//public HashSet<string> tags { get; set; }             // the tags that have been applied to this imageHash
 		public string[] tags { get; set; }
 
 		public int ratingSum { get; set; }
@@ -66,12 +67,12 @@ namespace Data
 		public long importFinish { get; set; }	// the UTC time that the import finished
 
 		public bool finished { get; set; }			// whether or not the import has finished
-		public HashSet<string> progressIds { get; set; }	// the ids of the sectioned in-progress arrays of paths,etc for this import
+		public HashSet<string> sectionIds { get; set; }	// the ids of the sectioned in-progress arrays of paths,etc for this import
 	}
 
 	public class ImportProgress
 	{
-		public string progressId { get; set; }	// the generated id P... of this section of the in-progress arrays
+		public string sectionId { get; set; }	// the generated id P... of this section of the in-progress arrays
 		public string[] paths { get; set; }		// the paths for this section of the in-progress arrays
 	}
 

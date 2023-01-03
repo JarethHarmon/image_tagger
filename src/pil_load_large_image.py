@@ -22,7 +22,7 @@ def has_transparency(img):
 def load_large_image(impath, imhash, num_y, num_x):
     im = Image.open(impath)
     is_png = has_transparency(im)
-    _type = 'png' if is_png else 'jpeg'
+    im_type = 'png' if is_png else 'jpeg'
     if is_png: 
         if im.mode != 'RGBA': 
             im = im.convert('RGBA')
@@ -37,7 +37,7 @@ def load_large_image(impath, imhash, num_y, num_x):
     
     for x in range(0, npim.shape[0], M):
         for y in range(0, npim.shape[1], N):
-            if csharp.StopLoadingLargeImage(imhash): break
+            if csharp.StopLoading(imhash): break
             bi = io.BytesIO()
             nim = Image.fromarray(npim[x:x+M, y:y+N])
             if is_png: nim.save(bi, 'png', compress_level=0)
@@ -45,5 +45,5 @@ def load_large_image(impath, imhash, num_y, num_x):
             base64_str = str(base64.b64encode(bi.getvalue()))
             base64_str = base64_str.replace('\'', '')
             base64_str = base64_str[1:len(base64_str)]
-            base64_str = f'{_type}?{imhash}?{base64_str}'
-            csharp.SendPartialImage(base64_str)
+            base64_str = f'{im_type}?{imhash}?{base64_str}'
+            csharp.SendImageTile(base64_str)

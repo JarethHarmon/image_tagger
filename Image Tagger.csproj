@@ -4,11 +4,10 @@
     <RootNamespace>ImageTagger</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-	<PackageReference Include="Magick.NET-Q8-x64" Version="12.2.0" />
+	<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="12.2.2" />
 	<PackageReference Include="AlphaFS" Version="2.2.6" />
-	<PackageReference Include="CoenM.ImageSharp.ImageHash" Version="1.2.30" />
 	<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-	<PackageReference Include="pythonnet" Version="3.0.0" />
+	<PackageReference Include="pythonnet" Version="3.0.1" />
 	<Reference Include="System.Windows.Forms" />
 	<Reference Include="LiteDB">
 	  <HintPath>.mono\\temp\\bin\\Debug\\LiteDB.dll</HintPath>
