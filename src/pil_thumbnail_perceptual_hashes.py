@@ -99,18 +99,10 @@ def calc_color_buckets():
     red = rr.sum() // divisor
     green = gg.sum() // divisor
     blue = bb.sum() // divisor
-    
     alpha = (a < 127).sum() // divisor
-    # sums colors (including alpha) of each pixel, subtracts the alpha value from that, filters pixels to only ones with an alpha > 127
-    #   repeat/reshape ensure the where clause has the same size and shape as the pixels array; finally divides everything by 3 to get 
-    #   the average of each pixel; this is then used to determine the brightness of a color
-    # this could be accomplished much easier by converting to grayscale, but image ops are slow compared to numpy
-    # that said, I do already have an 'L' version of the image created, so I might be able to use that instead; would still need the alpha reshapes
-    #   to ensure pixels with alpha < 127 are not counted as dark/light and are instead counted as alpha
-    # could also do a weighted count for alpha, where I just add each alpha value together before dividing, this does not work for colors
-    # because white pixels will increase r,g, and b, but it should not cause issues for alpha
-    avg = np.add(-1 * a, np.sum(pixels, axis=2, where=((a > 127).repeat(4).reshape(image.height, image.width, 4)))) // 3 #reshape(256, 256, 4)))) // 3
-    light = (avg > 195).sum() // divisor
-    dark = (avg < 64).sum() // divisor
+
+    avg = np.add(np.sum(pixels, axis=2), -1 * a) // 3
+    aa = (a > 127)
+    light = (np.logical_and((avg > 195), aa)).sum() // divisor
+    dark = (np.logical_and((avg < 64), aa)).sum() // divisor
     return f'{red}?{green}?{blue}?{alpha}?{light}?{dark}'
-    #return list((red, green, blue, alpha, light, dark))
