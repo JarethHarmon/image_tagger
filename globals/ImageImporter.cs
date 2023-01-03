@@ -130,16 +130,6 @@ namespace Importer
             public int light;
             public int dark;
 
-            public ColorBuckets(int red, int green, int blue, int alpha, int light, int dark)
-            {
-                this.red = red;
-                this.green = green;
-                this.blue = blue;
-                this.alpha = alpha;
-                this.light = light;
-                this.dark = dark;
-            }
-
             public ColorBuckets(string _colors)
             {
                 string[] temp = _colors.Split('?');
