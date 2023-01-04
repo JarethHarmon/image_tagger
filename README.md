@@ -62,6 +62,3 @@
 
 ##### Querying the database can take much longer than it should while an import is in progress
 - The query does finish eventually
-
-##### Very large images are not supported
-- I do intend to add support for them, but it is pending a complete rewrite of how the preview section works.
