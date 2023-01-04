@@ -53,7 +53,7 @@ public class Database : Node
 		importer = GetNode<Importer.ImageImporter>("/root/ImageImporter");
 		globals = GetNode<Node>("/root/Globals");
 		signals = GetNode<Node>("/root/Signals");
-	}
+    }
 
 	public int Create()
 	{
@@ -594,12 +594,6 @@ public class Database : Node
 		int precision = 3;
 		//float colorPrecision = 13f;
 		double minSimilarity = 81.25f;
-
-		bool counted=false;
-		if (tagsAll.Length == 0 && tagsAny.Length == 0 && tagsNone.Length == 0 && minSimilarity == 0.0 && precision < 0) {
-			_lastQueriedCount = (importId.Equals("All")) ? GetSuccessCount(importId) : GetSuccessOrDuplicateCount(importId);
-			counted = true;
-		}
 
 		if (importId != "All") query = query.Where(x => x.imports.Contains(importId));
 		if (tagsAll.Length > 0) foreach (string tag in tagsAll) query = query.Where(x => x.tags.Contains(tag));

@@ -271,7 +271,7 @@ namespace Importer
             {
                 var image = (path.Length() < MAX_PATH_LENGTH)
                     ? new MagickImage(path)
-                    : new MagickImage((TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>()));
+                    : new MagickImage(TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>());
                 return false;
             }
             catch
@@ -383,7 +383,7 @@ namespace Importer
                 : new ImageInfo(path);
         }
 
-        private static Godot.Image LoadUnsupportedImage(string path)
+        public static Godot.Image LoadUnsupportedImage(string path)
         {
             try
             {
@@ -594,7 +594,10 @@ namespace Importer
                 {
                     db.UpdateImportCount(importId, ImportCode.FAILED);
                 }
-                else validPaths.Add(path);
+                else
+                {
+                    validPaths.Add(path);
+                }
             }
 
             //GD.Print(string.Join("\n", validPaths));
@@ -637,7 +640,7 @@ namespace Importer
             {
                 var imageInfo = GetImageInfo(imagePath);
                 if (imageInfo.ImageType == ImageType.ERROR) return ImportCode.FAILED;
-                
+
                 if (thumbnailExisted)
                 {
                     (perceptualHashes, colorBuckets) = GetPerceptualHashes(thumbPath);
@@ -683,7 +686,10 @@ namespace Importer
             else
             {
                 hashInfo.paths.Add(imagePath);
-                if (hashInfo.imports.Contains(importId)) result = ImportCode.IGNORED;
+                if (hashInfo.imports.Contains(importId))
+                {
+                    result = ImportCode.IGNORED;
+                }
                 else
                 {
                     hashInfo.imports.Add(importId);
