@@ -3,6 +3,7 @@
 namespace ImageTagger.Managers
 {
     // need to test if I can just use static functions instead
+    // also this does get added to the scene tree, but should do so itself instead of always being in the scene tree
     public sealed class PythonManager : Node
     {
         private ImportManager importer;

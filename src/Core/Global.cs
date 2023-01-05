@@ -19,7 +19,7 @@ namespace ImageTagger
     public sealed class Global
     {
         public const string ALL = "All";
-        public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256;
+        public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
 
         public static Settings Settings = Settings.LoadFromJsonFile();
 
@@ -67,7 +67,7 @@ namespace ImageTagger
                 : Settings.ThumbnailPath;
         }
 
-        private string GetRandomId(int numBytes)
+        private static string GetRandomId(int numBytes)
         {
             byte[] bytes = new byte[numBytes];
             var rng = new RNGCryptoServiceProvider();
@@ -75,9 +75,9 @@ namespace ImageTagger
             rng?.Dispose();
             return BitConverter.ToString(bytes).Replace("-", string.Empty);
         }
-        public string CreateImportId() { return $"I{GetRandomId(8)}"; }
-        public string CreateTabId() { return $"T{GetRandomId(8)}"; }
-        public string CraeteGroupId() { return $"G{GetRandomId(8)}"; }
-        public string CreateSectionId() { return $"S{GetRandomId(8)}"; }
+        public static string CreateImportId() { return $"I{GetRandomId(8)}"; }
+        public static string CreateTabId() { return $"T{GetRandomId(8)}"; }
+        public static string CraeteGroupId() { return $"G{GetRandomId(8)}"; }
+        public static string CreateSectionId() { return $"S{GetRandomId(8)}"; }
     }
 }

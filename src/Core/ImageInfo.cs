@@ -38,7 +38,7 @@ namespace ImageTagger.Core
         public string[] Tags { get; set; }
 
         public int RatingSum { get; set; }
-        public float RatingAverage { get; set; }
+        public float RatingAvg { get; set; }
         public Dictionary<string, int> Ratings { get; set; }
 
         public ImageInfo()

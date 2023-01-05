@@ -6,8 +6,6 @@ using ImageTagger.Core;
 using System.Linq;
 using System.Collections.Generic;
 using System;
-using ImageMagick.Formats;
-using System.Runtime.CompilerServices;
 
 namespace ImageTagger.Managers
 {
@@ -19,7 +17,7 @@ namespace ImageTagger.Managers
         private static readonly object locker = new object();
         private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
         private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
-        private Godot.File file;
+        private readonly Godot.File file;
 
         public override void _Ready()
         {
@@ -27,6 +25,10 @@ namespace ImageTagger.Managers
             signals = GetNode<Node>("/root/Signals");
             dbm = GetNode<DatabaseManager>("/root/DatabaseManager");
         }
+
+        /*=========================================================================================
+									           Load Images
+        =========================================================================================*/
 
         public Godot.Image LoadUnsupportedImage(string path)
         {
@@ -42,9 +44,6 @@ namespace ImageTagger.Managers
             return image;
         }
 
-        /*=========================================================================================
-									      Animations & Large Images
-        =========================================================================================*/
         public void LoadGif(string path, string hash)
         {
             Error error = ImageImporter.LoadGif(path, hash);
@@ -63,13 +62,16 @@ namespace ImageTagger.Managers
             signals.Call("emit_signal", "finish_large_image", hash);
         }
 
-        public bool StopLoading(string hash)
+        /*=========================================================================================
+									      Animations & Large Images
+        =========================================================================================*/
+        internal bool StopLoading(string hash)
         {
             return dbm.IncorrectImage(hash);
         }
 
         private bool frameOne = true;
-        public void SendFrameCount(int count)
+        internal void SendFrameCount(int count)
         {
             signals.Call("emit_signal", "set_animation_info", count, 24);
             frameOne = true;
@@ -90,7 +92,7 @@ namespace ImageTagger.Managers
             return texture;
         }
 
-        public void SendAnimationFrame(string frame)
+        internal void SendAnimationFrame(string frame)
         {
             string[] sections = frame.Split("?");
             string type = sections[0], hash = sections[1], data = sections[3];
@@ -107,7 +109,7 @@ namespace ImageTagger.Managers
         }
 
         private int currentGridIndex = 0;
-        public void SendImageTile(string tile)
+        internal void SendImageTile(string tile)
         {
             string[] sections = tile.Split("?");
             string type = sections[0], hash = sections[1], data = sections[2];
@@ -143,7 +145,7 @@ namespace ImageTagger.Managers
             ImportInfoAccess.SetImportInfo(Global.ALL, info);
         }
 
-        public void StoreTempImageInfo(string importId, string sectionId, ImageInfo info)
+        private void StoreTempImageInfo(string importId, string sectionId, ImageInfo info)
         {
             lock (locker)
             {
@@ -162,7 +164,7 @@ namespace ImageTagger.Managers
                 return tempHashes[sectionId].ToArray();
         }
 
-        public void CompleteImportSection(string importId, string sectionId)
+        private void CompleteImportSection(string importId, string sectionId)
         {
             if (!tempHashes.ContainsKey(sectionId)) return;
             string[] hashes = GetTemphashes(sectionId);
@@ -203,7 +205,7 @@ namespace ImageTagger.Managers
             DatabaseAccess.UpsertImageInfo(imageInfos);
         }
 
-        public void CompleteImport(string importId)
+        private void CompleteImport(string importId)
         {
             var info = ImportInfoAccess.GetImportInfo(importId);
             if (info is null) return;
@@ -249,7 +251,7 @@ namespace ImageTagger.Managers
             CompleteImportSection(importId, sectionId);
         }
 
-        public ImportStatus ImportImage(string importId, string sectionId, string imagePath)
+        private ImportStatus ImportImage(string importId, string sectionId, string imagePath)
         {
             var fileInfo = new ImageImporter.FileInfo(imagePath);
             if (fileInfo.Size < 0) return ImportStatus.FAILED;

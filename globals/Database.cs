@@ -822,8 +822,10 @@ public class Database : Node
 			for (int i = 0; i < numSections-1; i++) {
 				string[] __paths = new string[progressSectionSize];
 				Array.Copy(_paths, i * progressSectionSize, __paths, 0, progressSectionSize);
+                //var __paths = new ArraySegment<string>(_paths, i * progressSectionSize, progressSectionSize); // might be usable if I write my own serializer for litedb
+                //var __paths = _paths.AsSpan(i * progressSectionSize, progressSectionSize);
 
-				var _sectionId = importer.CreateSectionId();
+                var _sectionId = importer.CreateSectionId();
 				var importProgress = new ImportProgress {
                     sectionId = _sectionId,
 					paths = __paths,
@@ -834,8 +836,10 @@ public class Database : Node
 			if (lastSectionSize > 0) {
 				string[] __paths = new string[lastSectionSize];
 				Array.Copy(_paths, _total-lastSectionSize, __paths, 0, lastSectionSize);
+                //var __paths = new ArraySegment<string>(_paths, _total - lastSectionSize, lastSectionSize);
+                //var __paths = _paths.AsSpan(_total - lastSectionSize, lastSectionSize);
 
-				var _sectionId = importer.CreateSectionId();
+                var _sectionId = importer.CreateSectionId();
 				var importProgress = new ImportProgress {
                     sectionId = _sectionId,
 					paths = __paths,

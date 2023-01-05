@@ -10,6 +10,10 @@ namespace ImageTagger.Metadata
     {
         private static Dictionary<string, TabInfo> dictTabInfo = new Dictionary<string, TabInfo>();
 
+
+        /* ===================================================================================
+                                                Manage 
+        =================================================================================== */
         internal static void CreateDictionary(IEnumerable<TabInfo> tabs)
         {
             foreach (var tab in tabs)
@@ -30,25 +34,27 @@ namespace ImageTagger.Metadata
             }
         }
 
+        internal static void CreateTab(TabInfo info)
+        {
+            dictTabInfo[info.Id] = info;
+            DatabaseAccess.InsertTabInfo(info);
+        }
+
+        internal static void DeleteTab(string id)
+        {
+            dictTabInfo.Remove(id);
+            DatabaseAccess.DeleteTabInfo(id);
+        }
+
+
+        /* ===================================================================================
+                                              Get Info 
+        =================================================================================== */
         internal static TabInfo GetTabInfo(string id)
         {
             if (dictTabInfo.TryGetValue(id, out TabInfo info))
                 return info;
             return null;
-        }
-
-        internal static TabType GetTabType(string id)
-        {
-            if (dictTabInfo.TryGetValue(id, out TabInfo tabInfo))
-                return tabInfo.TabType;
-            return TabType.DEFAULT;
-        }
-
-        internal static string GetImportId(string id)
-        {
-            if (dictTabInfo.TryGetValue(id, out TabInfo tabInfo))
-                return tabInfo.ImportId;
-            return Global.ALL;
         }
 
         internal static string[] GetTabIds()
@@ -63,6 +69,5 @@ namespace ImageTagger.Metadata
             query = query.Where(x => x.ImportId.Equals(importId));
             return query.Select(x => x.Id).ToArray();
         }
-
     }
 }

@@ -40,6 +40,7 @@ Storage="*res://globals/Storage.cs"
 Inputs="*res://globals/Inputs.gd"
 ImportManager="*res://src/Managers/ImportManager.cs"
 DatabaseManager="*res://src/Managers/DatabaseManager.cs"
+MetadataManager="*res://src/Managers/MetadataManager.cs"
 
 [debug]
 

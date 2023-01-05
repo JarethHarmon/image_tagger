@@ -149,7 +149,7 @@ namespace ImageTagger.Database
             _All = null;
             _None = null;
 
-            all = All.ToArray(); // this would be a nice time to have access to Span<T>
+            all = All.ToArray();
             any = Any.ToArray();
             none = None.ToArray();
 
@@ -197,7 +197,7 @@ namespace ImageTagger.Database
 
                     var list = new List<BsonExpression>();
                     if (condition[ExpressionType.ALL].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.ALL].ToArray(), ExpressionType.ALL)); // another use case for Span<T>
+                        list.Add(CreateCondition(condition[ExpressionType.ALL].ToArray(), ExpressionType.ALL));
                     if (condition[ExpressionType.ANY].Count > 0)
                         list.Add(CreateCondition(condition[ExpressionType.ANY].ToArray(), ExpressionType.ANY));
                     if (condition[ExpressionType.NONE].Count > 0)

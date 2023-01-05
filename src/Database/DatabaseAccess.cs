@@ -72,6 +72,16 @@ namespace ImageTagger.Database
             return colImageInfo?.FindById(hash);
         }
 
+        internal static void UpdateImageInfo(ImageInfo info)
+        {
+            colImageInfo?.Update(info);
+        }
+
+        internal static void UpdateImageInfo(IEnumerable<ImageInfo> infos)
+        {
+            colImageInfo?.Update(infos);
+        }
+
         internal static void UpsertImageInfo(ImageInfo info)
         {
             colImageInfo?.Upsert(info);
@@ -110,12 +120,22 @@ namespace ImageTagger.Database
             colImportInfo?.Update(infos);
         }
 
+        internal static void DeleteImportInfo(string id)
+        {
+            colImportInfo?.Delete(id);
+        }
+
         /* ===================================================================================
                                            ImportSection 
         =================================================================================== */
         internal static string[] FindImportSectionPaths(string id)
         {
             return colImportSection?.FindById(id)?.Paths ?? Array.Empty<string>();
+        }
+
+        internal static void InsertImportSections(IEnumerable<ImportSection> sections)
+        {
+            colImportSection?.Insert(sections);
         }
 
         internal static void DeleteImportSection(string id)
@@ -134,6 +154,11 @@ namespace ImageTagger.Database
         internal static void InsertTabInfo(TabInfo tabInfo)
         {
             colTabInfo?.Insert(tabInfo);
+        }
+
+        internal static void DeleteTabInfo(string id)
+        {
+            colTabInfo?.Delete(id);
         }
     }
 }

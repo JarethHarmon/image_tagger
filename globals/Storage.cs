@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 
 namespace Data
@@ -72,7 +73,10 @@ namespace Data
     public class ImportProgress
     {
         public string sectionId { get; set; }   // the generated id P... of this section of the in-progress arrays
+        //public List<string> paths { get; set; }
         public string[] paths { get; set; }     // the paths for this section of the in-progress arrays
+        //public ArraySegment<string> paths { get; set; }
+        //public ReadOnlySpan<string> paths { get; set; }
     }
 
     public class GroupInfo

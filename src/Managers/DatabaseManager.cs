@@ -58,5 +58,39 @@ namespace ImageTagger.Managers
             hashes.Append(queryInfo.Id);
             return hashes;
         }
+
+        /*=========================================================================================
+                                                Similarity
+        =========================================================================================*/
+        public float GetAveragedSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            float simi1 = Global.CalcHammingSimilarity(info1.AverageHash, info2.AverageHash);
+            float simi2 = Global.CalcHammingSimilarity(info1.DifferenceHash, info2.DifferenceHash);
+            float simi3 = Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
+            return (simi1 + simi2 + simi3) / 3;
+        }
+
+        public float GetAverageSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            return Global.CalcHammingSimilarity(info1.AverageHash, info2.AverageHash);
+        }
+
+        public float GetDifferenceSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            return Global.CalcHammingSimilarity(info1.DifferenceHash, info2.DifferenceHash);
+        }
+
+        public float GetWaveletSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            return Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
+        }
     }
 }
