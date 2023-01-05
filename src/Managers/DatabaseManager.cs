@@ -1,24 +1,17 @@
-﻿using ImageTagger.Database;
-using Godot;
-using ImageTagger.Metadata;
+﻿using Godot;
 using System;
 using System.Linq;
-using ImageTagger.Core;
+using ImageTagger.Database;
+using ImageTagger.Metadata;
+using ImageTagger.Importer;
 
 namespace ImageTagger.Managers
 {
     public sealed class DatabaseManager : Node
     {
-        private ImageInfo currentImageInfo;
-
-        public string GetCurrentHash()
-        {
-            return currentImageInfo?.Hash ?? string.Empty;
-        }
-
         public bool IncorrectImage(string hash)
         {
-            string _hash = GetCurrentHash();
+            string _hash = ImageInfoAccess.GetCurrentHash();
             if (_hash.Equals(string.Empty)) return true;
             return !hash.Equals(_hash, StringComparison.InvariantCultureIgnoreCase);
         }
@@ -33,7 +26,7 @@ namespace ImageTagger.Managers
         {
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
             if (tabInfo is null) return Array.Empty<string>();
-            var perceptualHashes = ImageInfoAccess.GetPerceptualHashes(tabInfo.SimilarityHash);
+            var perceptualHashes = ImageImporter.GetPerceptualHashes(tabInfo.SimilarityHash);
             var conditions = Querier.ConvertStringToComplexTags(tagsAll, tagsAny, tagsNone, tagsComplex);
 
             var queryInfo = new QueryInfo
@@ -55,9 +48,9 @@ namespace ImageTagger.Managers
                 SortSimilarity = (SortSimilarity)sortSimilarity,
 
                 SimilarityHash = tabInfo.SimilarityHash,
-                AverageHash = perceptualHashes.average,
-                DifferenceHash = perceptualHashes.difference,
-                WaveletHash = perceptualHashes.wavelet,
+                AverageHash = perceptualHashes.Average,
+                DifferenceHash = perceptualHashes.Difference,
+                WaveletHash = perceptualHashes.Wavelet,
             };
             queryInfo.CalcId();
 

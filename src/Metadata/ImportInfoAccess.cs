@@ -31,8 +31,14 @@ namespace ImageTagger.Metadata
         {
             if (dictImportInfo?.TryGetValue(id, out var info) ?? false)
                 return info;
-            // this should not ever be called, and there is an argument to be made that it should just return null instead
+            // this should not ever be called, and there is an argument to be made that it should just return null instead (to avoid wasting time in database)
             return DatabaseAccess.FindImportInfo(id);
+        }
+
+        internal static void SetImportInfo(string id, ImportInfo info)
+        {
+            dictImportInfo[id] = info;
+            DatabaseAccess.UpdateImportInfo(info);
         }
     }
 }

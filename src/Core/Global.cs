@@ -35,6 +35,15 @@ namespace ImageTagger
             3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
         };
 
+        internal static int CountBits(ulong hash)
+        {
+            ulong temp = hash;
+            int count = 0;
+            for (; temp > 0; temp >>= 8)
+                count += _bitCounts[temp & 0xff];
+            return count;
+        }
+
         public static float CalcHammingSimilarity(ulong hash1, ulong hash2)
         {
             int hammingDistance = 0;

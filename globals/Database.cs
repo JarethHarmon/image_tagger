@@ -17,7 +17,7 @@ public class Database : Node
 	public void SetMetadataPath(string path) { metadataPath = path; }
 
 	/* may eventually reduce and merge these (especially merging dbGroups with dbTags) */
-	private LiteDatabase dbHashes, dbImports, dbGroups, dbTags;
+	private LiteDatabase dbHashes, dbImports;//, dbGroups, dbTags;
 	//private LiteDatabase[] dbThumbnails = new LiteDatabas[256]; // FF=255, 00=0, 7F=128	(7*16+F=8*16=128)
 
 	private ILiteCollection<HashInfo> colHashes;
@@ -145,14 +145,14 @@ public class Database : Node
 	{
 		dbHashes.Dispose();
 		dbImports.Dispose();
-		dbGroups.Dispose();
-		dbTags.Dispose();
+		//dbGroups.Dispose();
+		//dbTags.Dispose();
 	}
 
 	public void CheckpointHashDB() { dbHashes.Checkpoint(); }
 	public void CheckpointImportDB() { dbImports.Checkpoint(); }
-	public void CheckpointGroupDB() { dbGroups.Checkpoint(); }
-	public void CheckpointTagDB() { dbTags.Checkpoint(); }
+	//public void CheckpointGroupDB() { dbGroups.Checkpoint(); }
+	//public void CheckpointTagDB() { dbTags.Checkpoint(); }
 
 	/*==============================================================================*/
 	/*                            Temporary Hash Storage                            */

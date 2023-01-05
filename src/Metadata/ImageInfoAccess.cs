@@ -1,28 +1,22 @@
+using ImageTagger.Core;
 using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
     internal sealed class ImageInfoAccess
     {
-        internal struct PerceptualHashes
-        {
-            public ulong average;
-            public ulong difference;
-            public ulong wavelet;
+        private static ImageInfo currentImageInfo;
 
-            public PerceptualHashes(ulong average, ulong difference, ulong wavelet)
-            {
-                this.average = average;
-                this.difference = difference;
-                this.wavelet = wavelet;
-            }
+        internal static string GetCurrentHash()
+        {
+            return currentImageInfo?.Hash ?? string.Empty;
         }
 
-        internal static PerceptualHashes GetPerceptualHashes(string hash)
+        internal static ImageInfo GetImageInfo(string hash)
         {
-            var info = DatabaseAccess.FindImageInfo(hash);
-            if (info is null) return new PerceptualHashes();
-            return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash);
+            if (currentImageInfo?.Hash.Equals(hash, System.StringComparison.InvariantCultureIgnoreCase) ?? false)
+                return currentImageInfo;
+            return DatabaseAccess.FindImageInfo(hash);
         }
     }
 }

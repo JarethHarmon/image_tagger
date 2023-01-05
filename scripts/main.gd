@@ -20,10 +20,10 @@ func _notification(what) -> void:
 		importer.cancel_manager()
 		importer.cancel_IS_thread()
 		previewer.stop_threads()
-		Database.CheckpointGroupDB()
+		#Database.CheckpointGroupDB()
 		Database.CheckpointHashDB()
 		Database.CheckpointImportDB()
-		Database.CheckpointTagDB()
+		#Database.CheckpointTagDB()
 		Database.Destroy()
 		ImageImporter.Shutdown();
 		Globals.save_settings()

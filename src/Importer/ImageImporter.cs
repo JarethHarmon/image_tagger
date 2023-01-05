@@ -1,6 +1,6 @@
 using System;
-using System.CodeDom;
 using ImageMagick;
+using ImageTagger.Database;
 using Python.Runtime;
 
 namespace ImageTagger.Importer
@@ -45,15 +45,22 @@ namespace ImageTagger.Importer
         internal struct PerceptualHashes
         {
             public ulong Average;
-            public ulong Wavelet;
             public ulong Difference;
+            public ulong Wavelet;
 
-            public PerceptualHashes(ulong average, ulong wavelet, ulong difference)
+            public PerceptualHashes(ulong average, ulong difference, ulong wavelet)
             {
                 Average = average;
-                Wavelet = wavelet;
                 Difference = difference;
+                Wavelet = wavelet;
             }
+        }
+
+        internal static PerceptualHashes GetPerceptualHashes(string hash)
+        {
+            var info = DatabaseAccess.FindImageInfo(hash);
+            if (info is null) return new PerceptualHashes();
+            return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash);
         }
 
         internal struct ColorBuckets
@@ -160,7 +167,7 @@ namespace ImageTagger.Importer
         /*=========================================================================================
 									                IO
         =========================================================================================*/
-        private static bool FileDoesNotExist(string path)
+        internal static bool FileDoesNotExist(string path)
         {
             return (path.Length < Global.MAX_PATH_LENGTH)
                 ? !System.IO.File.Exists(path)
@@ -237,20 +244,13 @@ namespace ImageTagger.Importer
             }
         }
 
-        internal struct ImageInfo
+        internal struct ImageInfoPart
         {
             public ImageType ImageType;
             public int Width;
             public int Height;
 
-            public ImageInfo(ImageType type, int width, int height)
-            {
-                ImageType = type;
-                Width = width;
-                Height = height;
-            }
-
-            public ImageInfo(string path)
+            public ImageInfoPart(string path)
             {
                 try
                 {
@@ -276,7 +276,7 @@ namespace ImageTagger.Importer
                 }
             }
 
-            public ImageInfo(string path, ImageType type)
+            public ImageInfoPart(string path, ImageType type)
             {
                 try
                 {
@@ -319,11 +319,11 @@ namespace ImageTagger.Importer
             }
         }
 
-        internal static ImageInfo GetImageInfo(string path)
+        internal static ImageInfoPart GetImageInfoPart(string path)
         {
             return (IsApng(path))
-                ? new ImageInfo(path, ImageType.APNG)
-                : new ImageInfo(path);
+                ? new ImageInfoPart(path, ImageType.APNG)
+                : new ImageInfoPart(path);
         }
 
         // have 3rd script create the image instead to avoid using Godot here

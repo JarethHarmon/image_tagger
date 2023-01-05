@@ -44,11 +44,20 @@ namespace ImageTagger.Core
         public ImageInfo()
         {
             ImageType = ImageType.ERROR;
+            IsGroupLeader = false;
             Imports = new HashSet<string>();
             Paths = new HashSet<string>();
             Groups = new HashSet<string>();
             Tags = Array.Empty<string>();
             Ratings = new Dictionary<string, int>();
+        }
+
+        public void Merge(ImageInfo other)
+        {
+            this.Paths.UnionWith(other.Paths);
+            this.Imports.UnionWith(other.Imports);
+            this.Groups.UnionWith(other.Groups);
+            this.Tags = (string[])this.Tags.Union(other.Tags);
         }
     }
 }

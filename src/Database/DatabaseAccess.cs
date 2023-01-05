@@ -72,6 +72,16 @@ namespace ImageTagger.Database
             return colImageInfo?.FindById(hash);
         }
 
+        internal static void UpsertImageInfo(ImageInfo info)
+        {
+            colImageInfo?.Upsert(info);
+        }
+
+        internal static void UpsertImageInfo(IEnumerable<ImageInfo> infos)
+        {
+            colImageInfo?.Upsert(infos);
+        }
+
         /* ===================================================================================
                                             ImportInfo 
         =================================================================================== */
@@ -90,12 +100,27 @@ namespace ImageTagger.Database
             colImportInfo?.Insert(infos);
         }
 
+        internal static void UpdateImportInfo(ImportInfo info)
+        {
+            colImportInfo?.Update(info);
+        }
+
+        internal static void UpdateImportInfo(IEnumerable<ImportInfo> infos)
+        {
+            colImportInfo?.Update(infos);
+        }
+
         /* ===================================================================================
                                            ImportSection 
         =================================================================================== */
         internal static string[] FindImportSectionPaths(string id)
         {
             return colImportSection?.FindById(id)?.Paths ?? Array.Empty<string>();
+        }
+
+        internal static void DeleteImportSection(string id)
+        {
+            colImportSection?.Delete(id);
         }
 
         /* ===================================================================================
