@@ -44,11 +44,11 @@ namespace ImageTagger.Core
         public ImageInfo()
         {
             ImageType = ImageType.ERROR;
-            Imports = (HashSet<string>)Enumerable.Empty<string>();
-            Paths = (HashSet<string>)Enumerable.Empty<string>();
-            Groups = (HashSet<string>)Enumerable.Empty<string>();
+            Imports = new HashSet<string>();
+            Paths = new HashSet<string>();
+            Groups = new HashSet<string>();
             Tags = Array.Empty<string>();
-            Ratings = (Dictionary<string, int>)Enumerable.Empty<(string, int)>();
+            Ratings = new Dictionary<string, int>();
         }
     }
 }

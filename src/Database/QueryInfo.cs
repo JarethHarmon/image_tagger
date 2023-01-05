@@ -1,14 +1,14 @@
-﻿using ImageTagger.Core;
-using LiteDB;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using LiteDB;
+using ImageTagger.Core;
 
 namespace ImageTagger.Database
 {
-    public sealed class SimilarityQueryResult
+    internal sealed class SimilarityQueryResult
     {
         public string Hash { get; set; }
         public ulong Difference { get; set; }
@@ -17,61 +17,61 @@ namespace ImageTagger.Database
         public float Similarity { get; set; }
     }
 
-    public sealed class QueryInfo
+    internal sealed class QueryInfo
     {
-        public string Id { get; set; }
-        public string ImportId { get; set; }
-        public string GroupId { get; set; }
+        internal string Id { get; set; }
+        internal string ImportId { get; set; }
+        internal string GroupId { get; set; }
 
-        public string[] TagsAll { get; set; }
-        public string[] TagsAny { get; set; }
-        public string[] TagsNone { get; set; }
-        public List<Dictionary<ExpressionType, HashSet<string>>> TagsComplex { get; set; }
+        internal string[] TagsAll { get; set; }
+        internal string[] TagsAny { get; set; }
+        internal string[] TagsNone { get; set; }
+        internal List<Dictionary<ExpressionType, HashSet<string>>> TagsComplex { get; set; }
 
-        public int Offset { get; set; }
-        public int Limit { get; set; }
+        internal int Offset { get; set; }
+        internal int Limit { get; set; }
 
-        public TabType QueryType { get; set; }
-        public Sort Sort { get; set; }
-        public Order Order { get; set; }
-        public SortSimilarity SortSimilarity { get; set; }
+        internal TabType QueryType { get; set; }
+        internal Sort Sort { get; set; }
+        internal Order Order { get; set; }
+        internal SortSimilarity SortSimilarity { get; set; }
 
-        public string SimilarityHash { get; set; }
-        public ulong AverageHash { get; set; }
-        public ulong DifferenceHash { get; set; }
-        public ulong WaveletHash { get; set; }
-        public float MinSimilarity { get; set; }
-        public int BucketPrecision { get; set; }
+        internal string SimilarityHash { get; set; }
+        internal ulong AverageHash { get; set; }
+        internal ulong DifferenceHash { get; set; }
+        internal ulong WaveletHash { get; set; }
+        internal float MinSimilarity { get; set; }
+        internal int BucketPrecision { get; set; }
 
-        public int MinWidth { get; set; }
-        public int MaxWidth { get; set; }
-        public int MinHeight { get; set; }
-        public int MaxHeight { get; set; }
-        public long MinSize { get; set; }
-        public long MaxSize { get; set; }
+        internal int MinWidth { get; set; }
+        internal int MaxWidth { get; set; }
+        internal int MinHeight { get; set; }
+        internal int MaxHeight { get; set; }
+        internal long MinSize { get; set; }
+        internal long MaxSize { get; set; }
 
-        public long MinCreationTime { get; set; }
-        public long MaxCreationTime { get; set; }
-        public long MinUploadTime { get; set; }
-        public long MaxUploadTime { get; set; }
-        public long MinLastWriteTime { get; set; }
-        public long MaxLastWriteTime { get; set; }
-        public long MinLastEditTime { get; set; }
-        public long MaxLastEditTime { get; set; }
+        internal long MinCreationTime { get; set; }
+        internal long MaxCreationTime { get; set; }
+        internal long MinUploadTime { get; set; }
+        internal long MaxUploadTime { get; set; }
+        internal long MinLastWriteTime { get; set; }
+        internal long MaxLastWriteTime { get; set; }
+        internal long MinLastEditTime { get; set; }
+        internal long MaxLastEditTime { get; set; }
 
-        public int MinTagCount { get; set; }
-        public int MaxTagCount { get; set; }
-        public int MinRatingSum { get; set; }
-        public int MaxRatingSum { get; set; }
-        public float MinRatingAvg { get; set; }
-        public float MaxRatingAvg { get; set; }
+        internal int MinTagCount { get; set; }
+        internal int MaxTagCount { get; set; }
+        internal int MinRatingSum { get; set; }
+        internal int MaxRatingSum { get; set; }
+        internal float MinRatingAvg { get; set; }
+        internal float MaxRatingAvg { get; set; }
 
-        public ILiteQueryable<ImageInfo> Query { get; set; }
-        public ILiteQueryableResult<string> Results { get; set; }
-        public IEnumerable<string> ResultsRandom { get; set; }
-        public int LastQueriedCount { get; set; }
+        internal ILiteQueryable<ImageInfo> Query { get; set; }
+        internal ILiteQueryableResult<string> Results { get; set; }
+        internal IEnumerable<string> ResultsRandom { get; set; }
+        internal int LastQueriedCount { get; set; }
 
-        public QueryInfo()
+        internal QueryInfo()
         {
             Id = string.Empty;
             ImportId = Global.ALL;
@@ -157,7 +157,7 @@ namespace ImageTagger.Database
             return CalcHashFromString(string.Concat(list));
         }
 
-        public string GetId()
+        internal void CalcId()
         {
             Id = CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}",
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
@@ -165,7 +165,6 @@ namespace ImageTagger.Database
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime,
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
             ));
-            return Id;
         }
     }
 }

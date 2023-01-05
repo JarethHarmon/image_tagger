@@ -50,6 +50,8 @@ func _ready() -> void:
 	if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
 	Database.CreateAllInfo()
 	Database.LoadImportDb()
+	#if DatabaseAccess.Create() != OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
+	#if DatabaseAccess.Setup() != OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
 	Signals.emit_signal("import_info_load_finished")	
 
 func create_thumbnail_folders() -> void:

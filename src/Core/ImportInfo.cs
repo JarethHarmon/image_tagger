@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ImageTagger.Core
 {
@@ -24,7 +23,7 @@ namespace ImageTagger.Core
 
         public ImportInfo()
         {
-            Sections = (HashSet<string>)Enumerable.Empty<string>();
+            Sections = new HashSet<string>();
         }
     }
 

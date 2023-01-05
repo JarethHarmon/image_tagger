@@ -1,14 +1,16 @@
-﻿using ImageTagger.Core;
-using ImageTagger.Database;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using ImageTagger.Core;
+using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    public sealed class TabInfoAccess
+    internal sealed class TabInfoAccess
     {
         private static Dictionary<string, TabInfo> dictTabInfo = new Dictionary<string, TabInfo>();
 
-        public static void CreateDictionary(IEnumerable<TabInfo> tabs)
+        internal static void CreateDictionary(IEnumerable<TabInfo> tabs)
         {
             foreach (var tab in tabs)
                 dictTabInfo[tab.Id] = tab;
@@ -28,25 +30,39 @@ namespace ImageTagger.Metadata
             }
         }
 
-        public static TabInfo GetTabInfo(string id)
+        internal static TabInfo GetTabInfo(string id)
         {
-            if (dictTabInfo?.TryGetValue(id, out TabInfo info) ?? false)
+            if (dictTabInfo.TryGetValue(id, out TabInfo info))
                 return info;
             return null;
         }
 
-        public static TabType GetTabType(string id)
+        internal static TabType GetTabType(string id)
         {
-            if (dictTabInfo?.TryGetValue(id, out TabInfo tabInfo) ?? false)
+            if (dictTabInfo.TryGetValue(id, out TabInfo tabInfo))
                 return tabInfo.TabType;
             return TabType.DEFAULT;
         }
 
-        public static string GetImportId(string id)
+        internal static string GetImportId(string id)
         {
-            if (dictTabInfo?.TryGetValue(id, out TabInfo tabInfo) ?? false)
+            if (dictTabInfo.TryGetValue(id, out TabInfo tabInfo))
                 return tabInfo.ImportId;
             return Global.ALL;
         }
+
+        internal static string[] GetTabIds()
+        {
+            return dictTabInfo.Keys.ToArray();
+        }
+
+        internal static string[] GetTabIds(string importId)
+        {
+            if (importId.Equals(string.Empty)) return Array.Empty<string>();
+            var query = DatabaseAccess.GetTabInfoQuery();
+            query = query.Where(x => x.ImportId.Equals(importId));
+            return query.Select(x => x.Id).ToArray();
+        }
+
     }
 }

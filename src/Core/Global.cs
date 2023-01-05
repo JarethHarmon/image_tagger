@@ -1,8 +1,9 @@
-using ImageTagger.Core;
+using System;
+using System.Security.Cryptography;
 
 namespace ImageTagger
 {
-    public enum Error {  OK, GENERIC, DATABASE, DICTIONARY, IO }
+    public enum Error {  OK, GENERIC, DATABASE, DICTIONARY, IO, PYTHON }
     public enum ImportStatus {  SUCCESS, DUPLICATE, IGNORED, FAILED }
 
     public enum ImageType { JPEG, PNG, APNG, GIF, WEBP, OTHER=15, ERROR=-1 }
@@ -18,7 +19,9 @@ namespace ImageTagger
     public sealed class Global
     {
         public const string ALL = "All";
-        public static Settings Settings;
+        public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256;
+
+        public static Settings Settings = Settings.LoadFromJsonFile();
 
         private static readonly byte[] _bitCounts =
         {
@@ -54,5 +57,18 @@ namespace ImageTagger
                 ? Settings.DefaultThumbnailPath
                 : Settings.ThumbnailPath;
         }
+
+        private string GetRandomId(int numBytes)
+        {
+            byte[] bytes = new byte[numBytes];
+            var rng = new RNGCryptoServiceProvider();
+            rng.GetBytes(bytes);
+            rng?.Dispose();
+            return BitConverter.ToString(bytes).Replace("-", string.Empty);
+        }
+        public string CreateImportId() { return $"I{GetRandomId(8)}"; }
+        public string CreateTabId() { return $"T{GetRandomId(8)}"; }
+        public string CraeteGroupId() { return $"G{GetRandomId(8)}"; }
+        public string CreateSectionId() { return $"S{GetRandomId(8)}"; }
     }
 }

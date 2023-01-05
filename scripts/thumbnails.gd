@@ -171,6 +171,9 @@ func _query_thread(args:Array) -> void:
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
 		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
+		#image_hashes = QueryManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
+		#var qid:String = image_hashes.pop_back()
+		#queried_image_count = QueryManager.GetLastQueriedCount(qid)
 		queried_image_count = Database.GetLastQueriedCount()
 #		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 #		var lqh:int = lqc.hash()

@@ -4,11 +4,11 @@ using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    public sealed class ImportInfoAccess
+    internal sealed class ImportInfoAccess
     {
         private static Dictionary<string, ImportInfo> dictImportInfo = new Dictionary<string, ImportInfo>();
 
-        public static void CreateDictionary(IEnumerable<ImportInfo> imports)
+        internal static void CreateDictionary(IEnumerable<ImportInfo> imports)
         {
             foreach (var import in imports)
                 dictImportInfo[import.Id] = import;
@@ -27,7 +27,7 @@ namespace ImageTagger.Metadata
             }
         }
 
-        public static ImportInfo GetImportInfo(string id)
+        internal static ImportInfo GetImportInfo(string id)
         {
             if (dictImportInfo?.TryGetValue(id, out var info) ?? false)
                 return info;

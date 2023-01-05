@@ -1,18 +1,20 @@
+using System;
+using System.Collections.Generic;
+using LiteDB;
 using ImageTagger.Core;
 using ImageTagger.Metadata;
-using LiteDB;
-using System.Collections.Generic;
 
 namespace ImageTagger.Database
 {
-    public sealed class DatabaseAccess
+    internal sealed class DatabaseAccess
     {
         private static LiteDatabase dbImageInfo, dbImportInfo;
         private static ILiteCollection<ImageInfo> colImageInfo;
         private static ILiteCollection<ImportInfo> colImportInfo;
+        private static ILiteCollection<ImportSection> colImportSection;
         private static ILiteCollection<TabInfo> colTabInfo;
 
-        public static Error Create()
+        internal static Error Create()
         {
             try
             {
@@ -24,6 +26,7 @@ namespace ImageTagger.Database
 
                 colImageInfo = dbImageInfo.GetCollection<ImageInfo>("images");
                 colImportInfo = dbImportInfo.GetCollection<ImportInfo>("imports");
+                colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
 
                 return Error.OK;
@@ -35,7 +38,7 @@ namespace ImageTagger.Database
             }
         }
 
-        public static Error Setup()
+        internal static Error Setup()
         {
             if (colImageInfo is null) return Error.DATABASE;
             if (colImportInfo is null) return Error.DATABASE;
@@ -50,7 +53,7 @@ namespace ImageTagger.Database
             return Error.OK;
         }
 
-        public static void Shutdown()
+        internal static void Shutdown()
         {
             dbImageInfo?.Dispose();
             dbImportInfo?.Dispose();
@@ -59,12 +62,12 @@ namespace ImageTagger.Database
         /* ===================================================================================
                                             ImageInfo 
         =================================================================================== */
-        public static ILiteQueryable<ImageInfo> GetImageInfoQuery()
+        internal static ILiteQueryable<ImageInfo> GetImageInfoQuery()
         {
             return colImageInfo?.Query();
         }
 
-        public static ImageInfo FindImageInfo(string hash)
+        internal static ImageInfo FindImageInfo(string hash)
         {
             return colImageInfo?.FindById(hash);
         }
@@ -72,25 +75,38 @@ namespace ImageTagger.Database
         /* ===================================================================================
                                             ImportInfo 
         =================================================================================== */
-        public static ImportInfo FindImportInfo(string id)
+        internal static ImportInfo FindImportInfo(string id)
         {
             return colImportInfo?.FindById(id);
         }
 
-        public static void InsertImportInfo(ImportInfo info)
+        internal static void InsertImportInfo(ImportInfo info)
         {
             colImportInfo?.Insert(info);
         }
 
-        public static void InsertImportInfo(IEnumerable<ImportInfo> infos)
+        internal static void InsertImportInfo(IEnumerable<ImportInfo> infos)
         {
             colImportInfo?.Insert(infos);
         }
 
         /* ===================================================================================
+                                           ImportSection 
+        =================================================================================== */
+        internal static string[] FindImportSectionPaths(string id)
+        {
+            return colImportSection?.FindById(id)?.Paths ?? Array.Empty<string>();
+        }
+
+        /* ===================================================================================
                                               TabInfo 
         =================================================================================== */
-        public static void InsertTabInfo(TabInfo tabInfo)
+        internal static ILiteQueryable<TabInfo> GetTabInfoQuery()
+        {
+            return colTabInfo?.Query();
+        }
+
+        internal static void InsertTabInfo(TabInfo tabInfo)
         {
             colTabInfo?.Insert(tabInfo);
         }

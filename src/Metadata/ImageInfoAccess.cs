@@ -1,11 +1,10 @@
-using ImageTagger.Core;
 using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    public sealed class ImageInfoAccess
+    internal sealed class ImageInfoAccess
     {
-        public struct PerceptualHashes
+        internal struct PerceptualHashes
         {
             public ulong average;
             public ulong difference;
@@ -19,7 +18,7 @@ namespace ImageTagger.Metadata
             }
         }
 
-        public static PerceptualHashes GetPerceptualHashes(string hash)
+        internal static PerceptualHashes GetPerceptualHashes(string hash)
         {
             var info = DatabaseAccess.FindImageInfo(hash);
             if (info is null) return new PerceptualHashes();

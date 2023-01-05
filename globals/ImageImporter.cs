@@ -53,7 +53,6 @@ namespace Importer
         public ImageScanner scanner;
         public Database db;
 
-        public bool filterThumbnails = false;
         public string thumbnailPath;
         public void SetThumbnailPath(string path) { thumbnailPath = path; }
         public string executableDirectory;

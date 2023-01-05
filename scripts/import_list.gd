@@ -103,7 +103,7 @@ func indicate_selected_button(tab_id:String) -> void:
 	last_selected_tab = tab_id
 
 func create_tab_buttons() -> void: 
-	var tab_ids:Array = Database.GetTabIds()
+	var tab_ids:Array = Database.GetTabIds() # QueryManager.GetTabIds()
 	var all_count:int = Database.GetSuccessCount("All")
 	update_button_text("All", true, all_count, Database.GetTotalCount("All"), "All")
 	thread_count["All"] = all_count

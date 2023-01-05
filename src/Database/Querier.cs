@@ -1,18 +1,25 @@
-﻿using ImageTagger.Core;
-using ImageTagger.Metadata;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using LiteDB;
 using System.Linq;
+using LiteDB;
+using ImageTagger.Metadata;
 
 namespace ImageTagger.Database
 {
-    public sealed class QueryManager
+    internal sealed class TagConditions
     {
-        private Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
-        private Queue<string> queryHistoryQueue = new Queue<string>();
+        public string[] All;
+        public string[] Any;
+        public string[] None;
+        public List<Dictionary<ExpressionType, HashSet<string>>> Complex;
+    }
 
-        private BsonExpression CreateCondition(string[] tags, ExpressionType type)
+    internal sealed class Querier
+    {
+        private static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
+        private static Queue<string> queryHistoryQueue = new Queue<string>();
+
+        private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
             // NONE
             if (type == ExpressionType.NONE)
@@ -33,12 +40,16 @@ namespace ImageTagger.Database
             return Query.Or(list.ToArray());
         }
 
-        // numerical conditions
+        // numerical condition functions
 
-        private bool ManageQuery(QueryInfo info)
+        private static bool ManageQuery(QueryInfo info)
         {
             // return if query already in history
-            if (queryHistory.ContainsKey(info.Id)) return false;
+            if (queryHistory.TryGetValue(info.Id, out var _info))
+            {
+                info = _info; // retrieve info with results objects from history
+                return false;
+            }
             // if queryHistory already full, remove the oldest entry
             if (queryHistoryQueue.Count == Global.Settings.MaxQueriesToStore)
                 queryHistory.Remove(queryHistoryQueue.Dequeue());
@@ -48,7 +59,7 @@ namespace ImageTagger.Database
             return true;
         }
 
-        private void AddNumericalFilters(QueryInfo info)
+        private static void AddNumericalFilters(QueryInfo info)
         {
             // need to implement a UI for changing these, in the meantime pointless
             var query = DatabaseAccess.GetImageInfoQuery();
@@ -56,7 +67,7 @@ namespace ImageTagger.Database
             info.Query = query;
         }
 
-        private (string[], string[], string[], List<Dictionary<ExpressionType, HashSet<string>>>) ConvertStringToComplexTags(string[] all, string[] any, string[] none, string[] complex)
+        internal static TagConditions ConvertStringToComplexTags(string[] all, string[] any, string[] none, string[] complex)
         {
             HashSet<string> All = new HashSet<string>(all), Any = new HashSet<string>(any), None = new HashSet<string>(none),
                 _All = new HashSet<string>(all), _None = new HashSet<string>(none);
@@ -146,12 +157,16 @@ namespace ImageTagger.Database
             Any = null;
             None = null;
 
-            // might make a private class for this; method declaration is ugly
-            return (all, any, none, conditions);
+            return new TagConditions
+            {
+                All = all,
+                Any = any,
+                None = none,
+                Complex = conditions
+            };
         }
 
-        // note: change QueryInfo.TagsComplex to a List<BsonExpression> and construct them whenever the QueryInfo is constructed
-        private void AddTagFilters(QueryInfo info)
+        private static void AddTagFilters(QueryInfo info)
         {
             var query = info.Query;
             if (query is null) return;
@@ -201,7 +216,7 @@ namespace ImageTagger.Database
             info.Query = query;
         }
 
-        private IEnumerable<string> SimilarityQuery(QueryInfo info)
+        private static IEnumerable<string> SimilarityQuery(QueryInfo info)
         {
             if (info?.Query is null) return Array.Empty<string>();
             var query = info.Query;
@@ -274,7 +289,7 @@ namespace ImageTagger.Database
             return _results;
         }
 
-        private void OrderSortQuery(QueryInfo info, bool countResults)
+        private static void OrderSortQuery(QueryInfo info, bool countResults)
         {
             if (info.Query is null) return;
             var query = info.Query;
@@ -336,7 +351,7 @@ namespace ImageTagger.Database
             info.Results = query.Select(x => x.Hash);
         }
 
-        internal string[] QueryDatabase(QueryInfo info, bool countResults=false)
+        internal static string[] QueryDatabase(QueryInfo info, bool countResults=false)
         {
             if (info is null) return Array.Empty<string>();
             if (ManageQuery(info))
@@ -351,39 +366,13 @@ namespace ImageTagger.Database
             return info.Results?.Offset(info.Offset).Limit(info.Limit).ToArray() ?? Array.Empty<string>();
         }
 
-        public string[] TempConstructQueryInfo(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
-            int sort=(int)Sort.HASH, int order=(int)Order.ASCENDING, bool countResults=false, int sortSimilarity=(int)SortSimilarity.AVERAGED)
+        internal static int GetLastQueriedCount(string id)
         {
-            var tabInfo = TabInfoAccess.GetTabInfo(tabId);
-            var perceptualHashes = ImageInfoAccess.GetPerceptualHashes(tabInfo.SimilarityHash);
-            var (all, any, none, complex) = ConvertStringToComplexTags(tagsAll, tagsAny, tagsNone, tagsComplex);
-
-            var queryInfo = new QueryInfo
+            if (queryHistory.TryGetValue(id, out var info))
             {
-                ImportId = tabInfo.ImportId,
-                GroupId = string.Empty,
-
-                TagsAll = all,
-                TagsAny = any,
-                TagsNone = none,
-                TagsComplex = complex,
-
-                Offset = offset,
-                Limit = count,
-
-                QueryType = tabInfo.TabType,
-                Sort = (Sort)sort,
-                Order = (Order)order,
-                SortSimilarity = (SortSimilarity)sortSimilarity,
-
-                SimilarityHash = tabInfo.SimilarityHash,
-                AverageHash = perceptualHashes.average,
-                DifferenceHash = perceptualHashes.difference,
-                WaveletHash = perceptualHashes.wavelet,
-            };
-            queryInfo.GetId();
-
-            return QueryDatabase(queryInfo, countResults);
+                return info.LastQueriedCount;
+            }
+            return 0;
         }
     }
 }
