@@ -27,7 +27,7 @@ var index:int = 0
 var dark_grey:Color = Color(0.14, 0.14, 0.14)
 
 func _ready() -> void:
-	ImageScanner.SetCurrentPathDisplay(currently_scanning_path.get_path())
+	#ImageScanner.SetCurrentPathDisplay(currently_scanning_path.get_path())
 	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
 	Signals.connect("files_selected", self, "_files_selected") # need to append them directly to the path_list
@@ -42,7 +42,7 @@ func reset() -> void:
 	types.clear()
 	sizes.clear()
 	import_name.text = ""
-	import_id = ImageImporter.CreateImportId()
+	#import_id = ImageImporter.CreateImportId()
 
 func _files_dropped(file_paths:Array, _screen:int) -> void:
 	# instead of how it works now:
@@ -78,7 +78,7 @@ func start_scanner() -> void:
 func _thread() -> void:
 	while not scan_queue.empty():
 		var scan:Array = scan_queue.pop_front()
-		var image_count:int = ImageScanner.ScanDirectories(scan[0], scan[1], import_id)
+		#var image_count:int = ImageScanner.ScanDirectories(scan[0], scan[1], import_id)
 		# there will only every be one scan im progress/waiting to import at a time
 		# need to store the count and the array of found paths globally somewhere
 		# need to display array of found paths to user (in item list)
@@ -96,7 +96,7 @@ func _done() -> void:
 	scan_mutex.unlock()
 	print("scan finished")
 	
-	var paths_sizes:Array = ImageScanner.GetPathsSizes()
+	var paths_sizes:Array = []#ImageScanner.GetPathsSizes()
 	create_item_lists(paths_sizes)
 
 func _on_add_folders_button_up() -> void: Signals.emit_signal("add_folders")
@@ -107,9 +107,9 @@ func _folder_selected(folder:String) -> void: queue_append(folder, recursively.p
 # should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
-	var count:int = ImageScanner.ScanFiles(files, import_id)
-	var paths_sizes:Array = ImageScanner.GetPathsSizes()
-	create_item_lists(paths_sizes)
+	#var count:int = ImageScanner.ScanFiles(files, import_id)
+	#var paths_sizes:Array = ImageScanner.GetPathsSizes()
+	#create_item_lists(paths_sizes)
 
 func create_item_lists(paths_sizes:Array) -> void:
 	for path_size in paths_sizes:
@@ -139,5 +139,5 @@ func _on_begin_import_button_up() -> void:
 
 func _on_cancel_import_button_up() -> void:
 	reset()
-	ImageScanner.Cancel()
+	#ImageScanner.Cancel()
 	Signals.emit_signal("new_import_canceled")

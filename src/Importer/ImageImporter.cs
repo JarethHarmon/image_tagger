@@ -9,14 +9,12 @@ namespace ImageTagger.Importer
     {
         private const int MAX_BYTES_FOR_APNG_CHECK = 256;
         private const string acTL = "acTL";
-        private static string executableDirectory;
-        internal static void SetExecutableDirectory(string path) { executableDirectory = path; }
 
         /*=========================================================================================
 									         Initialization
         =========================================================================================*/
         private static IntPtr state;
-        internal static Error StartPython()
+        internal static Error StartPython(string executableDirectory)
         {
             try
             {
@@ -210,11 +208,12 @@ namespace ImageTagger.Importer
             }
         }
 
-        internal struct FileInfo
+        internal sealed class FileInfo
         {
             public long Size;
             public long CreationTime;
             public long LastWriteTime;
+            public string Name;
 
             public FileInfo(string path)
             {
@@ -226,6 +225,7 @@ namespace ImageTagger.Importer
                         Size = info.Length;
                         CreationTime = info.CreationTimeUtc.Ticks;
                         LastWriteTime = info.LastWriteTimeUtc.Ticks;
+                        Name = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
                     }
                     else
                     {
@@ -233,6 +233,7 @@ namespace ImageTagger.Importer
                         Size = info.Length;
                         CreationTime = info.CreationTimeUtc.Ticks;
                         LastWriteTime = info.LastWriteTimeUtc.Ticks;
+                        Name = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
                     }
                 }
                 catch
@@ -240,6 +241,7 @@ namespace ImageTagger.Importer
                     Size = -1;
                     CreationTime = -1;
                     LastWriteTime = -1;
+                    Name = string.Empty;
                 }
             }
         }

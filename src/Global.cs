@@ -1,3 +1,4 @@
+using Godot;
 using System;
 using System.Security.Cryptography;
 
@@ -16,7 +17,7 @@ namespace ImageTagger
     public enum TabType { DEFAULT, SIMILARITY }
     public enum ExpressionType { ALL, ANY, NONE }
 
-    public sealed class Global
+    public sealed class Global : Node
     {
         public const string ALL = "All";
         public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
@@ -56,14 +57,14 @@ namespace ImageTagger
         public static string GetMetadataPath()
         {
             return (Settings.UseDefaultMetadataPath)
-                ? Settings.DefaultMetadataPath
+                ? ProjectSettings.GlobalizePath("user://metadata")
                 : Settings.MetadataPath;
         }
 
         public static string GetThumbnailPath()
         {
             return (Settings.UseDefaultThumbnailPath)
-                ? Settings.DefaultThumbnailPath
+                ? ProjectSettings.GlobalizePath("user://thumbnails")
                 : Settings.ThumbnailPath;
         }
 
@@ -77,7 +78,7 @@ namespace ImageTagger
         }
         public static string CreateImportId() { return $"I{GetRandomId(8)}"; }
         public static string CreateTabId() { return $"T{GetRandomId(8)}"; }
-        public static string CraeteGroupId() { return $"G{GetRandomId(8)}"; }
+        public static string CreateGroupId() { return $"G{GetRandomId(8)}"; }
         public static string CreateSectionId() { return $"S{GetRandomId(8)}"; }
     }
 }

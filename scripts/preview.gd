@@ -91,7 +91,8 @@ func _ready() -> void:
 	timer.connect("timeout", self, "update_animation")
 
 func resize_current_image1() -> void:
-	 resize_current_image(Database.GetCurrentHash())
+	 #resize_current_image(Database.GetCurrentHash())
+	resize_current_image(MetadataManager.GetCurrentHash())
 
 func _toggle_preview_section(_visible:bool) -> void: 
 	self.visible = _visible
@@ -136,7 +137,8 @@ func _rating_thread() -> void:
 			var image_hash:String = args[0]
 			var rating_name:String = args[1]
 			var rating_value:int = args[2]
-			Database.AddRating(image_hash, rating_name, rating_value)
+			MetadataManager.AddRating([image_hash], rating_name, rating_value)
+			#Database.AddRating(image_hash, rating_name, rating_value)
 		OS.delay_msec(201)
 	rating_thread.call_deferred("wait_to_finish")
 	
@@ -202,9 +204,9 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		current_image = it
 		resize_current_image(image_hash)
 		# need to call a function that gets a list of ratings instead
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+		#Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
+		#Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
+		#Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
 		image_mutex.unlock()
 		return
 	
@@ -252,7 +254,7 @@ func start_manager() -> void:
 
 func start_one(_current_hash:String, _current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	var actual_format:int = Database.GetImageFormat(_current_hash)#ImageImporter.GetActualFormat(_current_path) # this should call the database method instead
+	var actual_format:int = 0#Database.GetImageFormat(_current_hash)#ImageImporter.GetActualFormat(_current_path) # this should call the database method instead
 	if actual_format == Globals.ImageType.APNG or actual_format == Globals.ImageType.GIF:
 		animation_mutex.lock()
 		animation_status[_current_hash] = a_status.LOADING
@@ -287,11 +289,11 @@ func _thread(args:Array) -> void:
 	var thread_id:int = args[2]
 	var actual_format:int = args[3]
 	
-	if Database.IncorrectImage(image_hash): return
+	if DatabaseManager.IncorrectImage(image_hash): return
 	
-	var dimensions:Vector2 = Database.GetDimensions(image_hash)
+	var dimensions:Vector2 = Vector2.ZERO#Database.GetDimensions(image_hash)
 
-	if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+	if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -340,7 +342,7 @@ func _thread(args:Array) -> void:
 				# not a major point of concern
 				ima.rect_position = Vector2((im_width * x) - x, (im_height * y) - y)
 				
-		ImageImporter.LoadLargeImage(path, image_hash, num_columns, num_rows)
+		#ImageImporter.LoadLargeImage(path, image_hash, num_columns, num_rows)
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -354,22 +356,22 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 
 		if e != OK: 
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			print("error ", e, ": ", path)
-			i = ImageImporter.LoadUnsupportedImage(path)
+			#i = ImageImporter.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -378,21 +380,21 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
-			i = ImageImporter.LoadUnsupportedImage(path)
+			#i = ImageImporter.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash): 
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -401,39 +403,39 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_webp_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+			if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
-			i = ImageImporter.LoadUnsupportedImage(path)
-			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+			#i = ImageImporter.LoadUnsupportedImage(path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
 		animation_mode = true
-		ImageImporter.LoadAPng(path, image_hash)
+		#ImageImporter.LoadAPng(path, image_hash)
 	elif actual_format == Globals.ImageType.GIF: 
 		animation_mode = true
-		ImageImporter.LoadGif(path, image_hash)
+		#ImageImporter.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED:# or Database.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return 
-		var i = ImageImporter.LoadUnsupportedImage(path)
-		if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
-			call_deferred("_done", thread_id, path, image_hash)
-			return
-		create_current_image(thread_id, i, path, image_hash)	
+		#var i = ImageImporter.LoadUnsupportedImage(path)
+		#if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
+		#	call_deferred("_done", thread_id, path, image_hash)
+		#	return
+		#create_current_image(thread_id, i, path, image_hash)	
 	else: pass
 
 	call_deferred("_done", thread_id, path, image_hash)
@@ -462,12 +464,14 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 			im = tex.get_data()
 	
 	var it:ImageTexture = ImageTexture.new()
-	it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
-	
+	#it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
+	it.create_from_image(im, 4 if Global.Settings.UseImageFilter else 0)
+
 	if image_hash != "":
 		it.set_meta("image_hash", image_hash)
 		image_mutex.lock()		
-		if image_queue.size() < Globals.settings.images_to_store:
+		#if image_queue.size() < Globals.settings.images_to_store:
+		if image_queue.size() < Global.Settings.MaxImagesToStore:
 			image_history[image_hash] = it
 			image_queue.push_back(image_hash)
 		else:
@@ -484,9 +488,9 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		# also need to consider doing this in bulk (which would likely require a rewrite of the rating.gd script, or the logic behind ratings in general)
 
 		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+		#Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
+		#Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
+		#Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
 		
 	if thread_id > 0 and path != "":
 		# if check_stop_thread(thread_id):
@@ -501,14 +505,15 @@ func change_filter() -> void:
 	if animation_mode: it = animation_images[animation_index]
 	else: it = preview_image.get_texture()
 	
-	if Globals.settings.use_filter: it.flags = 4
+	#if Globals.settings.use_filter: it.flags = 4
+	if Global.Settings.UseImageFilter: it.flags = 4
 	else: it.flags = 0	
 
 func resize_current_image(image_hash:String, path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: return # do not remember why I commented return here
 
-	var dimensions:Vector2 = Database.GetDimensions(image_hash)
+	var dimensions:Vector2 = Vector2.ZERO #Database.GetDimensions(image_hash)
 	var temp_size:Vector2 = calc_relative_size(calc_relative_size(single_image.get_parent().rect_size, display.rect_size), dimensions)
 	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
 	if temp_size != animation_size or current_image.get_meta("image_hash") != preview_image.get_texture().get_meta("image_hash"):
@@ -533,12 +538,15 @@ func calc_relative_size(size1:Vector2, size2:Vector2) -> Vector2:
 
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
-	Globals.settings.use_smooth_pixel = button_pressed
-	if button_pressed and Globals.settings.use_filter: preview_image.set_material(smooth_pixel)
+	#Globals.settings.use_smooth_pixel = button_pressed
+	Global.Settings.UseSmoothPixel = button_pressed
+	#if button_pressed and Globals.settings.use_filter: preview_image.set_material(smooth_pixel)
+	if button_pressed and Global.Settings.UseImageFilter: preview_image.set_material(smooth_pixel)
 	else: preview_image.set_material(null)
 	
 func _on_filter_toggled(button_pressed:bool) -> void:
-	Globals.settings.use_filter = button_pressed
+	#Globals.settings.use_filter = button_pressed
+	Global.Settings.UseImageFilter = button_pressed
 	if button_pressed: smooth_pixel_button.disabled = false
 	else: smooth_pixel_button.disabled = true
 	#_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
@@ -548,15 +556,18 @@ func _on_filter_toggled(button_pressed:bool) -> void:
 	#resize_current_image()
 	
 func _on_fxaa_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_fxaa = button_pressed
+	#Globals.settings.use_fxaa = button_pressed
+	Global.Settings.UseFXAA = button_pressed
 	fxaa.visible = button_pressed
 	
 func _on_edge_mix_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_edge_mix = button_pressed
+	#Globals.settings.use_edge_mix = button_pressed
+	Global.Settings.UseEdgeMix = button_pressed
 	edge_mix.visible = button_pressed
 	
 func _on_color_grading_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_color_grading = button_pressed
+	#Globals.settings.use_color_grading = button_pressed
+	Global.Settings.UseColorGrading = button_pressed
 	color_grading.visible = button_pressed
 
 export (NodePath) onready var normal_parent = get_node(normal_parent)
@@ -603,7 +614,7 @@ func remove_animations() -> void:
 	animation_mutex.unlock()
 
 func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=0.0, new_image:bool=false) -> void:
-	if Database.IncorrectImage(image_hash):
+	if DatabaseManager.IncorrectImage(image_hash):
 		animation_mutex.lock()
 		if animation_status.has(image_hash): 
 			animation_status[image_hash] = a_status.STOPPING
@@ -650,21 +661,23 @@ func update_animation(new_image:bool=false) -> void:
 		current_image = animation_images[animation_index]
 		delay = animation_delays[animation_index]
 		var tex:ImageTexture = animation_images[animation_index]
-		if Globals.settings.use_filter: tex.flags = 4
-		else: tex.flags = 0
+		#if Globals.settings.use_filter: tex.flags = 4
+		tex.flags = 4 if Global.Settings.UseImageFilter else 0
+		#else: tex.flags = 0
 		preview_image.set_texture(tex)
 		#resize_current_image(path)
 		animation_index = 1
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
+		#Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
+		#Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
+		#Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			delay = animation_delays[animation_index]
 			var tex:ImageTexture = animation_images[animation_index]
-			if Globals.settings.use_filter: tex.flags = 4
-			else: tex.flags = 0
+			#if Globals.settings.use_filter: tex.flags = 4
+			tex.flags = 4 if Global.Settings.UseImageFilter else 0
+			#else: tex.flags = 0
 			preview_image.set_texture(tex)
 			animation_index += 1
 	animation_mutex.unlock()

@@ -170,11 +170,11 @@ func _query_thread(args:Array) -> void:
 
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
-		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
+		#image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
 		#image_hashes = QueryManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
 		#var qid:String = image_hashes.pop_back()
 		#queried_image_count = QueryManager.GetLastQueriedCount(qid)
-		queried_image_count = Database.GetLastQueriedCount()
+		#queried_image_count = Database.GetLastQueriedCount()
 #		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 #		var lqh:int = lqc.hash()
 		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
@@ -218,9 +218,11 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 	start_loading(query, image_hashes, image_count)
 
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
-	var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
-	var thumbnail_path:String = Globals.settings.thumbnail_path
-	
+	#var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
+	#var thumbnail_path:String = Globals.settings.thumbnail_path
+	var max_loaded_thumbnails:int = Global.Settings.MaxThumbnailsToStore
+	var thumbnail_path:String = Global.GetThumbnailPath()
+
   # set current_hashes, iterate it to look for any thumbnails that are already loaded, set them and update their position in queue if found
 	var dict_image_hashes:Dictionary = {}
 	for idx in image_hashes.size():
@@ -269,8 +271,10 @@ func _set_thumbnails_from_history(query:Dictionary, image_hashes:Dictionary) -> 
 		lt.unlock()
 		var text:String = ""
 		if Globals.current_tab_type == Globals.Tab.SIMILARITY:
-			var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
-			var similarity:float = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
+			var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
+			var similarity:float = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
+			#var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+			#var similarity:float = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
 			text = "%1.2f" % [similarity] + "%"
 		if query != current_query: return true
 		self.set_item_icon(idx, im_tex)
@@ -331,7 +335,8 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	_set_metadata(image_hash)
 	
 	var f:File = File.new()
-	var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
+	#var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
+	var p:String = Global.Settings.GetThumbnailPath().plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
 	var e:int = f.open(p, File.READ)
 	
 	if stop_threads: return
@@ -379,16 +384,21 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	#	B. avoid querying the hash info at all, remove the concept of similarity labels, and instead
 	#		display the similarity percentage in the preview window on a per-image basis 
 	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
-		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+		#var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+		var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
 		var similarity:float = 0.0
 		if Globals.current_similarity == Globals.Similarity.AVERAGED:
-			similarity = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
+			#similarity = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
+			similarity = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
 		elif Globals.current_similarity == Globals.Similarity.AVERAGE:
-			similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+			#similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
+			similarity = DatabaseManager.GetAverageSimilarityTo(compare_hash, image_hash)
 		elif Globals.current_similarity == Globals.Similarity.WAVELET:
-			similarity = Database.GetWaveletSimilarityTo(compare_hash, image_hash)
+			#similarity = Database.GetWaveletSimilarityTo(compare_hash, image_hash)
+			similarity = DatabaseManager.GetWaveletSimilarityTo(compare_hash, image_hash)
 		else:
-			similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
+			#similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
+			similarity = DatabaseManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
 	sc.unlock()
 
@@ -457,10 +467,11 @@ func select_items() -> void:
 	#color_all()
 	
 	var image_hash:String = current_hashes[last_index]
-	Database.LoadCurrentHashInfo(image_hash)
+	MetadataManager.LoadCurrentImageInfo(image_hash)
+	#Database.LoadCurrentHashInfo(image_hash)
 	#print(image_hash)
-	var paths:Array = Database.GetHashPaths(image_hash)
-	var imports = Database.GetImportIdsFromHash(image_hash)
+	var paths:Array = MetadataManager.GetCurrentPaths()#Database.GetHashPaths(image_hash)
+	var imports:Array = MetadataManager.GetCurrentImports()#Database.GetImportIdsFromHash(image_hash)
 	Signals.emit_signal("load_image_tags", image_hash, selected_items)
 	Signals.emit_signal("create_path_buttons", image_hash, paths)
 	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)

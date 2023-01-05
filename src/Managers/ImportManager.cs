@@ -26,6 +26,11 @@ namespace ImageTagger.Managers
             dbm = GetNode<DatabaseManager>("/root/DatabaseManager");
         }
 
+        public void StartPython(string executablePath)
+        {
+            ImageImporter.StartPython(executablePath);
+        }
+
         /*=========================================================================================
 									           Load Images
         =========================================================================================*/
@@ -285,7 +290,7 @@ namespace ImageTagger.Managers
                 imageInfo = new ImageInfo
                 {
                     Hash = hash,
-                    Name = (string)globals.Call("get_file_name", imagePath), // replace
+                    Name = fileInfo.Name,
 
                     AverageHash = phashes.Average,
                     DifferenceHash = phashes.Difference,

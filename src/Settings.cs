@@ -7,22 +7,95 @@ namespace ImageTagger
     public sealed class Settings
     {
         public bool UseDefaultMetadataPath { get; set; }
-        public string DefaultMetadataPath { get; set; }
         public string MetadataPath { get; set; }
         public bool UseDefaultThumbnailPath { get; set; }
-        public string DefaultThumbnailPath { get; set; }
         public string ThumbnailPath { get; set; }
+        public string LastViewedDirectory { get; set; }
+        public string LastImportedDirectory { get; set; }
 
         public int MaxQueriesToStore { get; set; }
+        public Sort CurrentSort { get; set; }
+        public Order CurrentOrder { get; set; }
+        public SortSimilarity CurrentSortSimilarity { get; set; }
+
+        public bool ScanRecursively { get; set; }
+        public int MaxImportThreads { get; set; }
+
+        public int MaxImagesPerPage { get; set; }
+        public int MaxThumbnailThreads { get; set; }
+        public int MaxPagesToStore { get; set; }
+        public int MaxThumbnailsToStore { get; set; }
+        public int ThumbnailWidth { get; set; }
+
+        public int MaxImagesToStore { get; set; }
+        public int MaxLargeImagesToStore { get; set; }
+        public int MaxAnimatedImagesToStore { get; set; }
+        
+        public bool UseSmoothPixel { get; set; }
+        public bool UseImageFilter { get; set; }
+        public bool UseColorGrading { get; set; }
+        public bool UseFXAA { get; set; }
+        public bool UseEdgeMix { get; set; }
+
+        public int OffsetMainH { get; set; }
+        public int OffsetThumbnailsV { get; set; }
+        public int OffsetMetadataH { get; set; }
+        public int OffsetMetadataV { get; set; }
+        public bool UseFullscreen { get; set; }
+        public bool UseColoredTagBackgrounds { get; set; }
+        public bool UseRoundedTagButtons { get; set; }
+        public bool ShowThumbnailTooltips { get; set; }
 
         public Settings()
         {
-            DefaultMetadataPath = ProjectSettings.GlobalizePath("user://metadata");
-            DefaultThumbnailPath = ProjectSettings.GlobalizePath("user://thumbnails");
+            // paths
+            UseDefaultMetadataPath = true;
+            UseDefaultThumbnailPath = true;
             MetadataPath = string.Empty;
             ThumbnailPath = string.Empty;
+            LastViewedDirectory = string.Empty;
+            LastImportedDirectory = string.Empty;
 
+            // queries
             MaxQueriesToStore = 10;
+            CurrentSort = Sort.HASH;
+            CurrentOrder = Order.ASCENDING;
+            CurrentSortSimilarity = SortSimilarity.AVERAGED;
+
+            // scanning
+            ScanRecursively = false;
+
+            // importing
+            MaxImportThreads = 3;
+
+            // thumbnails
+            MaxImagesPerPage = 400;
+            MaxThumbnailThreads = 3;
+            MaxPagesToStore = 50;
+            MaxThumbnailsToStore = 8000;
+            ThumbnailWidth = 240;
+
+            // images
+            MaxImagesToStore = 10;
+            MaxLargeImagesToStore = 0;
+            MaxAnimatedImagesToStore = 0;
+
+            // shaders
+            UseSmoothPixel = false;
+            UseImageFilter = true;
+            UseColorGrading = true;
+            UseFXAA = false;
+            UseEdgeMix = false;
+
+            // ui
+            OffsetMainH = -200;
+            OffsetThumbnailsV = -360;
+            OffsetMetadataH = -250;
+            OffsetMetadataV = 150;
+            UseFullscreen = false;
+            UseColoredTagBackgrounds = true;
+            UseRoundedTagButtons = true;
+            ShowThumbnailTooltips = false;
         }
 
         public static Settings LoadFromJsonFile()
@@ -47,6 +120,20 @@ namespace ImageTagger
             }
 
             return settings;
+        }
+
+        public void Save()
+        {
+            try
+            {
+                string path = ProjectSettings.GlobalizePath("user://settings.txt");
+                using (StreamWriter file = System.IO.File.CreateText(path))
+                    new JsonSerializer().Serialize(file, this);
+            }
+            catch
+            {
+                GD.Print("Error saving settings file.");
+            }
         }
     }
 }

@@ -91,11 +91,13 @@ func _unhandled_input(event:InputEvent) -> void:
 func _on_pmenu_view_context_index_pressed(index:int) -> void:
 	if index == view_context_menu.FullScreen:
 		var checked:bool = get_set_view_context_checked(index)
-		Globals.settings.use_fullscreen = checked
+		#Globals.settings.use_fullscreen = checked
+		Global.Settings.UseFullscreen = checked
 		set_fullscreen(checked)
 	elif index == view_context_menu.ShowThumbnailTooltips:
 		var checked:bool = get_set_view_context_checked(index)
-		Globals.settings.show_thumbnail_tooltips = checked
+		#Globals.settings.show_thumbnail_tooltips = checked
+		Global.Settings.ShowThumbnailTooltips = checked
 		Signals.emit_signal("toggle_thumbnail_tooltips")
 	
 	elif index == view_context_menu.FileButtons:

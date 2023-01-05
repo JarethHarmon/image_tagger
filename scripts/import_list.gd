@@ -51,7 +51,8 @@ func _ready() -> void:
 	Signals.connect("create_similarity_tab", self, "create_new_similarity_tab")
 	buttons["All"] = all_button
 	
-	create_threads(Globals.settings.max_import_threads)
+	create_threads(Global.Settings.MaxImportThreads)
+	#create_threads(Globals.settings.max_import_threads)
 
 	Signals.connect("toggle_tab_section", self, "_toggle_tab_section")
 
@@ -67,11 +68,13 @@ func _on_tab_button_pressed(tab_id:String) -> void:
 
 func indicate_selected_button(tab_id:String) -> void:
 	if last_selected_tab != "": 
-		var import_id = Database.GetImportId(last_selected_tab)
-		var finished:bool = true if import_id == null else Database.GetFinished(import_id)
+		var import_id:String = MetadataManager.GetTabImportId(last_selected_tab)
+		#var import_id = Database.GetImportId(last_selected_tab)
+		var finished:bool = true if import_id == null else MetadataManager.GetFinished(import_id)#Database.GetFinished(import_id)
 		#print(finished)
 		if buttons.has(last_selected_tab):
-			if Database.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
+			#if Database.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
+			if MetadataManager.GetTabType(last_selected_tab) == Globals.Tab.SIMILARITY:
 				buttons[last_selected_tab].add_stylebox_override("normal", similarity_stylebox)
 				buttons[last_selected_tab].add_stylebox_override("focus", similarity_stylebox)
 				buttons[last_selected_tab].remove_color_override("font_color")
@@ -87,7 +90,8 @@ func indicate_selected_button(tab_id:String) -> void:
 				buttons[last_selected_tab].remove_color_override("font_color")
 				buttons[last_selected_tab].remove_color_override("font_color_focus")
 	
-	if Database.GetTabType(tab_id) == Globals.Tab.SIMILARITY:
+	#if Database.GetTabType(tab_id) == Globals.Tab.SIMILARITY:
+	if MetadataManager.GetTabType(tab_id) == Globals.Tab.SIMILARITY:
 		buttons[tab_id].add_stylebox_override("normal", similarity_stylebox_selected)
 		var color:Color = Color.white
 		var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.0, 0.05, 3)
@@ -103,24 +107,36 @@ func indicate_selected_button(tab_id:String) -> void:
 	last_selected_tab = tab_id
 
 func create_tab_buttons() -> void: 
-	var tab_ids:Array = Database.GetTabIds() # QueryManager.GetTabIds()
-	var all_count:int = Database.GetSuccessCount("All")
-	update_button_text("All", true, all_count, Database.GetTotalCount("All"), "All")
-	thread_count["All"] = all_count
+	var tab_ids:Array = MetadataManager.GetTabIds()
+	var all_count:int = MetadataManager.GetSuccessCount(Global.ALL)
+	update_button_text(Global.ALL, true, all_count, MetadataManager.GetTotalCount(Global.ALL), Global.ALL)
+	#update_button_text("All", true, all_count, Database.GetTotalCount("All"), "All")
+	#thread_count["All"] = all_count
+	thread_count[Global.ALL] = all_count
 
 	for tab_id in tab_ids:
-		var tab_type:int = Database.GetTabType(tab_id)
+		#var tab_type:int = Database.GetTabType(tab_id)
+		var tab_type:int = MetadataManager.GetTabType(tab_id)
 		if tab_type == Globals.Tab.IMPORT_GROUP:
-			var import_id:String = Database.GetImportId(tab_id)
-			var success_count:int = Database.GetSuccessOrDuplicateCount(import_id)
-			var total_count:int = Database.GetTotalCount(import_id)
-			var finished:bool = Database.GetFinished(import_id)
-			var processed_count:int = Database.GetProcessedCount(import_id)
-			var tab_name:String = Database.GetName(tab_id)
-			var progress_ids:Array = Database.GetSectionIds(import_id)
+		#	var import_id:String = Database.GetImportId(tab_id)
+		#	var success_count:int = Database.GetSuccessOrDuplicateCount(import_id)
+		#	var total_count:int = Database.GetTotalCount(import_id)
+		#	var finished:bool = Database.GetFinished(import_id)
+		#	var processed_count:int = Database.GetProcessedCount(import_id)
+		#	var tab_name:String = Database.GetName(tab_id)
+		#	var progress_ids:Array = Database.GetSectionIds(import_id)
+			var import_id:String = MetadataManager.GetTabImportId(tab_id)
+			var success_count:int = MetadataManager.GetSuccessCount(import_id)
+			var total_count:int = MetadataManager.GetTotalCount(import_id)
+			var finished:bool = MetadataManager.GetFinished(import_id)
+			var processed_count:int = MetadataManager.GetProcessedCount(import_id)
+			var tab_name:String = MetadataManager.GetTabName(import_id)
+			var progress_ids:Array = MetadataManager.GetSections(import_id)
+
 			if not finished:
 				if progress_ids.empty():
-					Database.FinishImport(import_id)
+					ImportManager.CompleteImport(import_id)
+					#Database.FinishImport(import_id)
 					finished = true
 			create_tab_button(tab_id, finished, total_count, success_count, processed_count, tab_name)
 			if not finished:
@@ -129,7 +145,8 @@ func create_tab_buttons() -> void:
 		elif tab_type == Globals.Tab.IMAGE_GROUP: pass
 		elif tab_type == Globals.Tab.TAG: pass
 		elif tab_type == Globals.Tab.SIMILARITY: 
-			var image_hash:String = Database.GetSimilarityHash(tab_id)
+			var image_hash:String = MetadataManager.GetTabSimilarityHash(tab_id)
+			#var image_hash:String = Database.GetSimilarityHash(tab_id)
 			create_similarity_tab(tab_id, image_hash)
 
 	start_manager()
@@ -157,8 +174,8 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	if import_id == "": return
 	if argument_queue.has(import_id): return
 
-	var tab_id:String = ImageImporter.CreateTabId()
-
+	#var tab_id:String = ImageImporter.CreateTabId()
+	var tab_id:String = MetadataManager.CreateTab(tab_name, Globals.Tab.IMPORT_GROUP, import_id, "", "", "")#Global.CreateTabId()
 	var b:Button = Button.new()
 	b.text = "  " + tab_name + " (0/" + String(count) + ")  "
 	b.connect("button_up", self, "_on_tab_button_pressed", [tab_id])
@@ -173,10 +190,11 @@ func create_new_tab_button(import_id:String, count:int, tab_name:String) -> void
 	# rename thread_count to image_count or progress_count
 	thread_count[tab_id] = 0
 
-	Database.CreateTab(tab_id, Globals.Tab.IMPORT_GROUP, tab_name, count, import_id, "", "", "")
-	Database.CommitImport(import_id, tab_name)
+	ScanManager.CommitScan(tab_name)
+	#Database.CommitImport(import_id, tab_name)
 
-	var progress_ids:Array = Database.GetSectionIds(import_id)
+	#var progress_ids:Array = Database.GetSectionIds(import_id)
+	var progress_ids:Array = MetadataManager.GetSections(import_id)
 	for progress_id in progress_ids:
 		append_arg([import_id, progress_id])
 	
@@ -202,7 +220,7 @@ func create_similarity_tab(tab_id:String, image_hash:String) -> void:
 
 func create_new_similarity_tab(image_hash:String) -> void:
 	if image_hash == "": return
-	var tab_id:String = ImageImporter.CreateTabId()
+	var tab_id:String = MetadataManager.CreateTab("Similarity", Globals.Tab.Similarity, "", "", "", image_hash)#ImageImporter.CreateTabId()
 	
 	var b:Button = Button.new()
 	b.text = "  " + image_hash.substr(0, 16) + "  "
@@ -215,7 +233,8 @@ func create_new_similarity_tab(image_hash:String) -> void:
 	
 	button_list.add_child(b)
 	buttons[tab_id] = b
-	Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash)
+	
+	#Database.CreateTab(tab_id, Globals.Tab.SIMILARITY, "Similarity", 0, "", "", "", image_hash)
 
 func _on_tab_button_gui_input(event:InputEvent, tab_id:String) -> void:
 	if event is InputEventMouseButton:
@@ -227,7 +246,9 @@ func delete_tab(tab_id:String) -> void:
 	var button:Button = buttons[tab_id]
 	buttons.erase(tab_id)
 	button_list.remove_child(button)
-	Database.RemoveTab(tab_id)
+	
+	MetadataManager.DeleteTab(tab_id)
+	#Database.RemoveTab(tab_id)
 	if last_selected_tab == tab_id:
 		_on_tab_button_pressed("All")
 
@@ -248,12 +269,14 @@ func increment_import_buttons(tab_ids:Array) -> void:
 		if thread_count.has(tab_id):
 			thread_count[tab_id] += 1
 			var count:int = thread_count[tab_id]
-			buttons[tab_id].text = "  %s (%d/%d)  " % [Database.GetName(tab_id), count, Database.GetTotalCount(Database.GetImportId(tab_id))]
+			buttons[tab_id].text = "  %s (%d/%d)  " % [MetadataManager.GetTabName(tab_id), count, MetadataManager.GetTotalCount(MetadataManager.GetTabImportId(tab_id))]
+			#buttons[tab_id].text = "  %s (%d/%d)  " % [Database.GetName(tab_id), count, Database.GetTotalCount(Database.GetImportId(tab_id))]
 	count_mutex.unlock()
 
 func finish_import_buttons(tab_ids:Array) -> void:
 	for tab_id in tab_ids:
-		buttons[tab_id].text = "  %s (%d)  " % [Database.GetName(tab_id), Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))]
+		#buttons[tab_id].text = "  %s (%d)  " % [Database.GetName(tab_id), Database.GetSuccessOrDuplicateCount(Database.GetImportId(tab_id))]
+		buttons[tab_id].text = "  %s (%d)  " % [MetadataManager.GetTabName(tab_id), MetadataManager.GetSuccessCount(MetadataManager.GetTabImportId(tab_id))]
 		if not last_selected_tab == tab_id:
 			buttons[tab_id].remove_stylebox_override("normal")
 			buttons[tab_id].remove_stylebox_override("focus")
@@ -267,8 +290,9 @@ func create_threads(num_threads:int) -> void:
 	import_section_thread.start(self, "_import_section_thread")
 	
 	if num_threads == thread_pool.size(): return
-	Globals.settings.max_import_threads = num_threads
-	
+	#Globals.settings.max_import_threads = num_threads
+	Global.Settings.MaxImportThreads = num_threads # unsure why this is done honestly
+
 	if num_threads > thread_pool.size():
 		for i in num_threads - thread_pool.size():
 			thread_pool.push_back(Thread.new())
@@ -295,7 +319,7 @@ func start_manager() -> void:
 		manager_thread.start(self, "_manager_thread")
 
 func start_one() -> void:
-	if active_threads == Globals.settings.max_import_threads: return
+	if active_threads == Global.Settings.MaxImportThreads: return#Globals.settings.max_import_threads: return
 	for thread_id in thread_pool.size():
 		if get_thread_status(thread_id) == Status.INACTIVE:
 			set_thread_status(thread_id, Status.ACTIVE)
@@ -308,7 +332,7 @@ func pause_all() -> void:
 		pause(thread_id)
 
 func pause(thread_id:int) -> void:
-	if thread_id >= Globals.settings.max_import_threads: return
+	if thread_id >= Global.Settings.MaxImportThreads: return#Globals.settings.max_import_threads: return
 	var status:int = get_thread_status(thread_id)
 	if status > Status.PAUSED: return
 	if status < Status.ACTIVE: return
@@ -441,7 +465,8 @@ func _thread(thread_id:int) -> void:
 		if get_thread_status(thread_id) != Status.PAUSED and section != null:
 			var import_id:String = section[0]
 			var progress_id:String = section[1]			
-			ImageImporter.ImportImages(import_id, progress_id)
+			ImportManager.ImportImages(import_id, progress_id)
+			#ImageImporter.ImportImages(import_id, progress_id)
 			set_thread_args(thread_id, null)
 			_add_finished_section([import_id, progress_id])
 		else: OS.delay_msec(delay_time)
@@ -470,7 +495,8 @@ func _import_section_thread() -> void:
 			var section:Array = temp
 			var import_id:String = section[0]
 			var progress_id:String = section[1]
-			Database.FinishImportSection(import_id, progress_id)
+			ImportManager.CompleteImportSection(import_id, progress_id)
+			#Database.FinishImportSection(import_id, progress_id)
 		OS.delay_msec(200)
 
 #var frame:int = 0

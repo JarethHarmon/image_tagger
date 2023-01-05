@@ -1,4 +1,5 @@
-﻿using ImageTagger.Core;
+﻿using Godot;
+using ImageTagger.Core;
 using ImageTagger.Metadata;
 using ImageTagger.Scanner;
 using System;
@@ -6,7 +7,7 @@ using System;
 namespace ImageTagger.Managers
 {
     // should call ScannerAccess.GetCurrentFolder() every 20ms or so to update label while scanning
-    public sealed class ScanManager
+    public sealed class ScanManager : Node
     {
         private bool recursive = false;
         public void SetRecursive(bool _recursive) { recursive = _recursive; }
@@ -42,6 +43,7 @@ namespace ImageTagger.Managers
             };
 
             ImportInfoAccess.CreateImport(info, paths);
+            // this needs to create a tab button, or be called by something that also handles that
         }
 
         public void CancelScan()
