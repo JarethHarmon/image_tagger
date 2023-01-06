@@ -18,7 +18,6 @@ signal load_image_tags(image_hash, selected_items)
 signal create_path_buttons(image_hash, paths)
 signal create_import_buttons(image_hash, imports)
 
-signal update_import_button(tab_id, finished, success_count, total_count, import_name)
 signal increment_all_button # increments its text by 1
 signal increment_import_buttons(tab_ids) # increments their text by 1
 signal finish_import_buttons(tab_ids) # sets their text to successCount
@@ -32,7 +31,7 @@ signal deselect_all_pressed
 signal start_scan(folder, recursive)
 signal files_selected(files)
 signal folder_selected(folder)
-signal new_import_started(import_id, count, import_name) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
+signal new_import_started(count, import_name) # something will need to start the imageimporter (it will need the import_id, count, and access to imagescanner)
 signal new_import_canceled
 
 signal create_similarity_tab(image_hash)

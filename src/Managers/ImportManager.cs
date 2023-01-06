@@ -17,7 +17,7 @@ namespace ImageTagger.Managers
         private static readonly object locker = new object();
         private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
         private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
-        private readonly Godot.File file;
+        private readonly Godot.File file = new Godot.File();
 
         public override void _Ready()
         {
@@ -29,6 +29,11 @@ namespace ImageTagger.Managers
         public void StartPython(string executablePath)
         {
             ImageImporter.StartPython(executablePath);
+        }
+
+        public void Shutdown()
+        {
+            ImageImporter.Shutdown();
         }
 
         /*=========================================================================================
@@ -238,6 +243,7 @@ namespace ImageTagger.Managers
 
             foreach (string path in paths)
             {
+                if (path is null) continue;
                 if (ImageImporter.FileDoesNotExist(path))
                 {
                     UpdateImportCount(importId, ImportStatus.FAILED);

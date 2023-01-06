@@ -20,46 +20,36 @@ func _notification(what) -> void:
 		importer.cancel_manager()
 		importer.cancel_IS_thread()
 		previewer.stop_threads()
-		#Database.CheckpointGroupDB()
-		#Database.CheckpointHashDB()
-		#Database.CheckpointImportDB()
-		#Database.CheckpointTagDB()
-		#Database.Destroy()
-		#ImageImporter.Shutdown();
-		#Globals.save_settings()
+		Global.SaveSettings()
+		DatabaseManager.Shutdown()
+		ImportManager.Shutdown()		
 		print_debug("exiting program")
 		get_tree().quit()
 
 func _ready() -> void:	
+ # initial setup
 	randomize()
 	get_viewport().transparent_bg = true
-	#Globals.initialize()
-	#Signals.emit_signal("settings_loaded")
+	var dir:Directory = Directory.new()
+
+	Global.Setup()
+	Signals.emit_signal("settings_loaded") 
 
  # make and set default metadata folder
-	#var dir:Directory = Directory.new()
-	#var err:int = dir.make_dir_recursive(Globals.settings.metadata_path)
-	#if err == OK: Database.SetMetadataPath(Globals.settings.metadata_path)
+	var metadata_path:String = Global.GetMetadataPath()
+	if (dir.make_dir_recursive(metadata_path) != OK): return
 	
  # make and set default thumbnail folder
-	#err = dir.make_dir_recursive(Globals.settings.thumbnail_path)
-	#if err == OK: ImageImporter.SetThumbnailPath(Globals.settings.thumbnail_path)
-	#create_thumbnail_folders()
-	
-  # create database
-	#if (Database.Create() != OK): _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-	#Database.CreateAllInfo()
-	#Database.LoadImportDb()
-	#if DatabaseAccess.Create() != OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-	#if DatabaseAccess.Setup() != OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-	#Signals.emit_signal("import_info_load_finished")	
+	var thumbnail_path:String = Global.GetThumbnailPath()
+	if (dir.make_dir_recursive(thumbnail_path) != OK): return
 
-func create_thumbnail_folders() -> void:
+ # create thumbnail folders
 	var arr:Array = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"]
-	var dir:Directory = Directory.new()
-	#var thumb_path = Globals.settings.thumbnail_path
-	var thumb_path:String = Global.GetThumbnailPath()
 	for hex1 in arr:
 		for hex2 in arr:
-			dir.make_dir_recursive(thumb_path.plus_file(hex1 + hex2 + "/"))
+			dir.make_dir_recursive(thumbnail_path.plus_file(hex1 + hex2 + "/"))
 	
+ # create database
+	if DatabaseManager.Create() != Globals.Error.OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
+	Signals.emit_signal("import_info_load_finished") # consider changing to "setup_finished"
+	ImportManager.StartPython(Globals._get_program_directory())

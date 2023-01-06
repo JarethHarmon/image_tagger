@@ -6,12 +6,9 @@ enum view_context_menu { FullScreen, ShowThumbnailTooltips, FileButtons=5, TabBu
 
 onready var import_panel:PopupPanel = $ppanel_import
 onready var darkened_background:ColorRect = $background/bg_darken
-
 onready var file_dialog:FileDialog = $FileDialog
 onready var file_context:PopupMenu = $context_menu/pmenu_file
 onready var view_context:PopupMenu = $context_menu/pmenu_view
-
-var side_offset_for_popups:int = 100 		# move to Globals.settings
 
 func _ready() -> void:
 	Signals.connect("file_button_pressed", self, "_file_pressed")
@@ -23,7 +20,7 @@ func _ready() -> void:
 	Signals.connect("show_import_menu", self, "show_import_menu")
 	Signals.connect("settings_loaded", self, "_settings_loaded")
 	
-func hide_popups(_import_id:String="", _count:int=0, _import_name:String="") -> void:
+func hide_popups(_count:int=0, _import_name:String="") -> void:
 	self.hide()
 	darkened_background.hide()
 	file_context.hide()
@@ -50,7 +47,8 @@ func _on_pmenu_file_context_index_pressed(index:int) -> void:
 func show_import_menu() -> void:
 	darkened_background.show()
 	var parent_size:Vector2 = self.get_parent().rect_size
-	import_panel.popup(Rect2(side_offset_for_popups, side_offset_for_popups, parent_size.x-side_offset_for_popups*2, parent_size.y-side_offset_for_popups*2))
+	var popup_offset:int = Global.GetOffsetPopupH()
+	import_panel.popup(Rect2(popup_offset, popup_offset, parent_size.x-popup_offset*2, parent_size.y-popup_offset*2))
 
 func show_file_dialog(select_folders:bool=false) -> void:
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -58,7 +56,8 @@ func show_file_dialog(select_folders:bool=false) -> void:
 	file_dialog.set_filters(PoolStringArray(["*.png, *.jpg, *.jpeg ; Image Files"]))
 	
 	var parent_size:Vector2 = self.get_parent().rect_size
-	file_dialog.popup(Rect2(side_offset_for_popups, side_offset_for_popups, parent_size.x-side_offset_for_popups*2, parent_size.y-side_offset_for_popups*2))
+	var popup_offset:int = Global.GetOffsetPopupH()
+	file_dialog.popup(Rect2(popup_offset, popup_offset, parent_size.x-popup_offset*2, parent_size.y-popup_offset*2))
 
 func _on_FileDialog_files_selected(paths:Array) -> void: Signals.emit_signal("files_selected", paths)
 func _on_FileDialog_dir_selected(dir:String) -> void: Signals.emit_signal("folder_selected", dir)
@@ -92,12 +91,12 @@ func _on_pmenu_view_context_index_pressed(index:int) -> void:
 	if index == view_context_menu.FullScreen:
 		var checked:bool = get_set_view_context_checked(index)
 		#Globals.settings.use_fullscreen = checked
-		Global.Settings.UseFullscreen = checked
+		Global.SetUseFullscreen(checked)
 		set_fullscreen(checked)
 	elif index == view_context_menu.ShowThumbnailTooltips:
 		var checked:bool = get_set_view_context_checked(index)
 		#Globals.settings.show_thumbnail_tooltips = checked
-		Global.Settings.ShowThumbnailTooltips = checked
+		Global.SetShowThumbnailTooltips(checked)
 		Signals.emit_signal("toggle_thumbnail_tooltips")
 	
 	elif index == view_context_menu.FileButtons:
@@ -136,6 +135,6 @@ func set_fullscreen(on:bool) -> void:
 		OS.set_window_maximized(true) # alternatively, need to resize and center window (and/or store settings before switching to fullscreen)
 
 func _settings_loaded() -> void:
-	view_context.set_item_checked(view_context_menu.FullScreen, Globals.settings.use_fullscreen)
-	view_context.set_item_checked(view_context_menu.ShowThumbnailTooltips, Globals.settings.show_thumbnail_tooltips)
-	set_fullscreen(Globals.settings.use_fullscreen)
+	view_context.set_item_checked(view_context_menu.FullScreen, Global.GetUseFullscreen())
+	view_context.set_item_checked(view_context_menu.ShowThumbnailTooltips, Global.GetShowThumbnailTooltips())
+	set_fullscreen(Global.GetUseFullscreen())

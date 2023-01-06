@@ -1,6 +1,5 @@
 extends Control
 
-
 func _ready():
 	Signals.connect("toggle_tag_section", self, "_toggle_tag_section")
 

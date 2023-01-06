@@ -1,5 +1,6 @@
 ﻿using Godot;
 using Newtonsoft.Json;
+using System;
 using System.IO;
 
 namespace ImageTagger
@@ -30,23 +31,24 @@ namespace ImageTagger
         public int MaxImagesToStore { get; set; }
         public int MaxLargeImagesToStore { get; set; }
         public int MaxAnimatedImagesToStore { get; set; }
-        
+
+        public bool UseFullScreen { get; set; }
         public bool UseSmoothPixel { get; set; }
         public bool UseImageFilter { get; set; }
         public bool UseColorGrading { get; set; }
         public bool UseFXAA { get; set; }
         public bool UseEdgeMix { get; set; }
 
+        public int OffsetPopupH { get; set; }
         public int OffsetMainH { get; set; }
         public int OffsetThumbnailsV { get; set; }
         public int OffsetMetadataH { get; set; }
         public int OffsetMetadataV { get; set; }
-        public bool UseFullscreen { get; set; }
         public bool UseColoredTagBackgrounds { get; set; }
         public bool UseRoundedTagButtons { get; set; }
         public bool ShowThumbnailTooltips { get; set; }
 
-        public Settings()
+        public Settings DefaultSettings()
         {
             // paths
             UseDefaultMetadataPath = true;
@@ -81,6 +83,7 @@ namespace ImageTagger
             MaxAnimatedImagesToStore = 0;
 
             // shaders
+            UseFullScreen = false;
             UseSmoothPixel = false;
             UseImageFilter = true;
             UseColorGrading = true;
@@ -88,14 +91,16 @@ namespace ImageTagger
             UseEdgeMix = false;
 
             // ui
+            OffsetPopupH = 100;
             OffsetMainH = -200;
             OffsetThumbnailsV = -360;
             OffsetMetadataH = -250;
             OffsetMetadataV = 150;
-            UseFullscreen = false;
             UseColoredTagBackgrounds = true;
             UseRoundedTagButtons = true;
             ShowThumbnailTooltips = false;
+
+            return this;
         }
 
         public static Settings LoadFromJsonFile()
@@ -112,7 +117,7 @@ namespace ImageTagger
             }
             catch
             {
-                settings = new Settings();
+                settings = new Settings().DefaultSettings();
             }
             finally
             {
@@ -127,8 +132,9 @@ namespace ImageTagger
             try
             {
                 string path = ProjectSettings.GlobalizePath("user://settings.txt");
+                string json = JsonConvert.SerializeObject(this, Formatting.Indented);
                 using (StreamWriter file = System.IO.File.CreateText(path))
-                    new JsonSerializer().Serialize(file, this);
+                    file.Write(json);
             }
             catch
             {

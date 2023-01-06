@@ -9,6 +9,18 @@ namespace ImageTagger.Managers
 {
     public sealed class DatabaseManager : Node
     {
+        public int Create()
+        {
+            var result = DatabaseAccess.Create();
+            if (result != Error.OK) return (int)result;
+            return (int)DatabaseAccess.Setup();
+        }
+
+        public void Shutdown()
+        {
+            DatabaseAccess.Shutdown();
+        }
+
         public bool IncorrectImage(string hash)
         {
             string _hash = ImageInfoAccess.GetCurrentHash();
@@ -55,8 +67,7 @@ namespace ImageTagger.Managers
             queryInfo.CalcId();
 
             var hashes = Querier.QueryDatabase(queryInfo, countResults);
-            hashes.Append(queryInfo.Id);
-            return hashes;
+            return hashes.Append(queryInfo.Id).ToArray();
         }
 
         /*=========================================================================================

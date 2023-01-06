@@ -9,9 +9,12 @@ namespace ImageTagger
 
     public enum ImageType { JPEG, PNG, APNG, GIF, WEBP, OTHER=15, ERROR=-1 }
     public enum Order { ASCENDING, DESCENDING }
-    public enum Sort { HASH, PATH, NAME, SIZE, UPLOAD, CREATION, LAST_WRITE, LAST_EDIT, DIMENSIONS, WIDTH, HEIGHT, TAG_COUNT, QUALITY, APPEAL, ART_STYLE,
-        RED, GREEN, BLUE, ALPHA, LIGHT, DARK, YELLOW, CYAN, FUSCHIA, LIGHT_RED, DARK_RED, LIGHT_GREEN, DARK_GREEN, LIGHT_BLUE, DARK_BLUE, LIGHT_YELLOW,
-        DARK_YELLOW, LIGHT_CYAN, DARK_CYAN, LIGHT_FUSCHIA, DARK_FUSCHIA, RANDOM }
+    public enum Sort
+    {
+        HASH, PATH, NAME, SIZE, UPLOAD, CREATION, LAST_WRITE, LAST_EDIT, DIMENSIONS, WIDTH, HEIGHT, TAG_COUNT, QUALITY, APPEAL, ART_STYLE,
+        RED, LIGHT_RED, DARK_RED, GREEN, LIGHT_GREEN, DARK_GREEN, BLUE, LIGHT_BLUE, DARK_BLUE, YELLOW, LIGHT_YELLOW, DARK_YELLOW, CYAN, LIGHT_CYAN,
+        DARK_CYAN, FUSCHIA, LIGHT_FUSCHIA, DARK_FUSCHIA, LIGHT, DARK, ALPHA, RANDOM
+    }
     public enum SortSimilarity { AVERAGED, AVERAGE, DIFFERENCE, WAVELET }
 
     public enum TabType { DEFAULT, SIMILARITY }
@@ -22,7 +25,72 @@ namespace ImageTagger
         public const string ALL = "All";
         public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
 
-        public static Settings Settings = Settings.LoadFromJsonFile();
+        // I hope to find a better solution eventually, Godot is convinced that Settings is null, even if I make it not static
+        public static Settings Settings;
+
+        // manual get/set of Setting properties, because see above
+        public static void SetMaxQueriesToStore(int num) { Settings.MaxQueriesToStore = num; }
+        public static int GetMaxQueriesToStore() { return Settings.MaxQueriesToStore; }
+        public static void SetCurrentSort(int sort) { Settings.CurrentSort = (Sort)sort; }
+        public static int GetCurrentSort() { return (int)Settings.CurrentSort; }
+        public static void SetCurrentOrder(int order) { Settings.CurrentOrder = (Order)order; }
+        public static int GetCurrentOrder() { return (int)Settings.CurrentOrder; }
+        public static void SetCurrentSortSimilarity(int simi) { Settings.CurrentSortSimilarity = (SortSimilarity)simi; }
+
+        public static void SetScanRecursively(bool value) { Settings.ScanRecursively = value; }
+        public static bool GetScanRecursively() { return Settings.ScanRecursively; }
+
+        public static void SetMaxImportThreads(int num) { Settings.MaxImportThreads = num; }
+        public static int GetMaxImportThreads() { return Settings.MaxImportThreads; }
+
+        public static void SetMaxImagesPerPage(int num) { Settings.MaxImagesPerPage = num; }
+        public static int GetMaxImagesPerPage() { return Settings.MaxImagesPerPage; }
+        public static void SetMaxThumbnailThreads(int num) { Settings.MaxThumbnailThreads = num; }
+        public static int GetMaxThumbnailThreads() { return Settings.MaxThumbnailThreads; }
+        public static void SetMaxPagesToStore(int num) { Settings.MaxPagesToStore = num; }
+        public static int GetMaxPagesToStore() { return Settings.MaxPagesToStore; }
+        public static void SetMaxThumbnailsToStore(int num) { Settings.MaxThumbnailsToStore = num; }
+        public static int GetMaxThumbnailsToStore() { return Settings.MaxThumbnailsToStore; }
+        public static void SetThumbnailWidth(int num) { Settings.ThumbnailWidth = num; }
+        public static int GetThumbnailWidth() { return Settings.ThumbnailWidth; }
+
+        public static void SetMaxImagesToStore(int num) { Settings.MaxImagesToStore = num; }
+        public static int GetMaxImagesToStore() { return Settings.MaxImagesToStore; }
+        public static void SetMaxLargeImagesToStore(int num) { Settings.MaxLargeImagesToStore = num; }
+        public static int GetMaxLargeImagesToStore() { return Settings.MaxLargeImagesToStore; }
+        public static void SetMaxAnimatedImagesToStore(int num) { Settings.MaxAnimatedImagesToStore = num; }
+        public static int GetMaxAnimatedImagesToStore() { return Settings.MaxAnimatedImagesToStore; }
+
+        public static void SetUseFullscreen(bool value) { Settings.UseFullScreen = value; }
+        public static bool GetUseFullscreen() { return Settings.UseFullScreen; }
+        public static void SetUseSmoothPixel(bool value) { Settings.UseSmoothPixel = value; }
+        public static bool GetUseSmoothPixel() { return Settings.UseSmoothPixel; }
+        public static void SetUseImageFilter(bool value) { Settings.UseImageFilter = value; }
+        public static bool GetUseImageFilter() { return Settings.UseImageFilter; }
+        public static void SetUseColorGrading(bool value) { Settings.UseColorGrading = value; }
+        public static bool GetUseColorGrading() { return Settings.UseColorGrading; }
+        public static void SetUseFXAA(bool value) { Settings.UseFXAA = value; }
+        public static bool GetUseFXAA() { return Settings.UseFXAA; }
+        public static void SetUseEdgeMix(bool value) { Settings.UseEdgeMix = value; }
+        public static bool GetUseEdgeMix() { return Settings.UseEdgeMix; }
+
+        public static void SetOffsetPopupH(int num) { Settings.OffsetPopupH = num; }
+        public static int GetOffsetPopupH() { return Settings.OffsetPopupH; }
+        public static void SetOffsetMainH(int num) { Settings.OffsetMainH = num; }
+        public static int GetOffsetMainH() { return Settings.OffsetMainH; }
+        public static void SetOffsetThumbnailsV(int num) { Settings.OffsetThumbnailsV = num; }
+        public static int GetOffsetThumbnailsV() { return Settings.OffsetThumbnailsV; }
+        public static void SetOffsetMetadataH(int num) { Settings.OffsetMetadataH = num; }
+        public static int GetOffsetMetadataH() { return Settings.OffsetMetadataH; }
+        public static void SetOffsetMetadataV(int offset) { Settings.OffsetMetadataV = offset; }
+        public static int GetOffsetMetadataV() { return Settings.OffsetMetadataV; }
+
+        public static void SetUseColoredTagBackgrounds(bool value) { Settings.UseColoredTagBackgrounds = value; }
+        public static bool GetUseColoredTagBackgrounds() { return Settings.UseColoredTagBackgrounds; }
+        public static void SetUseRoundedTagButtons(bool value) { Settings.UseRoundedTagButtons = value; }
+        public static bool GetUseRoundedTagButtons() { return Settings.UseRoundedTagButtons; }
+        public static void SetShowThumbnailTooltips(bool value) { Settings.ShowThumbnailTooltips = value; }
+        public static bool GetShowThumbnailTooltips() { return Settings.ShowThumbnailTooltips; }
 
         private static readonly byte[] _bitCounts =
         {
@@ -35,6 +103,16 @@ namespace ImageTagger
             2,3,3,4,3,4,4,5, 3,4,4,5,4,5,5,6, 3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7,
             3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
         };
+
+        public void Setup()
+        {
+            Settings = Settings.LoadFromJsonFile();
+        }
+
+        public void SaveSettings()
+        {
+            Settings.Save();
+        }
 
         internal static int CountBits(ulong hash)
         {
@@ -57,14 +135,14 @@ namespace ImageTagger
         public static string GetMetadataPath()
         {
             return (Settings.UseDefaultMetadataPath)
-                ? ProjectSettings.GlobalizePath("user://metadata")
+                ? ProjectSettings.GlobalizePath("user://metadata/")
                 : Settings.MetadataPath;
         }
 
         public static string GetThumbnailPath()
         {
             return (Settings.UseDefaultThumbnailPath)
-                ? ProjectSettings.GlobalizePath("user://thumbnails")
+                ? ProjectSettings.GlobalizePath("user://thumbnails/")
                 : Settings.ThumbnailPath;
         }
 

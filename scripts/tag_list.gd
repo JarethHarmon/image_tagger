@@ -56,7 +56,7 @@ func set_selection(selection:Dictionary) -> void:
 func _load_tags(image_hash:String, selection:Dictionary) -> void:
 	clear_tag_list()
 	curr_hash = image_hash
-	var tags:Array = MetadataManager.GetCurrentTags()#Database.GetTags(image_hash)
+	var tags:Array = MetadataManager.GetCurrentTags()
 	for tag in tags: add_tag(tag)
 	selected_thumbnails = selection
 
@@ -112,9 +112,7 @@ func _thread(args:Array) -> void:
 	var thread:Thread = args[0]
 	var tags:Array = args[1]
 	var selected_hashes:Array = args[2]
-	#print_debug(tags)
 	MetadataManager.AddTags(selected_hashes, tags)
-	#Database.BulkAddTags(selected_hashes, tags)
 	# still need to actually create the tags in the tags database (to store meta info about the tags themselves)
 	# current tags are not complex enough for this to actually be necessary though
 	thread.call_deferred("wait_to_finish")
@@ -208,7 +206,6 @@ func _on_remove_tags_button_up() -> void:
 	var hashes:Array = []
 	for idx in selected_thumbnails: 
 		hashes.push_back(selected_thumbnails[idx])
-	#Database.BulkRemoveTags(hashes, tags)
 	MetadataManager.RemoveTags(hashes, tags)
 
 func _on_bg_gui_input(event:InputEvent) -> void:

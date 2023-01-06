@@ -76,7 +76,9 @@ namespace ImageTagger.Metadata
 
             if (list.Count > 0)
                 DatabaseAccess.InsertImportSections(list);
-            SetImportInfo(info.Id, info);
+
+            dictImportInfo[info.Id] = info;
+            DatabaseAccess.InsertImportInfo(info);
         }
 
         internal static ImportInfo GetImportInfo(string id)

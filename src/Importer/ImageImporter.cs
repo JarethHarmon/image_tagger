@@ -56,6 +56,7 @@ namespace ImageTagger.Importer
 
         internal static PerceptualHashes GetPerceptualHashes(string hash)
         {
+            if (hash?.Equals(string.Empty) ?? true) return new PerceptualHashes();
             var info = DatabaseAccess.FindImageInfo(hash);
             if (info is null) return new PerceptualHashes();
             return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash);
@@ -265,7 +266,7 @@ namespace ImageTagger.Importer
                     Height = info.Height;
 
                     string format = info.Format.ToString().ToUpperInvariant().Replace("JPG", "JPEG").Replace("JFIF", "JPEG");
-                    if (format.Equals("jpg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.JPEG;
+                    if (format.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.JPEG;
                     else if (format.Equals("png", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.PNG;
                     else if (format.Equals("gif", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.GIF;
                     else if (format.Equals("webp", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.WEBP;

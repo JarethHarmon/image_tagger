@@ -73,6 +73,11 @@ namespace ImageTagger.Managers
             ImageInfoAccess.AddRating(hashes, rating, value);
         }
 
+        public int GetRating(string hash, string rating)
+        {
+            return ImageInfoAccess.GetRating(hash, rating);
+        }
+
         /*=========================================================================================
                                                  ImportInfo
         =========================================================================================*/

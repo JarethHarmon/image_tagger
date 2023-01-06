@@ -31,14 +31,14 @@ config/auto_accept_quit=false
 
 [autoload]
 
-Globals="*res://globals/Globals.gd"
-Signals="*res://globals/Signals.gd"
-Inputs="*res://globals/Inputs.gd"
 ImportManager="*res://src/Managers/ImportManager.cs"
 DatabaseManager="*res://src/Managers/DatabaseManager.cs"
-MetadataManager="*res://src/Managers/MetadataManager.cs"
 ScanManager="*res://src/Managers/ScanManager.cs"
+MetadataManager="*res://src/Managers/MetadataManager.cs"
 Global="*res://src/Global.cs"
+Inputs="*res://globals/Inputs.gd"
+Signals="*res://globals/Signals.gd"
+Globals="*res://globals/Globals.gd"
 
 [debug]
 
