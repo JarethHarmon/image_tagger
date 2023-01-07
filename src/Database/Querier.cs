@@ -42,7 +42,7 @@ namespace ImageTagger.Database
 
         // numerical condition functions
 
-        private static bool ManageQuery(QueryInfo info)
+        private static bool ManageQuery(ref QueryInfo info)
         {
             // return if query already in history
             if (queryHistory.TryGetValue(info.Id, out var _info))
@@ -54,7 +54,6 @@ namespace ImageTagger.Database
             if (queryHistoryQueue.Count == Global.Settings.MaxQueriesToStore)
                 queryHistory.Remove(queryHistoryQueue.Dequeue());
             queryHistoryQueue.Enqueue(info.Id);
-            queryHistory[info.Id] = info;
             // return true if query was newly added (and therefore needs to be filtered)
             return true;
         }
@@ -360,11 +359,12 @@ namespace ImageTagger.Database
         internal static string[] QueryDatabase(QueryInfo info, bool countResults=false)
         {
             if (info is null) return Array.Empty<string>();
-            if (ManageQuery(info))
+            if (ManageQuery(ref info))
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
                 OrderSortQuery(info, countResults);
+                queryHistory[info.Id] = info;
             }
 
             if (info.Sort == Sort.RANDOM)
