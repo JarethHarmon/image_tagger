@@ -216,7 +216,7 @@ namespace ImageTagger.Database
             info.Query = query;
         }
 
-        private static IEnumerable<string> SimilarityQuery(QueryInfo info)
+        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit)
         {
             if (info?.Query is null) return Array.Empty<string>();
             var query = info.Query;
@@ -281,15 +281,15 @@ namespace ImageTagger.Database
             var _results = results.Where(x => x.Similarity > info.MinSimilarity)
                 .OrderByDescending(x => x.Similarity)
                 .Select(x => x.Hash)
-                .Skip(info.Offset)
-                .Take(info.Limit)
+                .Skip(offset)
+                .Take(limit)
                 .ToArray();
 
             info.LastQueriedCount = _results.Length;
             return _results;
         }
 
-        private static void OrderSortQuery(QueryInfo info, bool countResults)
+        private static void OrderSortQuery(QueryInfo info, int offset, int limit, bool countResults)
         {
             if (info.Query is null) return;
             var query = info.Query;
@@ -342,7 +342,7 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.SIMILARITY)
             {
-                var hashes = new HashSet<string>(SimilarityQuery(info));
+                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
@@ -351,19 +351,20 @@ namespace ImageTagger.Database
             info.Results = query.Select(x => x.Hash);
         }
 
-        internal static string[] QueryDatabase(QueryInfo info, bool countResults=false)
+        internal static string[] QueryDatabase(QueryInfo info, int offset, int limit, bool countResults=false)
         {
             if (info is null) return Array.Empty<string>();
             if (ManageQuery(info))
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, countResults);
+                OrderSortQuery(info, offset, limit, countResults);
+                queryHistory[info.Id] = info;
             }
 
             if (info.Sort == Sort.RANDOM)
-                return info.ResultsRandom?.Skip(info.Offset).Take(info.Limit).ToArray() ?? Array.Empty<string>();
-            return info.Results?.Offset(info.Offset).Limit(info.Limit).ToArray() ?? Array.Empty<string>();
+                return info.ResultsRandom?.Skip(offset).Take(limit).ToArray() ?? Array.Empty<string>();
+            return info.Results?.Offset(offset).Limit(limit).ToArray() ?? Array.Empty<string>();
         }
 
         internal static int GetLastQueriedCount(string id)

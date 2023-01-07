@@ -28,9 +28,6 @@ namespace ImageTagger.Database
         internal string[] TagsNone { get; set; }
         internal List<Dictionary<ExpressionType, HashSet<string>>> TagsComplex { get; set; }
 
-        internal int Offset { get; set; }
-        internal int Limit { get; set; }
-
         internal TabType QueryType { get; set; }
         internal Sort Sort { get; set; }
         internal Order Order { get; set; }

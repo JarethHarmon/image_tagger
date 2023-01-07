@@ -21,7 +21,7 @@ namespace ImageTagger.Managers
             return Querier.GetLastQueriedCount(id);
         }
 
-        public string[] TempConstructQueryInfo(string tabId, int offset, int count, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
+        public string[] TempConstructQueryInfo(string tabId, int offset, int limit, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
             int sort = (int)Sort.HASH, int order = (int)Order.ASCENDING, bool countResults = false, int sortSimilarity = (int)SortSimilarity.AVERAGED)
         {
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
@@ -39,9 +39,6 @@ namespace ImageTagger.Managers
                 TagsNone = conditions.None,
                 TagsComplex = conditions.Complex,
 
-                Offset = offset,
-                Limit = count,
-
                 QueryType = tabInfo.TabType,
                 Sort = (Sort)sort,
                 Order = (Order)order,
@@ -54,9 +51,8 @@ namespace ImageTagger.Managers
             };
             queryInfo.CalcId();
 
-            var hashes = Querier.QueryDatabase(queryInfo, countResults);
-            hashes.Append(queryInfo.Id);
-            return hashes;
+            var hashes = Querier.QueryDatabase(queryInfo, offset, limit, countResults);
+            return hashes.Append(queryInfo.Id).ToArray();
         }
 
         /*=========================================================================================
