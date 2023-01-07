@@ -16,7 +16,6 @@ var current_importing_ids:Dictionary = {}
 var current_importing_id:String = "" 	# stores import_id of the in-progress import (if there is one) 
 var current_tab_type:int = TabType.DEFAULT
 var current_tab_id:String = Global.ALL
-var current_similarity:int = SortSimilarity.AVERAGED
 var current_visible_tab_section:Control
 var currently_importing:bool = false	# whether an import is in progress
 var current_imports:Dictionary = {}		# the list of in-progress imports

@@ -147,7 +147,7 @@ func _query_thread(args:Array) -> void:
 	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
 	var num_threads:int = Global.GetMaxThumbnailThreads()
-	var similarity:int = Global.GetCurrentSortSimilarity()#Globals.current_similarity
+	var similarity:int = Global.GetCurrentSortSimilarity()
 	
   # calculate the offset and whether it should count the query
 	database_offset = (curr_page_number-1) * images_per_page
