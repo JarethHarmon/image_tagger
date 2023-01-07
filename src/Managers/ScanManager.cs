@@ -12,17 +12,17 @@ namespace ImageTagger.Managers
         private bool recursive = false;
         public void SetRecursive(bool _recursive) { recursive = _recursive; }
 
-        public int StartScan(string folder)
+        public int ScanFolder(string folder)
         {
             return ScannerAccess.ScanFolders(folder, recursive);
         }
 
-        public int StartScan(string[] files)
+        public int ScanFiles(string[] files)
         {
             return ScannerAccess.ScanFiles(files);
         }
 
-        public int StartScan(string[] folders, string[] files)
+        public int ScanFoldersAndFiles(string[] folders, string[] files)
         {
             int total = ScannerAccess.ScanFiles(files);
             foreach (string folder in folders)

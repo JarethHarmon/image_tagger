@@ -63,7 +63,13 @@ namespace ImageTagger.Database
         {
             // need to implement a UI for changing these, in the meantime pointless
             var query = DatabaseAccess.GetImageInfoQuery();
+
+            // not sure if these are best to have as first filter or not
+            if (!info.ImportId.Equals(Global.ALL)) query = query.Where(x => x.Imports.Contains(info.ImportId));
+            if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
+
             // apply filters
+
             info.Query = query;
         }
 
