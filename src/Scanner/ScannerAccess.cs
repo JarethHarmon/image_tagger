@@ -43,6 +43,7 @@ namespace ImageTagger.Scanner
                     if (extensionsToImport.Contains(file.Extension.ToLowerInvariant()))
                     {
                         string dir = file.Directory.FullName.Replace("\\", "/");
+                        currentFolder = dir;
                         if (tempPaths.ContainsKey(dir)) tempPaths[dir].Add(file.Name);
                         else tempPaths[dir] = new HashSet<string> { file.Name };
                         imageCount++;
@@ -73,7 +74,9 @@ namespace ImageTagger.Scanner
 
             try
             {
+                if (cancelling) return 0;
                 currentFolder = dir.FullName;
+
                 var paths = new HashSet<string>();
                 foreach (var file in dir.GetFiles())
                 {

@@ -53,6 +53,11 @@ namespace ImageTagger.Managers
             return ScannerAccess.GetScannedPaths();
         }
 
+        public string GetCurrentFolder()
+        {
+            return ScannerAccess.GetCurrentFolder();
+        }
+
         public void CancelScan()
         {
             ScannerAccess.Cancel();

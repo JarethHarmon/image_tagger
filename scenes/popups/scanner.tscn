@@ -252,10 +252,33 @@ text = "Recursively"
 [node name="space" type="Control" parent="margin/vsplit/panel2/margin/vbox"]
 margin_top = 36.0
 margin_right = 1876.0
-margin_bottom = 203.0
+margin_bottom = 185.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="hbox" type="HBoxContainer" parent="margin/vsplit/panel2/margin/vbox"]
+margin_top = 189.0
+margin_right = 1876.0
+margin_bottom = 203.0
+mouse_filter = 2
+
+[node name="currently_scanning" type="Label" parent="margin/vsplit/panel2/margin/vbox/hbox"]
+margin_right = 1736.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+
+[node name="vsep" type="VSeparator" parent="margin/vsplit/panel2/margin/vbox/hbox"]
+margin_left = 1740.0
+margin_right = 1744.0
+margin_bottom = 14.0
+mouse_filter = 2
+
+[node name="scanned_count" type="Label" parent="margin/vsplit/panel2/margin/vbox/hbox"]
+margin_left = 1748.0
+margin_right = 1876.0
+margin_bottom = 14.0
+rect_min_size = Vector2( 128, 0 )
 
 [node name="hbox2" type="HBoxContainer" parent="margin/vsplit/panel2/margin/vbox"]
 margin_top = 207.0
@@ -284,6 +307,8 @@ margin_right = 1876.0
 margin_bottom = 48.0
 text = "  Begin Importing  "
 
+[node name="Timer" type="Timer" parent="."]
+
 [connection signal="dragged" from="margin/vsplit/path_list/vbox/hsplit2" to="margin/vsplit/path_list" method="_on_hsplit2_dragged"]
 [connection signal="dragged" from="margin/vsplit/path_list/vbox/hsplit2/hsplit21" to="margin/vsplit/path_list" method="_on_hsplit21_dragged"]
 [connection signal="gui_input" from="margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices" to="margin/vsplit/path_list" method="_on_indices_gui_input"]
@@ -299,3 +324,4 @@ text = "  Begin Importing  "
 [connection signal="button_up" from="margin/vsplit/panel2/margin/vbox/hbox1/add_folders" to="." method="_on_add_folders_button_up"]
 [connection signal="button_up" from="margin/vsplit/panel2/margin/vbox/hbox2/cancel_import" to="." method="_on_cancel_import_button_up"]
 [connection signal="button_up" from="margin/vsplit/panel2/margin/vbox/hbox2/begin_import" to="." method="_on_begin_import_button_up"]
+[connection signal="timeout" from="Timer" to="." method="_on_Timer_timeout"]

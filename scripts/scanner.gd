@@ -2,7 +2,8 @@ extends Control
 
 onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recursively
 onready var import_name:LineEdit = $margin/vsplit/panel2/margin/vbox/hbox1/import_name
-onready var currently_scanning_path:Label = $margin/vsplit/panel2/margin/vbox/hbox1/space/currently_scanning_path
+onready var currently_scanning_path:Label = $margin/vsplit/panel2/margin/vbox/hbox/currently_scanning
+onready var scanned_count:Label = $margin/vsplit/panel2/margin/vbox/hbox/scanned_count
 
 onready var indices:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices
 onready var paths:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/paths
@@ -11,6 +12,8 @@ onready var sizes:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit22/size
 
 onready var scan_thread:Thread = Thread.new()
 onready var scan_mutex:Mutex = Mutex.new()
+
+onready var timer:Timer = $Timer
 
 var scan_queue:Array = []
 var scanner_active:bool = false 
@@ -29,12 +32,20 @@ func _ready() -> void:
 
 func reset() -> void:
 	#index = 0
+	timer.stop()
 	image_count = 0
 	indices.clear()
 	paths.clear()
 	types.clear()
 	sizes.clear()
+	scanned_count.text = "0"
+	currently_scanning_path.text = ""
 	import_name.text = ""
+
+func _on_Timer_timeout() -> void:
+	currently_scanning_path.text = ScanManager.GetCurrentFolder()
+	scanned_count.text = String(image_count)
+	timer.start(0.01)
 
 func _files_dropped(file_paths:Array, _screen:int) -> void:
 	# instead of how it works now:
@@ -65,6 +76,7 @@ func start_scanner() -> void:
 	if scan_thread.is_alive(): return
 	scan_mutex.lock()
 	scan_thread.start(self, "_thread")
+	timer.start(0.01)
 	scanner_active = true
 
 func _thread() -> void:
