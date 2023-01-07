@@ -244,7 +244,7 @@ namespace ImageTagger.Managers
             foreach (string path in paths)
             {
                 if (path is null) continue;
-                if (ImageImporter.FileDoesNotExist(path))
+                if (!ImageImporter.FileExists(path))
                 {
                     UpdateImportCount(importId, ImportStatus.FAILED);
                 }
@@ -274,11 +274,11 @@ namespace ImageTagger.Managers
             var result = ImportStatus.SUCCESS;
 
             bool thumbnailExisted = true;
-            if (ImageImporter.FileDoesNotExist(thumbPath))
+            if (!ImageImporter.FileExists(thumbPath))
             {
                 thumbnailExisted = false;
                 (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
-                if (phashes.Difference == 0 || ImageImporter.FileDoesNotExist(thumbPath)) return ImportStatus.FAILED;
+                if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath)) return ImportStatus.FAILED;
             }
 
             var imageInfo = ImageInfoAccess.GetImageInfo(hash);
@@ -327,7 +327,9 @@ namespace ImageTagger.Managers
             {
                 imageInfo.Paths.Add(imagePath);
                 if (imageInfo.Imports.Contains(importId))
+                {
                     result = ImportStatus.IGNORED;
+                }
                 else
                 {
                     imageInfo.Imports.Add(importId);

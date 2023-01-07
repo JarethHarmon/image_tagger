@@ -2,6 +2,7 @@ using System;
 using ImageMagick;
 using ImageTagger.Database;
 using Python.Runtime;
+using static Godot.HTTPRequest;
 
 namespace ImageTagger.Importer
 {
@@ -109,24 +110,28 @@ namespace ImageTagger.Importer
                 try
                 {
                     dynamic script = Py.Import(pyScript);
-                    script.save_webp_thumbnail(imagePath, thumbPath, thumbSize);
+                    dynamic _result = script.save_webp_thumbnail(imagePath, thumbPath, thumbSize);
+                    string result = (string) _result;
 
-                    dynamic _average = script.calc_average_hash();
-                    ulong average = (ulong)_average;
+                    string[] sections = result.Split('!');
+                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
-                    dynamic _wavelet = script.calc_wavelet_hash();
-                    ulong wavelet = (ulong)_wavelet;
+                    string[] hashes = sections[0].Split('?');
+                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    ulong.TryParse(hashes[0], out ulong average);
+                    ulong.TryParse(hashes[1], out ulong wavelet);
+                    ulong.TryParse(hashes[2], out ulong difference);
 
-                    dynamic _difference = script.calc_dhash();
-                    ulong difference = (ulong)_difference;
-
-                    dynamic _color_buckets = script.calc_color_buckets();
-                    string colorBuckets = (string)_color_buckets;
-
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(colorBuckets));
+                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
                 }
-                catch
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
+                    return (new PerceptualHashes(), new ColorBuckets());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                     return (new PerceptualHashes(), new ColorBuckets());
                 }
             }
@@ -140,24 +145,29 @@ namespace ImageTagger.Importer
                 try
                 {
                     dynamic script = Py.Import(pyScript);
-                    script.initialize(thumbPath);
+                    dynamic _result = script.initialize(thumbPath);
 
-                    dynamic _average = script.calc_average_hash();
-                    ulong average = (ulong)_average;
+                    string result = (string)_result;
 
-                    dynamic _wavelet = script.calc_wavelet_hash();
-                    ulong wavelet = (ulong)_wavelet;
+                    string[] sections = result.Split('!');
+                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
-                    dynamic _difference = script.calc_dhash();
-                    ulong difference = (ulong)_difference;
+                    string[] hashes = sections[0].Split('?');
+                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    ulong.TryParse(hashes[0], out ulong average);
+                    ulong.TryParse(hashes[1], out ulong wavelet);
+                    ulong.TryParse(hashes[2], out ulong difference);
 
-                    dynamic _color_buckets = script.calc_color_buckets();
-                    string colorBuckets = (string)_color_buckets;
-
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(colorBuckets));
+                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
                 }
-                catch
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
+                    return (new PerceptualHashes(), new ColorBuckets());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                     return (new PerceptualHashes(), new ColorBuckets());
                 }
             }
@@ -166,16 +176,16 @@ namespace ImageTagger.Importer
         /*=========================================================================================
 									                IO
         =========================================================================================*/
-        internal static bool FileDoesNotExist(string path)
+        internal static bool FileExists(string path)
         {
             return (path.Length < Global.MAX_PATH_LENGTH)
-                ? !System.IO.File.Exists(path)
-                : !Alphaleonis.Win32.Filesystem.File.Exists(path);
+                ? System.IO.File.Exists(path)
+                : Alphaleonis.Win32.Filesystem.File.Exists(path);
         }
 
         private static bool TryLoadFile(string path, out byte[] data)
         {
-            if (FileDoesNotExist(path))
+            if (!FileExists(path))
             {
                 data = Array.Empty<byte>();
                 return false;
