@@ -1,6 +1,6 @@
 import sys, io, base64, clr
 clr.AddReference('Image Tagger')
-from Importer import PythonInterop
+from ImageTagger.Managers import PythonManager
 import numpy as np
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -29,8 +29,7 @@ def load_large_image(impath, imhash, num_y, num_x):
     elif im.mode != 'RGB': im = im.convert('RGB')
     npim = np.asarray(im)
 	
-    csharp = PythonInterop()
-    csharp.Setup()
+    csharp = PythonManager()
 		
     M = npim.shape[0] // num_x
     N = npim.shape[1] // num_y
