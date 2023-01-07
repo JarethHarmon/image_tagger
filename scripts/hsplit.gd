@@ -9,5 +9,8 @@ func _on_hsplit_dragged(offset:int) -> void:
 	old_offset = offset
 	Global.SetOffsetMainH(offset)
 
-func _ready() -> void: Signals.connect("update_main_horizontal_offset", self, "update_offset")
-func update_offset(value:int) -> void: self.split_offset = value
+func _ready() -> void: 
+	Signals.connect("settings_loaded", self, "update_offset")
+	
+func update_offset() -> void: 
+	self.split_offset = Global.GetOffsetMainH()

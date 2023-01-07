@@ -1,10 +1,10 @@
 extends VSplitContainer
 
 func _ready() -> void: 
-	Signals.connect("update_thumbnails_vertical_offset", self, "update_offset")
+	Signals.connect("settings_loaded", self, "update_offset")
 	
-func update_offset(value:int) -> void: 
-	self.split_offset = value
+func update_offset() -> void: 
+	self.split_offset = Global.GetOffsetThumbnailsV()
 
 func _on_vsplit_dragged(offset:int) -> void: 
 	Global.SetOffsetThumbnailsV(offset)
