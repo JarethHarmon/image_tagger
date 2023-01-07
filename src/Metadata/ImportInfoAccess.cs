@@ -61,7 +61,7 @@ namespace ImageTagger.Metadata
             }
             if (lastSectionSize > 0)
             {
-                string[] _paths = new string[Global.PROGRESS_SECTION_SIZE];
+                string[] _paths = new string[lastSectionSize]; // << this was causing null paths
                 Array.Copy(paths, info.Total - lastSectionSize, _paths, 0, lastSectionSize);
 
                 var id = Global.CreateSectionId();
@@ -92,7 +92,6 @@ namespace ImageTagger.Metadata
         internal static void SetImportInfo(string id, ImportInfo info)
         {
             dictImportInfo[id] = info;
-            DatabaseAccess.UpdateImportInfo(info);
         }
 
         internal static string[] GetImportIds()

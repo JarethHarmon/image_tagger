@@ -121,7 +121,7 @@ func create_tab_buttons() -> void:
 			var total_count:int = MetadataManager.GetTotalCount(import_id)
 			var finished:bool = MetadataManager.GetFinished(import_id)
 			var processed_count:int = MetadataManager.GetProcessedCount(import_id)
-			var tab_name:String = MetadataManager.GetTabName(import_id)
+			var tab_name:String = MetadataManager.GetTabName(tab_id)
 			var progress_ids:Array = MetadataManager.GetSections(import_id)
 
 			if not finished:
