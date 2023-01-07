@@ -57,7 +57,7 @@ namespace ImageTagger.Core
             this.Paths.UnionWith(other.Paths);
             this.Imports.UnionWith(other.Imports);
             this.Groups.UnionWith(other.Groups);
-            this.Tags = (string[])this.Tags.Union(other.Tags);
+            this.Tags = this.Tags.Union(other.Tags).ToArray();
         }
     }
 }

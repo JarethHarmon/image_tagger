@@ -58,15 +58,15 @@ margin_bottom = 19.0
 text = "Sort By: "
 
 [node name="sort_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
-margin_right = 88.0
+margin_right = 61.0
 margin_bottom = 24.0
-text = "File Hash"
-items = [ "File Hash", null, false, 0, null, "File Path", null, false, 1, null, "File Name", null, false, 2, null, "File Size", null, false, 3, null, "File Upload Time", null, false, 4, null, "File Creation Time", null, false, 5, null, "File Edit Time", null, false, 6, null, "Dimensions", null, false, 7, null, "Tag Count", null, false, 8, null, "Random", null, false, 9, null, "Image Color", null, false, 11, null, "Rating-Quality", null, false, 11, null, "Rating-Appeal", null, false, 12, null, "Rating-Art Style", null, false, 13, null, "Rating-Sum", null, false, 15, null, "Rating-Average", null, false, 15, null, "Red", null, false, 16, null, "Green", null, false, 17, null, "Blue", null, false, 18, null, "Alpha", null, false, 19, null, "Light", null, false, 20, null, "Dark", null, false, 21, null ]
+text = "Hash"
+items = [ "Hash", null, false, 0, null, "Path", null, false, 1, null, "Name", null, false, 2, null, "Size", null, false, 3, null, "Upload Time", null, false, 4, null, "Creation Time", null, false, 5, null, "Last Write Time", null, false, 6, null, "Last Edit Time", null, false, 7, null, "Dimensions", null, false, 8, null, "Width", null, false, 9, null, "Height", null, false, 10, null, "Tag Count", null, false, 11, null, "Quality", null, false, 12, null, "Appeal", null, false, 13, null, "Art Style", null, false, 14, null, "Red", null, false, 15, null, "Light Red", null, false, 16, null, "Dark Red", null, false, 17, null, "Green", null, false, 18, null, "Light Green", null, false, 19, null, "Dark Green", null, false, 20, null, "Blue", null, false, 21, null, "Light Blue", null, false, 22, null, "Dark Blue", null, false, 23, null, "Yellow", null, false, 24, null, "Light Yellow", null, false, 25, null, "Dark Yellow", null, false, 26, null, "Cyan", null, false, 27, null, "Light Cyan", null, false, 28, null, "Dark Cyan", null, false, 29, null, "Fuschia", null, false, 30, null, "Light Fuschia", null, false, 31, null, "Dark Fuschia", null, false, 32, null, "Light", null, false, 33, null, "Dark", null, false, 34, null, "Alpha", null, false, 35, null, "Random", null, false, 36, null ]
 selected = 0
 
 [node name="order_by" type="OptionButton" parent="margin/vbox/sort_buttons"]
-margin_left = 92.0
-margin_right = 187.0
+margin_left = 65.0
+margin_right = 160.0
 margin_bottom = 24.0
 text = "Ascending"
 items = [ "Ascending", null, false, 0, null, "Descending", null, false, 1, null ]
@@ -82,15 +82,15 @@ items = [ "Averaged", null, false, 0, null, "Average", null, false, 1, null, "Di
 selected = 0
 
 [node name="space1" type="Control" parent="margin/vbox/sort_buttons"]
-margin_left = 191.0
-margin_right = 223.0
+margin_left = 164.0
+margin_right = 196.0
 margin_bottom = 24.0
 rect_min_size = Vector2( 32, 0 )
 mouse_filter = 2
 size_flags_vertical = 3
 
 [node name="thumbnail_size" type="HSlider" parent="margin/vbox/sort_buttons"]
-margin_left = 227.0
+margin_left = 200.0
 margin_right = 1704.0
 margin_bottom = 16.0
 size_flags_horizontal = 3

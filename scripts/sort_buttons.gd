@@ -16,29 +16,27 @@ func _input(event:InputEvent) -> void:
 		select_all.text = "  Select All  "
 	
 func _ready() -> void: 
-	Signals.connect("settings_loaded", self, "_apply_settings")
 	Signals.connect("switch_sort_buttons", self, "_switch_sort_buttons")
 	Signals.connect("settings_loaded", self, "apply_settings")
 
 func apply_settings() -> void:
-	$thumbnail_size.value = Globals.settings.thumbnail_width
-	$thumbnail_size_entry.value = Globals.settings.thumbnail_width
+	$thumbnail_size.value = Global.GetThumbnailWidth()
+	$thumbnail_size_entry.value = Global.GetThumbnailWidth()
+	sortby_options.selected = Global.GetCurrentSort()
+	orderby_options.selected = Global.GetCurrentOrder()
+	similarity.selected = Global.GetCurrentSortSimilarity()
 
 func _switch_sort_buttons(swap:bool) -> void:
 	sortby_options.visible = not swap
 	orderby_options.visible = not swap
 	similarity.visible = swap
-	
-func _apply_settings() -> void: 
-	sortby_options.selected = Globals.settings.current_sort
-	orderby_options.selected = Globals.settings.current_order
 
 func _on_sort_by_item_selected(index:int) -> void:
-	Globals.settings.current_sort = index
+	Global.SetCurrentSort(index)
 	Signals.emit_signal("sort_changed")
 	
 func _on_order_by_item_selected(index:int) -> void:
-	Globals.settings.current_order = index
+	Global.SetCurrentOrder(index)
 	Signals.emit_signal("order_changed")
 
 func _on_select_all_button_up() -> void:
@@ -46,5 +44,5 @@ func _on_select_all_button_up() -> void:
 	else: Signals.emit_signal("select_all_pressed")
 
 func _on_similarity_item_selected(index:int) -> void:
-	Globals.current_similarity = index
+	Global.SetCurrentSortSimilarity(index)
 	Signals.emit_signal("similarity_changed")

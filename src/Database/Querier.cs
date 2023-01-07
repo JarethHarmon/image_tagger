@@ -42,7 +42,7 @@ namespace ImageTagger.Database
 
         // numerical condition functions
 
-        private static bool ManageQuery(QueryInfo info)
+        private static bool ManageQuery(ref QueryInfo info)
         {
             // return if query already in history
             if (queryHistory.TryGetValue(info.Id, out var _info))
@@ -54,7 +54,6 @@ namespace ImageTagger.Database
             if (queryHistoryQueue.Count == Global.Settings.MaxQueriesToStore)
                 queryHistory.Remove(queryHistoryQueue.Dequeue());
             queryHistoryQueue.Enqueue(info.Id);
-            queryHistory[info.Id] = info;
             // return true if query was newly added (and therefore needs to be filtered)
             return true;
         }
@@ -62,8 +61,14 @@ namespace ImageTagger.Database
         private static void AddNumericalFilters(QueryInfo info)
         {
             // need to implement a UI for changing these, in the meantime pointless
-            var query = DatabaseAccess.GetImageInfoQuery();
+            var query = info.Query;
+
+            // not sure if these are best to have as first filter or not
+            if (!info.ImportId.Equals(Global.ALL)) query = query.Where(x => x.Imports.Contains(info.ImportId));
+            if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
+
             // apply filters
+
             info.Query = query;
         }
 
@@ -231,7 +236,7 @@ namespace ImageTagger.Database
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
                 }).ToArray();
-                foreach (var result in results)
+                foreach (var result in results) // results is empty on new que
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
                     float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);
@@ -354,7 +359,7 @@ namespace ImageTagger.Database
         internal static string[] QueryDatabase(QueryInfo info, int offset, int limit, bool countResults=false)
         {
             if (info is null) return Array.Empty<string>();
-            if (ManageQuery(info))
+            if (ManageQuery(ref info))
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);

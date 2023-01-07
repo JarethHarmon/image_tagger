@@ -1,6 +1,5 @@
 extends Control
 
-
 func _ready():
 	Signals.connect("toggle_search_section", self, "_toggle_section")
 	Signals.connect("toggle_preview_section", self, "_toggle_section")

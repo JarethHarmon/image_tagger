@@ -1,7 +1,6 @@
-using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Transactions;
 
 namespace ImageTagger.Scanner
 {
@@ -40,7 +39,7 @@ namespace ImageTagger.Scanner
                 {
                     if (cancelling) return 0;
                     var file = new System.IO.FileInfo(path);
-                    if (file.Length < requirements?.MinSize || file.Length > requirements.MaxSize) continue;
+                    if (file.Length < requirements?.MinSize || file.Length > requirements?.MaxSize) continue;
                     if (extensionsToImport.Contains(file.Extension.ToLowerInvariant()))
                     {
                         string dir = file.Directory.FullName.Replace("\\", "/");
@@ -79,7 +78,7 @@ namespace ImageTagger.Scanner
                 foreach (var file in dir.GetFiles())
                 {
                     if (cancelling) return 0;
-                    if (file.Length < requirements?.MinSize || file.Length > requirements.MaxSize) continue;
+                    if (file.Length < requirements?.MinSize || file.Length > requirements?.MaxSize) continue;
                     if (extensionsToImport.Contains(file.Extension.ToLowerInvariant()))
                     {
                         paths.Add(file.Name);

@@ -1,5 +1,7 @@
 extends PanelContainer
 
+# need to entire rewrite and restructure this section
+
 onready var hsplit1:HSplitContainer = $vbox/hsplit1
 onready var hsplit11:HSplitContainer = $vbox/hsplit1/hsplit11
 onready var hsplit12:HSplitContainer = $vbox/hsplit1/hsplit12
@@ -13,10 +15,10 @@ onready var paths:ItemList = $vbox/hsplit2/hsplit21/paths
 onready var types:ItemList = $vbox/hsplit2/hsplit22/types
 onready var sizes:ItemList = $vbox/hsplit2/hsplit22/sizes
 
-func _ready() -> void:
-	var vscrollbars:Array = [indices.get_v_scroll(), paths.get_v_scroll(), types.get_v_scroll(), sizes.get_v_scroll()]
-	for vscroll in vscrollbars:
-		var sbe:StyleBoxEmpty = StyleBoxEmpty.new()
+#func _ready() -> void:
+	#var vscrollbars:Array = [indices.get_v_scroll(), paths.get_v_scroll(), types.get_v_scroll(), sizes.get_v_scroll()]
+	#for vscroll in vscrollbars:
+		#var sbe:StyleBoxEmpty = StyleBoxEmpty.new()
 		#vscroll.add_stylebox_override("grabber", sbe)
 		#vscroll.add_stylebox_override("scroll", sbe)
 

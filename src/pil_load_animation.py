@@ -1,6 +1,6 @@
 import sys, io, base64, clr
 clr.AddReference('Image Tagger')
-from Importer import PythonInterop
+from ImageTagger.Managers import PythonManager
 from PIL import Image, ImageFile, GifImagePlugin
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 GifImagePlugin.LOADING_STRATEGY = GifImagePlugin.LoadingStrategy.RGB_ALWAYS
@@ -23,8 +23,7 @@ def get_gif_frames(path, im_hash):
     im = Image.open(path)
     frame_count = im.n_frames
     
-    csharp = PythonInterop()
-    csharp.Setup()
+    csharp = PythonManager()
     csharp.SendFrameCount(frame_count)
     
     for i in range(0, frame_count):
@@ -43,8 +42,7 @@ def get_apng_frames(im_path, im_hash):
     im = Image.open(im_path)
     frame_count = im.n_frames
     
-    csharp = PythonInterop()
-    csharp.Setup()
+    csharp = PythonManager()
     csharp.SendFrameCount(frame_count)
     
     is_png = has_transparency(im)

@@ -9,6 +9,18 @@ namespace ImageTagger.Managers
 {
     public sealed class DatabaseManager : Node
     {
+        public int Create()
+        {
+            var result = DatabaseAccess.Create();
+            if (result != Error.OK) return (int)result;
+            return (int)DatabaseAccess.Setup();
+        }
+
+        public void Shutdown()
+        {
+            DatabaseAccess.Shutdown();
+        }
+
         public bool IncorrectImage(string hash)
         {
             string _hash = ImageInfoAccess.GetCurrentHash();
@@ -31,7 +43,7 @@ namespace ImageTagger.Managers
 
             var queryInfo = new QueryInfo
             {
-                ImportId = tabInfo.ImportId,
+                ImportId = (!tabInfo.ImportId?.Equals(string.Empty) ?? false) ? tabInfo.ImportId : Global.ALL,
                 GroupId = string.Empty,
 
                 TagsAll = conditions.All,
@@ -48,6 +60,8 @@ namespace ImageTagger.Managers
                 AverageHash = perceptualHashes.Average,
                 DifferenceHash = perceptualHashes.Difference,
                 WaveletHash = perceptualHashes.Wavelet,
+
+                Query = DatabaseAccess.GetImageInfoQuery(),
             };
             queryInfo.CalcId();
 
