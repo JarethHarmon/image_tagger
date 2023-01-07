@@ -385,12 +385,14 @@ namespace ImageTagger.Importer
                     script.get_gif_frames(path, hash);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }
@@ -407,12 +409,14 @@ namespace ImageTagger.Importer
                     script.get_apng_frames(path, hash);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }
@@ -429,12 +433,14 @@ namespace ImageTagger.Importer
                     script.load_large_image(path, hash, columns, rows);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }

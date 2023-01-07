@@ -589,6 +589,7 @@ func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=
 			animation_images.clear()
 		animation_images.append(texture)
 		if delay > 0.0: animation_delays.append(delay)
+		else: animation_delays.append(0.041666667)
 		if new_image:
 			animation_mutex.unlock()
 			update_animation(new_image)
