@@ -1,7 +1,6 @@
 extends Control
 
 const smooth_pixel:Material = preload("res://shaders/SmoothPixel.tres")
-#const buffer_icon:StreamTexture = preload("res://assets/buffer-01.png")
 const broken_icon:StreamTexture = preload("res://assets/icon-broken.png")
 const display_image:PackedScene = preload("res://scenes/display_image.tscn")
 
@@ -15,6 +14,8 @@ export (NodePath) onready var preview_image = get_node(preview_image)
 export (NodePath) onready var tiled_image = get_node(tiled_image)
 export (NodePath) onready var viewport_display = get_node(viewport_display)
 export (NodePath) onready var shaders = get_node(shaders)
+export (NodePath) onready var normal_parent = get_node(normal_parent)
+export (NodePath) onready var fullscreen_parent = get_node(fullscreen_parent)
 
 onready var display:TextureRect = $margin/vbox/viewport_display
 onready var smooth_pixel_button:CheckButton = $margin/vbox/flow/smooth_pixel
@@ -22,7 +23,8 @@ onready var filter_button:CheckButton = $margin/vbox/flow/filter
 onready var fxaa_button:CheckButton = $margin/vbox/flow/fxaa
 onready var edge_mix_button:CheckButton = $margin/vbox/flow/edge_mix
 onready var color_grading_button:CheckButton = $margin/vbox/flow/color_grading
-
+onready var fullscreen_button:Button = $margin/vbox/flow/fullscreen
+onready var darker_background:ColorRect = $darker_background
 onready var timer:Timer = $Timer
 onready var buffering:HBoxContainer = $margin/hbox
 
@@ -40,6 +42,7 @@ onready var rating_thread:Thread = Thread.new()
 onready var rating_queue_mutex:Mutex = Mutex.new()
 onready var animation_mutex:Mutex = Mutex.new()
 
+var fullscreen:bool = false
 var max_size:int = 16384
 var max_threads:int = 3
 var active_threads:int = 0
@@ -79,25 +82,22 @@ func _ready() -> void:
 	Signals.connect("add_animation_texture", self, "add_animation_texture")
 	Signals.connect("finish_animation", self, "remove_status")
 	Signals.connect("add_large_image_section", self, "add_large_image_section")
+	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
+	Signals.connect("settings_loaded", self, "_settings_loaded")
 
 	create_threads(max_threads)
 	rating_thread.start(self, "_rating_thread")
-	
-	# connect to settings_loaded signal here
-	_on_settings_loaded()
-
-	Signals.connect("toggle_preview_section", self, "_toggle_preview_section")
-	
 	timer.connect("timeout", self, "update_animation")
 
 func resize_current_image1() -> void:
-	 resize_current_image(Database.GetCurrentHash())
+	resize_current_image(MetadataManager.GetCurrentHash())
 
 func _toggle_preview_section(_visible:bool) -> void: 
 	self.visible = _visible
 	Globals.toggle_parent_visibility_from_children(self)
 	Globals.toggle_parent_visibility_from_children(self.get_parent())
 
+# note: for simple tasks like this that are fire and forget, would be better to change c# functions to be Tasks 
 func _rating_set(rating_name:String, rating_value:int) -> void:
 	# for now, I will just ensure each frame of an animation has a rating
 	# in the future though, I should use current_hash instead
@@ -136,23 +136,23 @@ func _rating_thread() -> void:
 			var image_hash:String = args[0]
 			var rating_name:String = args[1]
 			var rating_value:int = args[2]
-			Database.AddRating(image_hash, rating_name, rating_value)
+			MetadataManager.AddRating([image_hash], rating_name, rating_value)
 		OS.delay_msec(201)
 	rating_thread.call_deferred("wait_to_finish")
 	
-func _on_settings_loaded() -> void:
-	smooth_pixel_button.pressed = Globals.settings.use_smooth_pixel
-	smooth_pixel_button.disabled = Globals.settings.use_filter
-	filter_button.pressed = Globals.settings.use_filter
-	fxaa_button.pressed = Globals.settings.use_fxaa
-	color_grading_button.pressed = Globals.settings.use_color_grading
-	edge_mix_button.pressed = Globals.settings.use_edge_mix
+func _settings_loaded() -> void:
+	smooth_pixel_button.pressed = Global.GetUseSmoothPixel()
+	smooth_pixel_button.disabled = Global.GetUseImageFilter()
+	filter_button.pressed = Global.GetUseImageFilter()
+	fxaa_button.pressed = Global.GetUseFXAA()
+	color_grading_button.pressed = Global.GetUseColorGrading()
+	edge_mix_button.pressed = Global.GetUseEdgeMix()
 	
-	_on_filter_toggled(Globals.settings.use_filter)
-	_on_fxaa_toggled(Globals.settings.use_fxaa)
-	_on_edge_mix_toggled(Globals.settings.use_edge_mix)
-	_on_color_grading_toggled(Globals.settings.use_color_grading)
-	_on_smooth_pixel_toggled(Globals.settings.use_smooth_pixel)
+	_on_filter_toggled(filter_button.pressed)
+	_on_fxaa_toggled(fxaa_button.pressed)
+	_on_edge_mix_toggled(edge_mix_button.pressed)
+	_on_color_grading_toggled(color_grading_button.pressed)
+	_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
 
 	create_current_image()
 	preview_image.get_texture().set_meta("image_hash", "6b5a6fef622ce6f0b6b42bceb2de405018ef65fc0aaed4b369db4cdaf8985710")
@@ -185,7 +185,6 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	image_mutex.lock()
 	current_path = path
 	current_hash = image_hash
-	#large_image = false
 	
 	animation_mutex.lock()
 	for child in tiled_image.get_children():
@@ -193,8 +192,6 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 	animation_mutex.unlock()
 	
 	if image_history.has(image_hash): 
-		# queue code here updates the most recently clicked image (so that the least-recently viewed image is removed from history 
-		#	instead of the first clicked) 
 		image_queue.erase(image_hash)
 		image_queue.push_back(image_hash)
 		var it:ImageTexture = image_history[image_hash]
@@ -202,9 +199,9 @@ func _load_full_image(image_hash:String, path:String, found:bool=true) -> void:
 		current_image = it
 		resize_current_image(image_hash)
 		# need to call a function that gets a list of ratings instead
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+		Signals.emit_signal("set_rating", "Appeal", MetadataManager.GetRating(image_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", MetadataManager.GetRating(image_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", MetadataManager.GetRating(image_hash, "Art"))
 		image_mutex.unlock()
 		return
 	
@@ -252,7 +249,7 @@ func start_manager() -> void:
 
 func start_one(_current_hash:String, _current_path:String, thread_id:int) -> void:
 	thread_status[thread_id] = status.ACTIVE
-	var actual_format:int = Database.GetImageFormat(_current_hash)#ImageImporter.GetActualFormat(_current_path) # this should call the database method instead
+	var actual_format:int = MetadataManager.GetCurrentFormat()
 	if actual_format == Globals.ImageType.APNG or actual_format == Globals.ImageType.GIF:
 		animation_mutex.lock()
 		animation_status[_current_hash] = a_status.LOADING
@@ -287,11 +284,11 @@ func _thread(args:Array) -> void:
 	var thread_id:int = args[2]
 	var actual_format:int = args[3]
 	
-	if Database.IncorrectImage(image_hash): return
+	if DatabaseManager.IncorrectImage(image_hash): return
 	
-	var dimensions:Vector2 = Database.GetDimensions(image_hash)
+	var dimensions:Vector2 = MetadataManager.GetCurrentDimensions()
 
-	if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+	if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -301,7 +298,6 @@ func _thread(args:Array) -> void:
 		tiled_image.show()
 		resize_current_image(image_hash)
 		var size:Vector2 = single_image.rect_size
-		#large_image = true
 		# need to create the individual piece of the grid (texturerect nodes) and align them correctly
 		# they should all be children of another node, in correct order, so that I can just iterate them to add pieces
 		var num_columns:int = (dimensions.x / max_size) + 1
@@ -310,8 +306,6 @@ func _thread(args:Array) -> void:
 		# need to resize and reposition image_0
 		var im_width:int = size.x / num_columns
 		var im_height:int = size.y / num_rows
-		#var im_width:int = single_image.rect_size.x / num_columns
-		#var im_height:int = single_image.rect_size.y / num_rows
 		var im_dimensions:Vector2 = Vector2(im_width, im_height)
 
 		var rx:int = dimensions.x as int % num_columns
@@ -340,7 +334,7 @@ func _thread(args:Array) -> void:
 				# not a major point of concern
 				ima.rect_position = Vector2((im_width * x) - x, (im_height * y) - y)
 				
-		ImageImporter.LoadLargeImage(path, image_hash, num_columns, num_rows)
+		ImportManager.LoadLargeImage(path, image_hash, num_columns, num_rows)
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -349,27 +343,27 @@ func _thread(args:Array) -> void:
 		tiled_image.hide()
 
 	animation_mode = false
-	if actual_format == Globals.ImageType.JPG:
+	if actual_format == Globals.ImageType.JPEG:
 		var f:File = File.new()
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 
 		if e != OK: 
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			print("error ", e, ": ", path)
-			i = ImageImporter.LoadUnsupportedImage(path)
+			i = ImportManager.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -378,21 +372,21 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
-			i = ImageImporter.LoadUnsupportedImage(path)
+			i = ImportManager.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -401,35 +395,35 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_webp_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
-			i = ImageImporter.LoadUnsupportedImage(path)
-			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash): 
+			i = ImportManager.LoadUnsupportedImage(path)
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
 		animation_mode = true
-		ImageImporter.LoadAPng(path, image_hash)
+		ImportManager.LoadAPng(path, image_hash)
 	elif actual_format == Globals.ImageType.GIF: 
 		animation_mode = true
-		ImageImporter.LoadGif(path, image_hash)
+		ImportManager.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or Database.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return 
-		var i = ImageImporter.LoadUnsupportedImage(path)
+		var i = ImportManager.LoadUnsupportedImage(path)
 		if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 			call_deferred("_done", thread_id, path, image_hash)
 			return
@@ -462,12 +456,12 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 			im = tex.get_data()
 	
 	var it:ImageTexture = ImageTexture.new()
-	it.create_from_image(im, 4 if Globals.settings.use_filter else 0)
-	
+	it.create_from_image(im, 4 if Global.GetUseImageFilter() else 0)
+
 	if image_hash != "":
 		it.set_meta("image_hash", image_hash)
 		image_mutex.lock()		
-		if image_queue.size() < Globals.settings.images_to_store:
+		if image_queue.size() < Global.GetMaxImagesToStore():
 			image_history[image_hash] = it
 			image_queue.push_back(image_hash)
 		else:
@@ -483,15 +477,10 @@ func create_current_image(thread_id:int=-1, im:Image=null, path:String="", image
 		#		Signals.emit_signal("set_rating", rating, Database.GetRating(image_hash, rating))
 		# also need to consider doing this in bulk (which would likely require a rewrite of the rating.gd script, or the logic behind ratings in general)
 
-		#Signals.emit_signal("set_rating", Database.GetRating(image_hash, "Default"))
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(image_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(image_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(image_hash, "Art"))
+		Signals.emit_signal("set_rating", "Appeal", MetadataManager.GetRating(image_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", MetadataManager.GetRating(image_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", MetadataManager.GetRating(image_hash, "Art"))
 		
-	if thread_id > 0 and path != "":
-		# if check_stop_thread(thread_id):
-		#	return
-		pass
 	current_image = it	
 	preview_image.set_texture(current_image)
 
@@ -500,15 +489,13 @@ func change_filter() -> void:
 	var it:Texture
 	if animation_mode: it = animation_images[animation_index]
 	else: it = preview_image.get_texture()
-	
-	if Globals.settings.use_filter: it.flags = 4
-	else: it.flags = 0	
+	it.flags = 4 if Global.GetUseImageFilter() else 0
 
 func resize_current_image(image_hash:String, path:String="") -> void:
 	if current_image == null: return
 	if path != "" and path != current_path: return # do not remember why I commented return here
 
-	var dimensions:Vector2 = Database.GetDimensions(image_hash)
+	var dimensions:Vector2 = MetadataManager.GetCurrentDimensions()
 	var temp_size:Vector2 = calc_relative_size(calc_relative_size(single_image.get_parent().rect_size, display.rect_size), dimensions)
 	# prevent issue causing previewed image to not change if the newly clicked image is the same size (while still preventing flash)
 	if temp_size != animation_size or current_image.get_meta("image_hash") != preview_image.get_texture().get_meta("image_hash"):
@@ -533,37 +520,28 @@ func calc_relative_size(size1:Vector2, size2:Vector2) -> Vector2:
 
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
-	Globals.settings.use_smooth_pixel = button_pressed
-	if button_pressed and Globals.settings.use_filter: preview_image.set_material(smooth_pixel)
+	Global.SetUseSmoothPixel(button_pressed)
+	if button_pressed and Global.GetUseImageFilter(): preview_image.set_material(smooth_pixel)
 	else: preview_image.set_material(null)
 	
 func _on_filter_toggled(button_pressed:bool) -> void:
-	Globals.settings.use_filter = button_pressed
+	Global.SetUseImageFilter(button_pressed)
 	if button_pressed: smooth_pixel_button.disabled = false
 	else: smooth_pixel_button.disabled = true
 	#_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
-	
 	change_filter()
-	#create_current_image()
-	#resize_current_image()
 	
 func _on_fxaa_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_fxaa = button_pressed
+	Global.SetUseFXAA(button_pressed)
 	fxaa.visible = button_pressed
 	
 func _on_edge_mix_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_edge_mix = button_pressed
+	Global.SetUseEdgeMix(button_pressed)
 	edge_mix.visible = button_pressed
 	
 func _on_color_grading_toggled(button_pressed:bool) -> void: 
-	Globals.settings.use_color_grading = button_pressed
+	Global.SetUseColorGrading(button_pressed)
 	color_grading.visible = button_pressed
-
-export (NodePath) onready var normal_parent = get_node(normal_parent)
-export (NodePath) onready var fullscreen_parent = get_node(fullscreen_parent)
-onready var fullscreen_button:Button = $margin/vbox/flow/fullscreen
-onready var darker_background:ColorRect = $darker_background
-var fullscreen:bool = false
 
 func _input(event:InputEvent) -> void:
 	if Input.is_action_just_pressed("fullscreen"): _on_fullscreen_pressed()
@@ -585,16 +563,12 @@ func _on_fullscreen_pressed(escape:bool=false) -> void:
 		darker_background.show()
 		fullscreen = true
 
-# need to add spinbox for fps override (and connect the signals for value changed, and the signal for toggle button
-
-# consider moving all "new" code to this function since it is only called at the start anyways
 func set_frames(total_frames:int, fps:int=0) -> void:
 	if fps > 0:
 		animation_fps = fps
 		if use_animation_fps_override: animation_min_delay = 1.0 / max(1, animation_fps_override)
 		else: animation_min_delay = 1.0 / max(1, fps)
 	animation_total_frames = total_frames
-	# set max frames label text
 
 func remove_animations() -> void:
 	animation_mutex.lock()
@@ -603,7 +577,7 @@ func remove_animations() -> void:
 	animation_mutex.unlock()
 
 func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=0.0, new_image:bool=false) -> void:
-	if Database.IncorrectImage(image_hash):
+	if DatabaseManager.IncorrectImage(image_hash):
 		animation_mutex.lock()
 		if animation_status.has(image_hash): 
 			animation_status[image_hash] = a_status.STOPPING
@@ -615,6 +589,7 @@ func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=
 			animation_images.clear()
 		animation_images.append(texture)
 		if delay > 0.0: animation_delays.append(delay)
+		else: animation_delays.append(0.041666667)
 		if new_image:
 			animation_mutex.unlock()
 			update_animation(new_image)
@@ -623,9 +598,7 @@ func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=
 func add_large_image_section(texture:ImageTexture, image_hash:String, grid_index:int) -> void:
 	if image_hash != current_hash: return
 	if tiled_image.get_child_count() <= grid_index: return
-
-	#print(grid_index, ": ", texture.get_width(), " x ", texture.get_height())
-
+	
 	animation_mutex.lock()
 	var section:TextureRect = tiled_image.get_child(grid_index)
 	if section != null: section.texture = texture
@@ -642,29 +615,26 @@ func update_animation(new_image:bool=false) -> void:
 	if animation_status[image_hash] == a_status.STOPPING: 
 		animation_mutex.unlock()
 		return
-	
-	# set frame counter label text
+
 	var delay:float = 0.0
 	if new_image:
 		animation_index = 0
 		current_image = animation_images[animation_index]
 		delay = animation_delays[animation_index]
 		var tex:ImageTexture = animation_images[animation_index]
-		if Globals.settings.use_filter: tex.flags = 4
-		else: tex.flags = 0
+		tex.flags = 4 if Global.GetUseImageFilter() else 0
 		preview_image.set_texture(tex)
-		#resize_current_image(path)
+		resize_current_image(image_hash)
 		animation_index = 1
-		Signals.emit_signal("set_rating", "Appeal", Database.GetRating(current_hash, "Appeal"))
-		Signals.emit_signal("set_rating", "Quality", Database.GetRating(current_hash, "Quality"))
-		Signals.emit_signal("set_rating", "Art", Database.GetRating(current_hash, "Art"))
+		Signals.emit_signal("set_rating", "Appeal", MetadataManager.GetRating(current_hash, "Appeal"))
+		Signals.emit_signal("set_rating", "Quality", MetadataManager.GetRating(current_hash, "Quality"))
+		Signals.emit_signal("set_rating", "Art", MetadataManager.GetRating(current_hash, "Art"))
 	else:
 		if animation_index >= animation_total_frames: animation_index = 0
 		if animation_images.size() > animation_index:
 			delay = animation_delays[animation_index]
 			var tex:ImageTexture = animation_images[animation_index]
-			if Globals.settings.use_filter: tex.flags = 4
-			else: tex.flags = 0
+			tex.flags = 4 if Global.GetUseImageFilter() else 0
 			preview_image.set_texture(tex)
 			animation_index += 1
 	animation_mutex.unlock()

@@ -19,7 +19,6 @@ namespace ImageTagger.Database
             try
             {
                 string metadataPath = Global.GetMetadataPath();
-
                 BsonMapper.Global.Entity<ImageInfo>().Id(x => x.Hash); // still need to test if int id is better; last test was inconclusive
                 dbImageInfo = new LiteDatabase(metadataPath + "image_info.db");
                 dbImportInfo = new LiteDatabase(metadataPath + "import_info.db");

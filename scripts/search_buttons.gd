@@ -42,7 +42,7 @@ func _on_exclude_all_text_changed(new_text:String) -> void: tags_none = new_text
 
 func tab_button_pressed(tab_id:String) -> void:
 	Globals.current_tab_id = tab_id
-	Globals.current_tab_type = Database.GetTabType(tab_id)
+	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
 	search_pressed()
 func search_pressed() -> void: 
 	Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, true)

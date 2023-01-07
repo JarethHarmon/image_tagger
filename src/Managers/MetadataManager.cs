@@ -33,6 +33,21 @@ namespace ImageTagger.Managers
             return ImageInfoAccess.GetCurrentImageInfo()?.Paths.ToArray() ?? Array.Empty<string>();
         }
 
+        public string[] GetCurrentTags()
+        {
+            return ImageInfoAccess.GetCurrentImageInfo()?.Tags ?? Array.Empty<string>();
+        }
+
+        public string[] GetCurrentImports()
+        {
+            return ImageInfoAccess.GetCurrentImageInfo()?.Imports.ToArray() ?? Array.Empty<string>();
+        }
+
+        public string GetCurrentHash()
+        {
+            return ImageInfoAccess.GetCurrentHash();
+        }
+
         public string GetCurrentName()
         {
             return ImageInfoAccess.GetCurrentImageInfo()?.Name ?? string.Empty;
@@ -43,9 +58,24 @@ namespace ImageTagger.Managers
             return (int)(ImageInfoAccess.GetCurrentImageInfo()?.ImageType ?? ImageType.ERROR);
         }
 
-        public string[] GetCurrentTags()
+        public void AddTags(string[] hashes, string[] tags)
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Tags ?? Array.Empty<string>();
+            ImageInfoAccess.AddTags(hashes, tags);
+        }
+
+        public void RemoveTags(string[] hashes, string[] tags)
+        {
+            ImageInfoAccess.RemoveTags(hashes, tags);
+        }
+
+        public void AddRating(string[] hashes, string rating, int value)
+        {
+            ImageInfoAccess.AddRating(hashes, rating, value);
+        }
+
+        public int GetRating(string hash, string rating)
+        {
+            return ImageInfoAccess.GetRating(hash, rating);
         }
 
         /*=========================================================================================
@@ -94,14 +124,14 @@ namespace ImageTagger.Managers
         /*=========================================================================================
                                                   TabInfo
         =========================================================================================*/
-        public string CreateTab(string name, TabType type, string importId, string groupId, string tag, string simiHash)
+        public string CreateTab(string name, int type, string importId, string groupId, string tag, string simiHash)
         {
             string id = Global.CreateTabId();
             var info = new TabInfo
             {
                 Id = id,
                 Name = name,
-                TabType = type,
+                TabType = (TabType)type,
                 ImportId = importId,
                 GroupId = groupId,
                 Tag = tag,
@@ -109,6 +139,11 @@ namespace ImageTagger.Managers
             };
             TabInfoAccess.CreateTab(info);
             return id;
+        }
+
+        public void DeleteTab(string id)
+        {
+            TabInfoAccess.DeleteTab(id);
         }
 
         public string[] GetTabIds()

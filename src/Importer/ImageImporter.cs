@@ -2,6 +2,7 @@ using System;
 using ImageMagick;
 using ImageTagger.Database;
 using Python.Runtime;
+using static Godot.HTTPRequest;
 
 namespace ImageTagger.Importer
 {
@@ -9,14 +10,12 @@ namespace ImageTagger.Importer
     {
         private const int MAX_BYTES_FOR_APNG_CHECK = 256;
         private const string acTL = "acTL";
-        private static string executableDirectory;
-        internal static void SetExecutableDirectory(string path) { executableDirectory = path; }
 
         /*=========================================================================================
 									         Initialization
         =========================================================================================*/
         private static IntPtr state;
-        internal static Error StartPython()
+        internal static Error StartPython(string executableDirectory)
         {
             try
             {
@@ -58,6 +57,7 @@ namespace ImageTagger.Importer
 
         internal static PerceptualHashes GetPerceptualHashes(string hash)
         {
+            if (hash?.Equals(string.Empty) ?? true) return new PerceptualHashes();
             var info = DatabaseAccess.FindImageInfo(hash);
             if (info is null) return new PerceptualHashes();
             return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash);
@@ -110,24 +110,28 @@ namespace ImageTagger.Importer
                 try
                 {
                     dynamic script = Py.Import(pyScript);
-                    script.save_webp_thumbnail(imagePath, thumbPath, thumbSize);
+                    dynamic _result = script.save_webp_thumbnail(imagePath, thumbPath, thumbSize);
+                    string result = (string) _result;
 
-                    dynamic _average = script.calc_average_hash();
-                    ulong average = (ulong)_average;
+                    string[] sections = result.Split('!');
+                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
-                    dynamic _wavelet = script.calc_wavelet_hash();
-                    ulong wavelet = (ulong)_wavelet;
+                    string[] hashes = sections[0].Split('?');
+                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    ulong.TryParse(hashes[0], out ulong average);
+                    ulong.TryParse(hashes[1], out ulong wavelet);
+                    ulong.TryParse(hashes[2], out ulong difference);
 
-                    dynamic _difference = script.calc_dhash();
-                    ulong difference = (ulong)_difference;
-
-                    dynamic _color_buckets = script.calc_color_buckets();
-                    string colorBuckets = (string)_color_buckets;
-
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(colorBuckets));
+                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
                 }
-                catch
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
+                    return (new PerceptualHashes(), new ColorBuckets());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                     return (new PerceptualHashes(), new ColorBuckets());
                 }
             }
@@ -141,24 +145,29 @@ namespace ImageTagger.Importer
                 try
                 {
                     dynamic script = Py.Import(pyScript);
-                    script.initialize(thumbPath);
+                    dynamic _result = script.initialize(thumbPath);
 
-                    dynamic _average = script.calc_average_hash();
-                    ulong average = (ulong)_average;
+                    string result = (string)_result;
 
-                    dynamic _wavelet = script.calc_wavelet_hash();
-                    ulong wavelet = (ulong)_wavelet;
+                    string[] sections = result.Split('!');
+                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
-                    dynamic _difference = script.calc_dhash();
-                    ulong difference = (ulong)_difference;
+                    string[] hashes = sections[0].Split('?');
+                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    ulong.TryParse(hashes[0], out ulong average);
+                    ulong.TryParse(hashes[1], out ulong wavelet);
+                    ulong.TryParse(hashes[2], out ulong difference);
 
-                    dynamic _color_buckets = script.calc_color_buckets();
-                    string colorBuckets = (string)_color_buckets;
-
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(colorBuckets));
+                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
                 }
-                catch
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
+                    return (new PerceptualHashes(), new ColorBuckets());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                     return (new PerceptualHashes(), new ColorBuckets());
                 }
             }
@@ -167,16 +176,16 @@ namespace ImageTagger.Importer
         /*=========================================================================================
 									                IO
         =========================================================================================*/
-        internal static bool FileDoesNotExist(string path)
+        internal static bool FileExists(string path)
         {
             return (path.Length < Global.MAX_PATH_LENGTH)
-                ? !System.IO.File.Exists(path)
-                : !Alphaleonis.Win32.Filesystem.File.Exists(path);
+                ? System.IO.File.Exists(path)
+                : Alphaleonis.Win32.Filesystem.File.Exists(path);
         }
 
         private static bool TryLoadFile(string path, out byte[] data)
         {
-            if (FileDoesNotExist(path))
+            if (!FileExists(path))
             {
                 data = Array.Empty<byte>();
                 return false;
@@ -210,11 +219,12 @@ namespace ImageTagger.Importer
             }
         }
 
-        internal struct FileInfo
+        internal sealed class FileInfo
         {
             public long Size;
             public long CreationTime;
             public long LastWriteTime;
+            public string Name;
 
             public FileInfo(string path)
             {
@@ -226,6 +236,7 @@ namespace ImageTagger.Importer
                         Size = info.Length;
                         CreationTime = info.CreationTimeUtc.Ticks;
                         LastWriteTime = info.LastWriteTimeUtc.Ticks;
+                        Name = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
                     }
                     else
                     {
@@ -233,6 +244,7 @@ namespace ImageTagger.Importer
                         Size = info.Length;
                         CreationTime = info.CreationTimeUtc.Ticks;
                         LastWriteTime = info.LastWriteTimeUtc.Ticks;
+                        Name = info.Name.Substring(0, info.Name.Length - info.Extension.Length);
                     }
                 }
                 catch
@@ -240,6 +252,7 @@ namespace ImageTagger.Importer
                     Size = -1;
                     CreationTime = -1;
                     LastWriteTime = -1;
+                    Name = string.Empty;
                 }
             }
         }
@@ -263,7 +276,7 @@ namespace ImageTagger.Importer
                     Height = info.Height;
 
                     string format = info.Format.ToString().ToUpperInvariant().Replace("JPG", "JPEG").Replace("JFIF", "JPEG");
-                    if (format.Equals("jpg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.JPEG;
+                    if (format.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.JPEG;
                     else if (format.Equals("png", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.PNG;
                     else if (format.Equals("gif", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.GIF;
                     else if (format.Equals("webp", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.WEBP;
@@ -372,12 +385,14 @@ namespace ImageTagger.Importer
                     script.get_gif_frames(path, hash);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }
@@ -394,12 +409,14 @@ namespace ImageTagger.Importer
                     script.get_apng_frames(path, hash);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }
@@ -416,12 +433,14 @@ namespace ImageTagger.Importer
                     script.load_large_image(path, hash, columns, rows);
                     return Error.OK;
                 }
-                catch (PythonException)
+                catch (PythonException pex)
                 {
+                    Console.WriteLine(pex);
                     return Error.PYTHON;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     return Error.GENERIC;
                 }
             }

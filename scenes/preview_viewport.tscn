@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://shaders/EdgeMix.tres" type="Material" id=2]
 [ext_resource path="res://shaders/ColorGrading.tres" type="Material" id=3]
@@ -6,7 +6,6 @@
 [ext_resource path="res://shaders/Halftone.tres" type="Material" id=5]
 [ext_resource path="res://shaders/SmoothPixel.tres" type="Material" id=6]
 [ext_resource path="res://assets/icon.png" type="Texture" id=7]
-[ext_resource path="res://scripts/preview_viewport.gd" type="Script" id=8]
 
 [node name="preview_viewport" type="Control"]
 anchor_right = 1.0
@@ -16,7 +15,6 @@ margin_bottom = 1080.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-script = ExtResource( 8 )
 
 [node name="ReferenceRect3" type="ReferenceRect" parent="."]
 visible = false

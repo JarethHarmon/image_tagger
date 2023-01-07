@@ -31,16 +31,14 @@ config/auto_accept_quit=false
 
 [autoload]
 
-Database="*res://globals/Database.cs"
-Globals="*res://globals/Globals.gd"
-Signals="*res://globals/Signals.gd"
-ImageImporter="*res://globals/ImageImporter.cs"
-ImageScanner="*res://globals/ImageScanner.cs"
-Storage="*res://globals/Storage.cs"
-Inputs="*res://globals/Inputs.gd"
 ImportManager="*res://src/Managers/ImportManager.cs"
 DatabaseManager="*res://src/Managers/DatabaseManager.cs"
+ScanManager="*res://src/Managers/ScanManager.cs"
 MetadataManager="*res://src/Managers/MetadataManager.cs"
+Global="*res://src/Global.cs"
+Inputs="*res://globals/Inputs.gd"
+Signals="*res://globals/Signals.gd"
+Globals="*res://globals/Globals.gd"
 
 [debug]
 

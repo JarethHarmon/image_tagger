@@ -1,4 +1,5 @@
-﻿using ImageTagger.Core;
+﻿using Godot;
+using ImageTagger.Core;
 using ImageTagger.Metadata;
 using ImageTagger.Scanner;
 using System;
@@ -6,29 +7,30 @@ using System;
 namespace ImageTagger.Managers
 {
     // should call ScannerAccess.GetCurrentFolder() every 20ms or so to update label while scanning
-    public sealed class ScanManager
+    public sealed class ScanManager : Node
     {
         private bool recursive = false;
         public void SetRecursive(bool _recursive) { recursive = _recursive; }
 
-        public void StartScan(string folder)
+        public int ScanFolder(string folder)
         {
-            ScannerAccess.ScanFolders(folder, recursive);
+            return ScannerAccess.ScanFolders(folder, recursive);
         }
 
-        public void StartScan(string[] files)
+        public int ScanFiles(string[] files)
         {
-            ScannerAccess.ScanFiles(files);
+            return ScannerAccess.ScanFiles(files);
         }
 
-        public void StartScan(string[] folders, string[] files)
+        public int ScanFoldersAndFiles(string[] folders, string[] files)
         {
+            int total = ScannerAccess.ScanFiles(files);
             foreach (string folder in folders)
-                ScannerAccess.ScanFolders(folder, recursive);
-            ScannerAccess.ScanFiles(files);
+                total += ScannerAccess.ScanFolders(folder, recursive);
+            return total;
         }
 
-        public void CommitScan(string name)
+        public string CommitScan(string name)
         {
             string[] paths = ScannerAccess.GetScannedPaths();
             var info = new ImportInfo
@@ -42,6 +44,13 @@ namespace ImageTagger.Managers
             };
 
             ImportInfoAccess.CreateImport(info, paths);
+            // this needs to create a tab button, or be called by something that also handles that
+            return info.Id;
+        }
+
+        public string[] GetPaths()
+        {
+            return ScannerAccess.GetScannedPaths();
         }
 
         public void CancelScan()

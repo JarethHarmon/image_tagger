@@ -17,13 +17,23 @@ namespace ImageTagger.Managers
         private static readonly object locker = new object();
         private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
         private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
-        private readonly Godot.File file;
+        private readonly Godot.File file = new Godot.File();
 
         public override void _Ready()
         {
             globals = GetNode<Node>("/root/Globals");
             signals = GetNode<Node>("/root/Signals");
             dbm = GetNode<DatabaseManager>("/root/DatabaseManager");
+        }
+
+        public void StartPython(string executablePath)
+        {
+            ImageImporter.StartPython(executablePath);
+        }
+
+        public void Shutdown()
+        {
+            ImageImporter.Shutdown();
         }
 
         /*=========================================================================================
@@ -126,23 +136,26 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         private void UpdateImportCount(string importId, ImportStatus result)
         {
-            var info = ImportInfoAccess.GetImportInfo(importId);
-            var allInfo = ImportInfoAccess.GetImportInfo(Global.ALL);
-
-            // note: there is a bug in this implementation where it will count the same images a second time if the user deletes only the image_info.db file
-            //  this is because importInfo no longer stores the hashes it contains, that information is stored on the images
-            if (result == ImportStatus.SUCCESS)
+            lock (locker)
             {
-                info.Success++;
-                allInfo.Success++;
-            }
-            else if (result == ImportStatus.DUPLICATE) info.Duplicate++;
-            else if (result == ImportStatus.IGNORED) info.Ignored++;
-            else info.Failed++;
-            info.Processed++;
+                var info = ImportInfoAccess.GetImportInfo(importId);
+                var allInfo = ImportInfoAccess.GetImportInfo(Global.ALL);
 
-            ImportInfoAccess.SetImportInfo(importId, info);
-            ImportInfoAccess.SetImportInfo(Global.ALL, info);
+                // note: there is a bug in this implementation where it will count the same images a second time if the user deletes only the image_info.db file
+                //  this is because importInfo no longer stores the hashes it contains, that information is stored on the images
+                if (result == ImportStatus.SUCCESS)
+                {
+                    info.Success++;
+                    allInfo.Success++;
+                }
+                else if (result == ImportStatus.DUPLICATE) info.Duplicate++;
+                else if (result == ImportStatus.IGNORED) info.Ignored++;
+                else info.Failed++;
+                info.Processed++;
+
+                ImportInfoAccess.SetImportInfo(importId, info);
+                ImportInfoAccess.SetImportInfo(Global.ALL, allInfo);
+            }
         }
 
         private void StoreTempImageInfo(string importId, string sectionId, ImageInfo info)
@@ -212,7 +225,7 @@ namespace ImageTagger.Managers
             info.Finished = true;
             info.FinishTime = DateTime.UtcNow.Ticks;
 
-            ImportInfoAccess.SetImportInfo(importId, info);
+            DatabaseAccess.UpdateImportInfo(info);
             lock (locker) tempImageInfo.Remove(importId);
             string[] tabs = TabInfoAccess.GetTabIds(importId);
             signals.Call("emit_signal", "finish_import_buttons", tabs);
@@ -233,7 +246,7 @@ namespace ImageTagger.Managers
 
             foreach (string path in paths)
             {
-                if (ImageImporter.FileDoesNotExist(path))
+                if (!ImageImporter.FileExists(path))
                 {
                     UpdateImportCount(importId, ImportStatus.FAILED);
                 }
@@ -263,11 +276,11 @@ namespace ImageTagger.Managers
             var result = ImportStatus.SUCCESS;
 
             bool thumbnailExisted = true;
-            if (ImageImporter.FileDoesNotExist(thumbPath))
+            if (!ImageImporter.FileExists(thumbPath))
             {
                 thumbnailExisted = false;
                 (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
-                if (phashes.Difference == 0 || ImageImporter.FileDoesNotExist(thumbPath)) return ImportStatus.FAILED;
+                if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath)) return ImportStatus.FAILED;
             }
 
             var imageInfo = ImageInfoAccess.GetImageInfo(hash);
@@ -285,7 +298,7 @@ namespace ImageTagger.Managers
                 imageInfo = new ImageInfo
                 {
                     Hash = hash,
-                    Name = (string)globals.Call("get_file_name", imagePath), // replace
+                    Name = fileInfo.Name,
 
                     AverageHash = phashes.Average,
                     DifferenceHash = phashes.Difference,
@@ -316,7 +329,9 @@ namespace ImageTagger.Managers
             {
                 imageInfo.Paths.Add(imagePath);
                 if (imageInfo.Imports.Contains(importId))
+                {
                     result = ImportStatus.IGNORED;
+                }
                 else
                 {
                     imageInfo.Imports.Add(importId);

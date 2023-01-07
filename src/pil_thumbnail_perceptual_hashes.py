@@ -8,29 +8,29 @@ ZERO = np.uint64(0)
 EIGHT = np.uint64(8)	
 SIZE = 8
 
-red = 0
-green = 0
-blue = 0
-alpha = 0
-light = 0
-dark = 0
-
-image = None
-imageL = None
-
 def initialize(sv_path):
-    global image, imageL # now that I know about global keyword, I could probably get rid of the clr stuff for animations
     image = Image.open(sv_path)
     image = ImageOps.exif_transpose(image)
     imageL = image.convert('L')
+    
+    avg_hash = calc_average_hash(imageL)
+    wav_hash = calc_wavelet_hash(image)
+    dif_hash = calc_dhash(imageL)
+    colors = calc_color_buckets(image)
+    return f'{avg_hash}?{wav_hash}?{dif_hash}!{colors}'
 
 def save_webp_thumbnail(im_path, sv_path, sv_size):
-    global image, imageL
     image = Image.open(im_path)
     image.thumbnail((sv_size, sv_size))
     image.save(sv_path, 'webp')
     image = ImageOps.exif_transpose(image)
     imageL = image.convert('L')
+
+    avg_hash = calc_average_hash(imageL)
+    wav_hash = calc_wavelet_hash(imageL)
+    dif_hash = calc_dhash(imageL)
+    colors = calc_color_buckets(image)
+    return f'{avg_hash}?{wav_hash}?{dif_hash}!{colors}'
 
 def convert_binary_to_ulong(arr):
     result = ZERO
@@ -39,7 +39,7 @@ def convert_binary_to_ulong(arr):
         result <<= ONE
     return result
 
-def calc_average_hash():
+def calc_average_hash(imageL):
     pixels = np.asarray(imageL.resize((SIZE, SIZE), Image.Resampling.LANCZOS))
     avg = np.mean(pixels)
 
@@ -47,8 +47,8 @@ def calc_average_hash():
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 
-def calc_wavelet_hash():
-    natural_scale = 2 ** int(np.log2(min(image.size)))
+def calc_wavelet_hash(imageL):
+    natural_scale = 2 ** int(np.log2(min(imageL.size)))
     scale = max(natural_scale, SIZE)
     
     max_level = int(np.log2(scale))
@@ -70,20 +70,19 @@ def calc_wavelet_hash():
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 
-def calc_dhash():
+def calc_dhash(imageL):
     pixels = np.asarray(imageL.resize((SIZE+1, SIZE), Image.Resampling.LANCZOS))
     diff = pixels[:, 1:] > pixels[:, :-1]
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 
-def calc_dhash_vertical():
+def calc_dhash_vertical(imageL):
     pixels = np.asarray(imageL.resize((SIZE, SIZE+1), Image.Resampling.LANCZOS))
     diff = pixels[1:, :] > pixels[:-1, :]
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 
-def calc_color_buckets():
-    global red, green, blue, alpha, light, dark
+def calc_color_buckets(image):
     pixels = np.asarray(image.convert('RGBA'))
     divisor = int(math.sqrt(image.width * image.height))
     
@@ -105,4 +104,5 @@ def calc_color_buckets():
     aa = (a > 127)
     light = (np.logical_and((avg > 195), aa)).sum() // divisor
     dark = (np.logical_and((avg < 64), aa)).sum() // divisor
+    
     return f'{red}?{green}?{blue}?{alpha}?{light}?{dark}'

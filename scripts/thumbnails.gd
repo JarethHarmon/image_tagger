@@ -16,6 +16,10 @@ extends ItemList
 const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") 
 const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
 
+# need to fix these references
+onready var thumb_size:HSlider = self.get_parent().get_node("sort_buttons/thumbnail_size")
+onready var thumb_size_entry:SpinBox = self.get_parent().get_node("sort_buttons/thumbnail_size_entry")
+
 enum Status { INACTIVE, ACTIVE, CANCELED, ERROR }
 
 onready var lt:Mutex = Mutex.new()			# mutex for interacting with loaded_thumbnails
@@ -110,11 +114,10 @@ func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], t
 	var thread:Thread = Thread.new()
 	
 	# disable sort buttons for similarity tabs
-	if Globals.current_tab_type == Globals.Tab.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
+	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
 	else: Signals.emit_signal("switch_sort_buttons", false)
 	
 	thread.call_deferred("start", self, "_query_thread", [thread, query])
-	#thread.start(self, "_query_thread", [thread, query])
 	first_time = true
 
 func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
@@ -132,19 +135,19 @@ func _query_thread(args:Array) -> void:
 	var tags_any:Array = query.tags_any
 	var tags_none:Array = query.tags_none
 	var tags_complex:Array = query.tags_complex
-	
+
 	if _is_invalid_query(thread, query): return
 	
   # set temp variables	
 	var image_hashes:Array = []
 	var tab_type:int = Globals.current_tab_type
-	var images_per_page:int = Globals.settings.images_per_page
-	var current_sort:int = Globals.settings.current_sort
+	var images_per_page:int = Global.GetMaxImagesPerPage()
+	var current_sort:int = Global.GetCurrentSort()
    # order by descending if Similarity Tab
-	var current_order:int = Globals.settings.current_order if tab_type < Globals.Tab.SIMILARITY else Globals.OrderBy.Descending
+	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
-	var num_threads:int = Globals.settings.load_threads
-	var similarity:int = Globals.current_similarity
+	var num_threads:int = Global.GetMaxThumbnailThreads()
+	var similarity:int = Global.GetCurrentSortSimilarity()
 	
   # calculate the offset and whether it should count the query
 	database_offset = (curr_page_number-1) * images_per_page
@@ -153,12 +156,8 @@ func _query_thread(args:Array) -> void:
 	
   # query the database
 #	if tags_all.empty() and tags_any.empty() and tags_none.empty():
-#		var import_id:String = ""
-#		var temp =  Database.GetImportId(tab_id)
-#		if temp == null or temp == "": temp = "All"
-#		import_id = temp
-#
-#		queried_image_count = Database.GetSuccessOrDuplicateCount(import_id)
+#		var import_id =  MetadataManager.GetTabImportId(tab_id)
+#		queried_image_count = MetadataManager.GetSuccessCount(import_id)
 #		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 #		var lqh:int = lqc.hash()
 #
@@ -170,11 +169,10 @@ func _query_thread(args:Array) -> void:
 
 	if image_hashes.empty():	
 		if _is_invalid_query(thread, query): return
-		image_hashes = Database.QueryDatabase(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
-		#image_hashes = QueryManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
-		#var qid:String = image_hashes.pop_back()
-		#queried_image_count = QueryManager.GetLastQueriedCount(qid)
-		queried_image_count = Database.GetLastQueriedCount()
+		image_hashes = DatabaseManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
+		if empty_results(image_hashes, thread): return
+		var qid:String = image_hashes.pop_back()
+		queried_image_count = DatabaseManager.GetLastQueriedCount(qid)
 #		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
 #		var lqh:int = lqc.hash()
 		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
@@ -197,6 +195,12 @@ func _query_thread(args:Array) -> void:
 	thread.call_deferred("wait_to_finish")
 	buffer.hide()
 
+func empty_results(a:Array, t:Thread) -> bool:
+	if not a.empty(): return false
+	buffer.hide()
+	t.call_deferred("wait_to_finish")
+	return true
+
 func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	sc.lock()
 	var scroll_mult:float = 0.0
@@ -218,9 +222,9 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 	start_loading(query, image_hashes, image_count)
 
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
-	var max_loaded_thumbnails:int = Globals.settings.max_loaded_thumbnails
-	var thumbnail_path:String = Globals.settings.thumbnail_path
-	
+	var max_loaded_thumbnails:int = Global.GetMaxThumbnailsToStore()
+	var thumbnail_path:String = Global.GetThumbnailPath()
+
   # set current_hashes, iterate it to look for any thumbnails that are already loaded, set them and update their position in queue if found
 	var dict_image_hashes:Dictionary = {}
 	for idx in image_hashes.size():
@@ -268,9 +272,9 @@ func _set_thumbnails_from_history(query:Dictionary, image_hashes:Dictionary) -> 
 		loaded_thumbnails.push_back(image_hash)
 		lt.unlock()
 		var text:String = ""
-		if Globals.current_tab_type == Globals.Tab.SIMILARITY:
-			var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
-			var similarity:float = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
+		if Globals.current_tab_type == Globals.TabType.SIMILARITY:
+			var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
+			var similarity:float = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
 			text = "%1.2f" % [similarity] + "%"
 		if query != current_query: return true
 		self.set_item_icon(idx, im_tex)
@@ -331,7 +335,7 @@ func load_thumbnail(image_hash:String, index:int) -> void:
 	_set_metadata(image_hash)
 	
 	var f:File = File.new()
-	var p:String = Globals.settings.thumbnail_path.plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
+	var p:String = Global.GetThumbnailPath().plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
 	var e:int = f.open(p, File.READ)
 	
 	if stop_threads: return
@@ -378,20 +382,21 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	#	A. query the hash info all at once, then re-iterate the thumbnails and update their labels
 	#	B. avoid querying the hash info at all, remove the concept of similarity labels, and instead
 	#		display the similarity percentage in the preview window on a per-image basis 
-	if Globals.current_tab_type == Globals.Tab.SIMILARITY:
-		var compare_hash:String = Database.GetSimilarityHash(Globals.current_tab_id)
+	if Globals.current_tab_type == Globals.TabType.SIMILARITY:
+		var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
 		var similarity:float = 0.0
-		if Globals.current_similarity == Globals.Similarity.AVERAGED:
-			similarity = Database.GetAveragedSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.Similarity.AVERAGE:
-			similarity = Database.GetAverageSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.Similarity.WAVELET:
-			similarity = Database.GetWaveletSimilarityTo(compare_hash, image_hash)
+		var curr_simi:int = Global.GetCurrentSortSimilarity()
+		
+		if curr_simi == Globals.SortSimilarity.AVERAGED:
+			similarity = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
+		elif curr_simi == Globals.SortSimilarity.AVERAGE:
+			similarity = DatabaseManager.GetAverageSimilarityTo(compare_hash, image_hash)
+		elif curr_simi == Globals.SortSimilarity.WAVELET:
+			similarity = DatabaseManager.GetWaveletSimilarityTo(compare_hash, image_hash)
 		else:
-			similarity = Database.GetDifferenceSimilarityTo(compare_hash, image_hash)
+			similarity = DatabaseManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
 	sc.unlock()
-
 
 #-----------------------------------------------------------------------#
 #					             OTHER									#
@@ -407,23 +412,12 @@ func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	tooltip += "\ncolor hash: " + String(dict.color_hash)
 	return tooltip
 
+# need to entirely rewrite(remove) this function; metadata will now be queried for a single image only, so the
+# entire concept behind the design of this function is wrong; and just serves to cause issues with the dict
 func _set_metadata(image_hash:String) -> void:
-	#var size:String = Database.GetFileSize(image_hash)
-	#var image_name:String = Database.GetImageName(image_hash)
-	#var diff_hash:String = Database.GetDiffHash(image_hash)
-	#var color_hash:Array = Database.GetColorHash(image_hash)
-	#var creation_time:String = Database.GetCreationTime(image_hash)
-	#var paths:Array = Database.GetHashPaths(image_hash)# (create paths section again)
 	th.lock()
-	# get dimensions too
 	var dict:Dictionary = {
 		"texture" : null,
-	#	"size" : size,
-	#	"image_name" : image_name,
-	#	"diff_hash" : diff_hash,
-	#	"color_hash" : color_hash,
-	#	"creation_time" : creation_time,
-	#	"paths" : paths
 	}
 	thumb_history[image_hash] = dict
 	th.unlock()
@@ -448,19 +442,16 @@ func color_all() -> void:
 		self.set_item_custom_bg_color(idx, Color.red) 
 
 func select_items() -> void:
-	#uncolor_all()
 	selected_items.clear()
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
 	for i in arr_index.size():
 		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
-	#color_all()
 	
 	var image_hash:String = current_hashes[last_index]
-	Database.LoadCurrentHashInfo(image_hash)
-	#print(image_hash)
-	var paths:Array = Database.GetHashPaths(image_hash)
-	var imports = Database.GetImportIdsFromHash(image_hash)
+	MetadataManager.LoadCurrentImageInfo(image_hash)
+	var paths:Array = MetadataManager.GetCurrentPaths()
+	var imports:Array = MetadataManager.GetCurrentImports()
 	Signals.emit_signal("load_image_tags", image_hash, selected_items)
 	Signals.emit_signal("create_path_buttons", image_hash, paths)
 	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
@@ -568,23 +559,20 @@ func get_num_columns() -> int:
 		result = i
 	return 1
 
-onready var thumb_size:HSlider = self.get_parent().get_node("sort_buttons/thumbnail_size")
-onready var thumb_size_entry:SpinBox = self.get_parent().get_node("sort_buttons/thumbnail_size_entry")
-
 func _on_thumbnail_size_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size_entry.value = value
-	Globals.settings.thumbnail_width = value
+	Global.SetThumbnailWidth(value)
 	
 func _on_thumbnail_size_entry_value_changed(value:int) -> void:
 	self.fixed_icon_size = Vector2(value, value)
 	self.fixed_column_width = value
 	thumb_size.value = value
-	Globals.settings.thumbnail_width = value
+	Global.SetThumbnailWidth(value)
 
 func _toggle_thumbnail_tooltips() -> void:
-	var show_tooltips:bool = Globals.settings.show_thumbnail_tooltips
+	var show_tooltips:bool = Global.GetShowThumbnailTooltips()
 	if show_tooltips:
 		for idx in self.get_item_count():
 			var image_hash:String = current_hashes[idx]
