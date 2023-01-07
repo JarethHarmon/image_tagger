@@ -43,7 +43,7 @@ namespace ImageTagger.Managers
 
             var queryInfo = new QueryInfo
             {
-                ImportId = tabInfo.ImportId,
+                ImportId = tabInfo.ImportId ?? Global.ALL,
                 GroupId = string.Empty,
 
                 TagsAll = conditions.All,
