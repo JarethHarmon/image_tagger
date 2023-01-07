@@ -135,7 +135,7 @@ func _query_thread(args:Array) -> void:
 	var tags_any:Array = query.tags_any
 	var tags_none:Array = query.tags_none
 	var tags_complex:Array = query.tags_complex
-	
+
 	if _is_invalid_query(thread, query): return
 	
   # set temp variables	
@@ -147,7 +147,7 @@ func _query_thread(args:Array) -> void:
 	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
 	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
 	var num_threads:int = Global.GetMaxThumbnailThreads()
-	var similarity:int = Globals.current_similarity
+	var similarity:int = Global.GetCurrentSortSimilarity()#Globals.current_similarity
 	
   # calculate the offset and whether it should count the query
 	database_offset = (curr_page_number-1) * images_per_page
@@ -385,11 +385,13 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 	if Globals.current_tab_type == Globals.TabType.SIMILARITY:
 		var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
 		var similarity:float = 0.0
-		if Globals.current_similarity == Globals.SortSimilarity.AVERAGED:
+		var curr_simi:int = Global.GetCurrentSortSimilarity()
+		
+		if curr_simi == Globals.SortSimilarity.AVERAGED:
 			similarity = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.SortSimilarity.AVERAGE:
+		elif curr_simi == Globals.SortSimilarity.AVERAGE:
 			similarity = DatabaseManager.GetAverageSimilarityTo(compare_hash, image_hash)
-		elif Globals.current_similarity == Globals.SortSimilarity.WAVELET:
+		elif curr_simi == Globals.SortSimilarity.WAVELET:
 			similarity = DatabaseManager.GetWaveletSimilarityTo(compare_hash, image_hash)
 		else:
 			similarity = DatabaseManager.GetDifferenceSimilarityTo(compare_hash, image_hash)

@@ -61,7 +61,7 @@ namespace ImageTagger.Database
         private static void AddNumericalFilters(QueryInfo info)
         {
             // need to implement a UI for changing these, in the meantime pointless
-            var query = DatabaseAccess.GetImageInfoQuery();
+            var query = info.Query;
 
             // not sure if these are best to have as first filter or not
             if (!info.ImportId.Equals(Global.ALL)) query = query.Where(x => x.Imports.Contains(info.ImportId));
@@ -236,7 +236,7 @@ namespace ImageTagger.Database
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
                 }).ToArray();
-                foreach (var result in results)
+                foreach (var result in results) // results is empty on new que
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
                     float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);

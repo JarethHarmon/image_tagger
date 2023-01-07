@@ -15,7 +15,7 @@ namespace ImageTagger
         RED, LIGHT_RED, DARK_RED, GREEN, LIGHT_GREEN, DARK_GREEN, BLUE, LIGHT_BLUE, DARK_BLUE, YELLOW, LIGHT_YELLOW, DARK_YELLOW, CYAN, LIGHT_CYAN,
         DARK_CYAN, FUSCHIA, LIGHT_FUSCHIA, DARK_FUSCHIA, LIGHT, DARK, ALPHA, RANDOM
     }
-    public enum SortSimilarity { AVERAGED, AVERAGE, DIFFERENCE, WAVELET }
+    public enum SortSimilarity { AVERAGED=0, AVERAGE, DIFFERENCE, WAVELET }
 
     public enum TabType { DEFAULT, SIMILARITY }
     public enum ExpressionType { ALL, ANY, NONE }
@@ -36,6 +36,7 @@ namespace ImageTagger
         public static void SetCurrentOrder(int order) { Settings.CurrentOrder = (Order)order; }
         public static int GetCurrentOrder() { return (int)Settings.CurrentOrder; }
         public static void SetCurrentSortSimilarity(int simi) { Settings.CurrentSortSimilarity = (SortSimilarity)simi; }
+        public static int GetCurrentSortSimilarity() { return (int)Settings.CurrentSortSimilarity; }
 
         public static void SetScanRecursively(bool value) { Settings.ScanRecursively = value; }
         public static bool GetScanRecursively() { return Settings.ScanRecursively; }

@@ -43,7 +43,7 @@ namespace ImageTagger.Managers
 
             var queryInfo = new QueryInfo
             {
-                ImportId = tabInfo.ImportId ?? Global.ALL,
+                ImportId = (!tabInfo.ImportId?.Equals(string.Empty) ?? false) ? tabInfo.ImportId : Global.ALL,
                 GroupId = string.Empty,
 
                 TagsAll = conditions.All,
@@ -63,6 +63,8 @@ namespace ImageTagger.Managers
                 AverageHash = perceptualHashes.Average,
                 DifferenceHash = perceptualHashes.Difference,
                 WaveletHash = perceptualHashes.Wavelet,
+
+                Query = DatabaseAccess.GetImageInfoQuery(),
             };
             queryInfo.CalcId();
 

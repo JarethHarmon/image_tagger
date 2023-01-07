@@ -16,22 +16,20 @@ func _input(event:InputEvent) -> void:
 		select_all.text = "  Select All  "
 	
 func _ready() -> void: 
-	Signals.connect("settings_loaded", self, "_apply_settings")
 	Signals.connect("switch_sort_buttons", self, "_switch_sort_buttons")
 	Signals.connect("settings_loaded", self, "apply_settings")
 
 func apply_settings() -> void:
 	$thumbnail_size.value = Global.GetThumbnailWidth()
 	$thumbnail_size_entry.value = Global.GetThumbnailWidth()
+	sortby_options.selected = Global.GetCurrentSort()
+	orderby_options.selected = Global.GetCurrentOrder()
+	similarity.selected = Global.GetCurrentSortSimilarity()
 
 func _switch_sort_buttons(swap:bool) -> void:
 	sortby_options.visible = not swap
 	orderby_options.visible = not swap
 	similarity.visible = swap
-	
-func _apply_settings() -> void: 
-	sortby_options.selected = Global.GetCurrentSort()
-	orderby_options.selected = Global.GetCurrentOrder()
 
 func _on_sort_by_item_selected(index:int) -> void:
 	Global.SetCurrentSort(index)
