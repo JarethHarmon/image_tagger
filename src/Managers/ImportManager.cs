@@ -3,7 +3,6 @@ using ImageTagger.Importer;
 using ImageTagger.Metadata;
 using ImageTagger.Database;
 using ImageTagger.Core;
-using System.Linq;
 using System.Collections.Generic;
 using System;
 
@@ -11,12 +10,12 @@ namespace ImageTagger.Managers
 {
     public sealed class ImportManager : Node
     {
+        private const int BULK_IMPORT_SIZE = 100;
         public Node signals, globals;
         public DatabaseManager dbm;
 
         private static readonly object locker = new object();
         private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
-        private Dictionary<string, HashSet<string>> tempHashes = new Dictionary<string, HashSet<string>>();
         private readonly Godot.File file = new Godot.File();
 
         public override void _Ready()
@@ -157,94 +156,83 @@ namespace ImageTagger.Managers
                 ImportInfoAccess.SetImportInfo(Global.ALL, allInfo);
             }
         }
-
-        private void StoreTempImageInfo(string importId, string sectionId, ImageInfo info)
+        
+        private void StoreTempImageInfo(string importId, ImageInfo info)
         {
             lock (locker)
             {
-                if (!tempImageInfo.ContainsKey(importId)) tempImageInfo[importId] = new Dictionary<string, ImageInfo>();
-                if (!tempHashes.ContainsKey(sectionId)) tempHashes[sectionId] = new HashSet<string>();
-                if (tempImageInfo[importId].TryGetValue(info.Hash, out var _info))
-                    info.Merge(_info);
+                if (tempImageInfo.TryGetValue(importId, out var dict))
+                {
+                    if (dict.TryGetValue(info.Hash, out ImageInfo _info))
+                    {
+                        info.Merge(_info);
+                    }
+                }
+                else tempImageInfo[importId] = new Dictionary<string, ImageInfo>();
                 tempImageInfo[importId][info.Hash] = info;
-                tempHashes[sectionId].Add(info.Hash);
+
+                if (tempImageInfo[importId].Count >= BULK_IMPORT_SIZE)
+                {
+                    var infos = new ImportInfo[2]
+                    {
+                        ImportInfoAccess.GetImportInfo(importId),
+                        ImportInfoAccess.GetImportInfo(Global.ALL)
+                    };
+                    DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
+                    DatabaseAccess.UpdateImportInfo(infos);
+                    tempImageInfo[importId].Clear();
+                }
             }
         }
 
-        private string[] GetTemphashes(string sectionId)
+        private ImageInfo GetImportingImageInfo(string importId, string hash)
         {
             lock (locker)
-                return tempHashes[sectionId].ToArray();
+            {
+                if (tempImageInfo.TryGetValue(importId, out var dict))
+                    if (dict.TryGetValue(hash, out var info))
+                        return info;
+                return ImageInfoAccess.GetImageInfo(hash);
+            }
         }
 
         private void CompleteImportSection(string importId, string sectionId)
         {
-            if (!tempHashes.ContainsKey(sectionId)) return;
-            string[] hashes = GetTemphashes(sectionId);
-            var imageInfos = new List<ImageInfo>();
-            foreach (string hash in hashes)
-            {
-                ImageInfo info = null;
-                lock (locker)
-                    if (tempImageInfo.TryGetValue(importId, out var part))
-                        part.TryGetValue(hash, out info);
-
-                if (info is null) continue;
-                var dbInfo = DatabaseAccess.FindImageInfo(hash);
-                if (dbInfo != null) info.Merge(dbInfo);
-                imageInfos.Add(info);
-                // new:
-                info.Imports.Add(importId);
-            }
-
             lock (locker)
             {
-                ImportInfo[] infos = new ImportInfo[2]
+                var info = ImportInfoAccess.GetImportInfo(importId);
+                info.Sections.Remove(sectionId);
+
+                if (info.Sections.Count == 0)
                 {
-                    ImportInfoAccess.GetImportInfo(importId),
-                    ImportInfoAccess.GetImportInfo(Global.ALL)
-                };
-                infos[0].Sections.Remove(sectionId);
-                DatabaseAccess.Transaction(infos, imageInfos, sectionId);
-                tempHashes.Remove(sectionId);
-
-                if (infos[0].Sections.Count == 0) CompleteImport(importId);
+                    lock (locker)
+                    {
+                        if (tempImageInfo.TryGetValue(importId, out var iinfo))
+                        {
+                            if (iinfo.Count > 0)
+                            {
+                                DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
+                            }
+                        }
+                        tempImageInfo.Remove(importId);
+                    }
+                    CompleteImport(importId);
+                }
             }
-
-            // should probably look into putting this into a transaction and rolling back if both are not updated;
-            // then only need to update imageInfos once (and add importId above)
-            /*DatabaseAccess.UpsertImageInfo(imageInfos);
-            lock (locker)
-            {
-                ImportInfo[] infos = new ImportInfo[2]
-                {
-                    ImportInfoAccess.GetImportInfo(importId),
-                    ImportInfoAccess.GetImportInfo(Global.ALL)
-                };
-                infos[0].Sections.Remove(sectionId);
-                DatabaseAccess.UpdateImportInfo(infos);
-                DatabaseAccess.DeleteImportSection(sectionId);
-                tempHashes.Remove(sectionId);
-
-                if (infos[0].Sections.Count == 0) CompleteImport(importId);
-            }
-
-            foreach (var info in imageInfos)
-            {
-                info.Imports.Add(importId);
-            }
-            DatabaseAccess.UpsertImageInfo(imageInfos);*/
         }
 
         private void CompleteImport(string importId)
         {
-            var info = ImportInfoAccess.GetImportInfo(importId);
-            if (info is null) return;
-            info.Finished = true;
-            info.FinishTime = DateTime.UtcNow.Ticks;
+            var infos = new ImportInfo[2]
+            {
+                ImportInfoAccess.GetImportInfo(importId),
+                ImportInfoAccess.GetImportInfo(Global.ALL)
+            };
 
-            DatabaseAccess.UpdateImportInfo(info);
-            lock (locker) tempImageInfo.Remove(importId);
+            infos[0].Finished = true;
+            infos[0].FinishTime = DateTime.UtcNow.Ticks;
+
+            DatabaseAccess.UpdateImportInfo(infos);
             string[] tabs = TabInfoAccess.GetTabIds(importId);
             signals.Call("emit_signal", "finish_import_buttons", tabs);
         }
@@ -267,6 +255,7 @@ namespace ImageTagger.Managers
                 if (!ImageImporter.FileExists(path))
                 {
                     UpdateImportCount(importId, ImportStatus.FAILED);
+                    Console.WriteLine("file path");
                 }
                 else
                 {
@@ -285,7 +274,11 @@ namespace ImageTagger.Managers
         private ImportStatus ImportImage(string importId, string sectionId, string imagePath)
         {
             var fileInfo = new ImageImporter.FileInfo(imagePath);
-            if (fileInfo.Size < 0) return ImportStatus.FAILED;
+            if (fileInfo.Size < 0)
+            {
+                Console.WriteLine("file size");
+                return ImportStatus.FAILED;
+            }
             string hash = file.GetSha256(imagePath);
 
             string thumbPath = $"{Global.GetThumbnailPath()}{hash.Substring(0, 2)}/{hash}.thumb";
@@ -298,19 +291,31 @@ namespace ImageTagger.Managers
             {
                 thumbnailExisted = false;
                 (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
-                if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath)) return ImportStatus.FAILED;
+                if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath))
+                {
+                    Console.WriteLine("file path or diff hash");
+                    return ImportStatus.FAILED;
+                }
             }
 
-            var imageInfo = ImageInfoAccess.GetImageInfo(hash);
+            var imageInfo = GetImportingImageInfo(importId, hash);
             if (imageInfo is null)
             {
                 var imageInfoPart = ImageImporter.GetImageInfoPart(imagePath);
-                if (imageInfoPart.ImageType == ImageType.ERROR) return ImportStatus.FAILED;
+                if (imageInfoPart.ImageType == ImageType.ERROR)
+                {
+                    Console.WriteLine("image error");
+                    return ImportStatus.FAILED;
+                }
 
                 if (thumbnailExisted)
                 {
                     (phashes, colors) = ImageImporter.GetPerceptualHashesAndColors(thumbPath);
-                    if (phashes.Difference == 0) return ImportStatus.FAILED;
+                    if (phashes.Difference == 0)
+                    {
+                        Console.WriteLine("diff hash");
+                        return ImportStatus.FAILED;
+                    }
                 }
 
                 imageInfo = new ImageInfo
@@ -358,7 +363,8 @@ namespace ImageTagger.Managers
                 }
             }
 
-            StoreTempImageInfo(importId, sectionId, imageInfo);
+            //StoreTempImageInfo(importId, sectionId, imageInfo);
+            StoreTempImageInfo(importId, imageInfo);
             return result;
         }
     }

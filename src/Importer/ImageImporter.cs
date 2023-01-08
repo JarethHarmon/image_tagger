@@ -2,7 +2,6 @@ using System;
 using ImageMagick;
 using ImageTagger.Database;
 using Python.Runtime;
-using static Godot.HTTPRequest;
 
 namespace ImageTagger.Importer
 {
@@ -125,7 +124,7 @@ namespace ImageTagger.Importer
                     ulong.TryParse(hashes[2], out ulong difference);
                     ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, wavelet, difference, perceptual), new ColorBuckets(sections[1]));
+                    return (new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[1]));
                 }
                 catch (PythonException pex)
                 {
@@ -149,7 +148,6 @@ namespace ImageTagger.Importer
                 {
                     dynamic script = Py.Import(pyScript);
                     dynamic _result = script.initialize(thumbPath);
-
                     string result = (string)_result;
 
                     string[] sections = result.Split('!');
@@ -162,7 +160,7 @@ namespace ImageTagger.Importer
                     ulong.TryParse(hashes[2], out ulong difference);
                     ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, wavelet, difference, perceptual), new ColorBuckets(sections[1]));
+                    return (new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[1]));
                 }
                 catch (PythonException pex)
                 {

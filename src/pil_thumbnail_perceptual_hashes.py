@@ -17,10 +17,11 @@ def initialize(sv_path):
     imageL = image.convert('L')
     
     avg_hash = calc_average_hash(imageL)
-    wav_hash = calc_wavelet_hash(image)
+    wav_hash = calc_wavelet_hash(imageL)
     dif_hash = calc_dhash(imageL)
     per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
+    
     return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def save_webp_thumbnail(im_path, sv_path, sv_size):
@@ -35,6 +36,7 @@ def save_webp_thumbnail(im_path, sv_path, sv_size):
     dif_hash = calc_dhash(imageL)
     per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
+    
     return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def convert_binary_to_ulong(arr):

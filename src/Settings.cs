@@ -1,6 +1,5 @@
 ﻿using Godot;
 using Newtonsoft.Json;
-using System;
 using System.IO;
 
 namespace ImageTagger
