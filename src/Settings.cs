@@ -73,7 +73,7 @@ namespace ImageTagger
             // thumbnails
             MaxImagesPerPage = 400;
             MaxThumbnailThreads = 3;
-            MaxPagesToStore = 50;
+            MaxPagesToStore = 500;
             MaxThumbnailsToStore = 8000;
             ThumbnailWidth = 240;
 

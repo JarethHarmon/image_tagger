@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
-using ImageTagger.Metadata;
-using ImageTagger.Core;
 
 namespace ImageTagger.Database
 {
@@ -19,6 +17,8 @@ namespace ImageTagger.Database
     {
         private static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
         private static Queue<string> queryHistoryQueue = new Queue<string>();
+        private static Dictionary<string, string[]> pageHistory = new Dictionary<string, string[]>();
+        private static Queue<string> pageHistoryQueue = new Queue<string>();
 
         private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
@@ -42,6 +42,21 @@ namespace ImageTagger.Database
         }
 
         // numerical condition functions
+
+        private static bool HasPage(string pageId, out string[] results)
+        {
+            if (pageHistory.TryGetValue(pageId, out results)) return true;
+            results = Array.Empty<string>();
+            return false;
+        }
+
+        private static void ManagePage(string pageId, string[] results)
+        {
+            if (pageHistoryQueue.Count == Global.Settings.MaxPagesToStore)
+                pageHistory.Remove(pageHistoryQueue.Dequeue());
+            pageHistoryQueue.Enqueue(pageId);
+            pageHistory[pageId] = results;
+        }
 
         private static bool ManageQuery(ref QueryInfo info)
         {
@@ -368,6 +383,9 @@ namespace ImageTagger.Database
         internal static string[] QueryDatabase(QueryInfo info, int offset, int limit, bool countResults=false)
         {
             if (info is null) return Array.Empty<string>();
+            string pageId = $"{info.Id}?{offset}?{limit}";
+
+            if (HasPage(pageId, out string[] results)) return results;
             if (ManageQuery(ref info))
             {
                 AddNumericalFilters(info);
@@ -377,8 +395,16 @@ namespace ImageTagger.Database
             }
 
             if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
-                return info.ResultsRandom?.Skip(offset).Take(limit).ToArray() ?? Array.Empty<string>();
-            return info.Results?.Offset(offset).Limit(limit).ToArray() ?? Array.Empty<string>();
+            {
+                results = info.ResultsRandom?.Skip(offset).Take(limit).ToArray() ?? Array.Empty<string>();
+            }
+            else
+            {
+                results = info.Results?.Offset(offset).Limit(limit).ToArray() ?? Array.Empty<string>();
+            }
+            
+            ManagePage(pageId, results);
+            return results;
         }
 
         internal static int GetLastQueriedCount(string id)
