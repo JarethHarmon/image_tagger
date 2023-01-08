@@ -56,6 +56,8 @@ namespace ImageTagger.Managers
                 Order = (Order)order,
                 SortSimilarity = (SortSimilarity)sortSimilarity,
 
+                MinSimilarity = 74.999f,
+
                 SimilarityHash = tabInfo.SimilarityHash,
                 AverageHash = perceptualHashes.Average,
                 DifferenceHash = perceptualHashes.Difference,
