@@ -381,7 +381,7 @@ namespace ImageTagger.Database
                 queryHistory[info.Id] = info;
             }
 
-            if (info.Sort == Sort.RANDOM)
+            if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
                 return info.ResultsRandom?.Skip(offset).Take(limit).ToArray() ?? Array.Empty<string>();
             return info.Results?.Offset(offset).Limit(limit).ToArray() ?? Array.Empty<string>();
         }
