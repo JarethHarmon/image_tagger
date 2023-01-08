@@ -60,6 +60,7 @@ namespace ImageTagger.Managers
                 AverageHash = perceptualHashes.Average,
                 DifferenceHash = perceptualHashes.Difference,
                 WaveletHash = perceptualHashes.Wavelet,
+                PerceptualHash = perceptualHashes.Perceptual,
 
                 Query = DatabaseAccess.GetImageInfoQuery(),
             };
@@ -79,7 +80,8 @@ namespace ImageTagger.Managers
             float simi1 = Global.CalcHammingSimilarity(info1.AverageHash, info2.AverageHash);
             float simi2 = Global.CalcHammingSimilarity(info1.DifferenceHash, info2.DifferenceHash);
             float simi3 = Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
-            return (simi1 + simi2 + simi3) / 3;
+            float simi4 = Global.CalcHammingSimilarity(info1.PerceptualHash, info2.PerceptualHash);
+            return (simi1 + simi2 + simi3 + simi4) / 4;
         }
 
         public float GetAverageSimilarityTo(string hash1, string hash2)
@@ -101,6 +103,13 @@ namespace ImageTagger.Managers
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
             return Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
+        }
+
+        public float GetPerceptualSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            return Global.CalcHammingSimilarity(info1.PerceptualHash, info2.PerceptualHash);
         }
     }
 }

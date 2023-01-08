@@ -12,6 +12,7 @@ namespace ImageTagger.Core
         public ulong AverageHash { get; set; } // would like to use [BsonField("hAvg")] on this and other long names, but I want core to be standalone in case I switch to sqlite
         public ulong WaveletHash { get; set; }
         public ulong DifferenceHash { get; set; }
+        public ulong PerceptualHash { get; set; }
 
         public int Bucket { get; set; }
         public int Red { get; set; }

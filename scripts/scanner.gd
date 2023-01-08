@@ -18,12 +18,10 @@ onready var timer:Timer = $Timer
 var scan_queue:Array = []
 var scanner_active:bool = false 
 var import_id:String = ""
-#var index:int = 0
 var image_count:int = 0
 var dark_grey:Color = Color(0.14, 0.14, 0.14)
 
 func _ready() -> void:
-	#ImageScanner.SetCurrentPathDisplay(currently_scanning_path.get_path())
 	get_tree().connect("files_dropped", self, "_files_dropped")
 	Signals.connect("start_scan", self, "queue_append")
 	Signals.connect("files_selected", self, "_files_selected")

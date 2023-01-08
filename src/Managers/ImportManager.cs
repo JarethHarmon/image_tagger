@@ -303,6 +303,7 @@ namespace ImageTagger.Managers
                     AverageHash = phashes.Average,
                     DifferenceHash = phashes.Difference,
                     WaveletHash = phashes.Wavelet,
+                    PerceptualHash = phashes.Perceptual,
 
                     Red = colors.Red,
                     Green = colors.Green,

@@ -46,12 +46,14 @@ namespace ImageTagger.Importer
             public ulong Average;
             public ulong Difference;
             public ulong Wavelet;
+            public ulong Perceptual;
 
-            public PerceptualHashes(ulong average, ulong difference, ulong wavelet)
+            public PerceptualHashes(ulong average, ulong difference, ulong wavelet, ulong perceptual)
             {
                 Average = average;
                 Difference = difference;
                 Wavelet = wavelet;
+                Perceptual = perceptual;
             }
         }
 
@@ -60,7 +62,7 @@ namespace ImageTagger.Importer
             if (hash?.Equals(string.Empty) ?? true) return new PerceptualHashes();
             var info = DatabaseAccess.FindImageInfo(hash);
             if (info is null) return new PerceptualHashes();
-            return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash);
+            return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash, info.PerceptualHash);
         }
 
         internal struct ColorBuckets
@@ -117,12 +119,13 @@ namespace ImageTagger.Importer
                     if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
                     string[] hashes = sections[0].Split('?');
-                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    if (hashes.Length != 4) return (new PerceptualHashes(), new ColorBuckets());
                     ulong.TryParse(hashes[0], out ulong average);
                     ulong.TryParse(hashes[1], out ulong wavelet);
                     ulong.TryParse(hashes[2], out ulong difference);
+                    ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
+                    return (new PerceptualHashes(average, wavelet, difference, perceptual), new ColorBuckets(sections[1]));
                 }
                 catch (PythonException pex)
                 {
@@ -153,12 +156,13 @@ namespace ImageTagger.Importer
                     if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
 
                     string[] hashes = sections[0].Split('?');
-                    if (hashes.Length != 3) return (new PerceptualHashes(), new ColorBuckets());
+                    if (hashes.Length != 4) return (new PerceptualHashes(), new ColorBuckets());
                     ulong.TryParse(hashes[0], out ulong average);
                     ulong.TryParse(hashes[1], out ulong wavelet);
                     ulong.TryParse(hashes[2], out ulong difference);
+                    ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, wavelet, difference), new ColorBuckets(sections[1]));
+                    return (new PerceptualHashes(average, wavelet, difference, perceptual), new ColorBuckets(sections[1]));
                 }
                 catch (PythonException pex)
                 {

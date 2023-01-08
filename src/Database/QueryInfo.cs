@@ -14,6 +14,7 @@ namespace ImageTagger.Database
         public ulong Difference { get; set; }
         public ulong Average { get; set; }
         public ulong Wavelet { get; set; }
+        public ulong Perceptual { get; set; }
         public float Similarity { get; set; }
     }
 
@@ -37,6 +38,7 @@ namespace ImageTagger.Database
         internal ulong AverageHash { get; set; }
         internal ulong DifferenceHash { get; set; }
         internal ulong WaveletHash { get; set; }
+        internal ulong PerceptualHash { get; set; }
         internal float MinSimilarity { get; set; }
         internal int BucketPrecision { get; set; }
 
@@ -156,9 +158,9 @@ namespace ImageTagger.Database
 
         internal void CalcId()
         {
-            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}",
+            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}",
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
-                QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash,
+                QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash,
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime,
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
             ));

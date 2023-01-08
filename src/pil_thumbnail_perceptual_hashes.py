@@ -8,6 +8,9 @@ ZERO = np.uint64(0)
 EIGHT = np.uint64(8)	
 SIZE = 8
 
+# note that for any intensive operation that is performed multiple times, I should really do all of those in 
+#   initialize / save_webp_thumbnail and pass them as arguments to the relevant functions
+
 def initialize(sv_path):
     image = Image.open(sv_path)
     image = ImageOps.exif_transpose(image)
@@ -16,8 +19,9 @@ def initialize(sv_path):
     avg_hash = calc_average_hash(imageL)
     wav_hash = calc_wavelet_hash(image)
     dif_hash = calc_dhash(imageL)
+    per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
-    return f'{avg_hash}?{wav_hash}?{dif_hash}!{colors}'
+    return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def save_webp_thumbnail(im_path, sv_path, sv_size):
     image = Image.open(im_path)
@@ -29,8 +33,9 @@ def save_webp_thumbnail(im_path, sv_path, sv_size):
     avg_hash = calc_average_hash(imageL)
     wav_hash = calc_wavelet_hash(imageL)
     dif_hash = calc_dhash(imageL)
+    per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
-    return f'{avg_hash}?{wav_hash}?{dif_hash}!{colors}'
+    return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def convert_binary_to_ulong(arr):
     result = ZERO
@@ -79,6 +84,28 @@ def calc_dhash(imageL):
 def calc_dhash_vertical(imageL):
     pixels = np.asarray(imageL.resize((SIZE, SIZE+1), Image.Resampling.LANCZOS))
     diff = pixels[1:, :] > pixels[:-1, :]
+    flat = diff.flatten()
+    return convert_binary_to_ulong(flat)
+
+def calc_phash(imageL):
+    import scipy.fftpack
+    size = 32
+    pixels = np.asarray(imageL.resize((size, size), Image.Resampling.LANCZOS))
+    dct = scipy.fftpack.dct(scipy.fftpack.dct(pixels, axis=0), axis=1)
+    dctlowfreq = dct[:8, :8]
+    median = np.median(dctlowfreq)
+    diff = dctlowfreq > median
+    flat = diff.flatten()
+    return convert_binary_to_ulong(flat)
+
+def calc_phash_simple(imageL):
+    import scipy.fftpack
+    size = 32
+    pixels = np.asarray(imageL.resize((size, size), Image.Resampling.LANCZOS))
+    dct = scipy.fftpack.dct(pixels)
+    dctlowfreq = dct[:8, 1:8 + 1]
+    avg = dctlowfreq.mean()
+    diff = dctlowfreq > avg
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 

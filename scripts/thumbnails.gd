@@ -393,6 +393,8 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 			similarity = DatabaseManager.GetAverageSimilarityTo(compare_hash, image_hash)
 		elif curr_simi == Globals.SortSimilarity.WAVELET:
 			similarity = DatabaseManager.GetWaveletSimilarityTo(compare_hash, image_hash)
+		elif curr_simi == Globals.SortSimilarity.PERCEPTUAL:
+			similarity = DatabaseManager.GetPerceptualSimilarityTo(compare_hash, image_hash)
 		else:
 			similarity = DatabaseManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")

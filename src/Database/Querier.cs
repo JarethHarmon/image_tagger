@@ -235,13 +235,15 @@ namespace ImageTagger.Database
                     Wavelet = x.WaveletHash,
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
+                    Perceptual = x.PerceptualHash,
                 }).ToArray();
                 foreach (var result in results) // results is empty on new que
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
                     float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);
                     float simi3 = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
-                    result.Similarity = (simi1 + simi2 + simi3) / 3;
+                    float simi4 = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
+                    result.Similarity = (simi1 + simi2 + simi3 + simi4) / 4;
                 }
             }
             else if (info.SortSimilarity == SortSimilarity.AVERAGE)
@@ -279,6 +281,18 @@ namespace ImageTagger.Database
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
+                }
+            }
+            else if (info.SortSimilarity == SortSimilarity.PERCEPTUAL)
+            {
+                results = query.Select(x => new SimilarityQueryResult
+                {
+                    Hash = x.Hash,
+                    Perceptual = x.PerceptualHash
+                }).ToArray();
+                foreach (var result in results)
+                {
+                    result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
                 }
             }
             else return Array.Empty<string>();
