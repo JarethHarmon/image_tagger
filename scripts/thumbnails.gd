@@ -32,7 +32,8 @@ onready var buffer:CenterContainer = $cc
 var tab_history:Dictionary = {} 			# { tab_id:{ "scroll":scroll_percentage , "page":page } }
 var thumb_history:Dictionary = {}			# { image_hash:ImageTexture }
 var current_query:Dictionary = {}			# the query currently being processed
-var current_hashes:Dictionary = {}			# { index:image_hash } the image_hashes and their index for the currently viewed page
+#var current_hashes:Dictionary = {}			# { index:image_hash } the image_hashes and their index for the currently viewed page
+var current_hashes:Array = []
 var selected_items:Dictionary = {}
 
 var loaded_thumbnails:Array = []			# [ fifo_queue_version_of_thumb_history.keys() ] 
@@ -221,33 +222,40 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 	if query != current_query: return
 	start_loading(query, image_hashes, image_count)
 
+# think I will have to rewrite this function/script in order to fix the issue
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
 	var max_loaded_thumbnails:int = Global.GetMaxThumbnailsToStore()
 	var thumbnail_path:String = Global.GetThumbnailPath()
 
   # set current_hashes, iterate it to look for any thumbnails that are already loaded, set them and update their position in queue if found
-	var dict_image_hashes:Dictionary = {}
-	for idx in image_hashes.size():
-		dict_image_hashes[idx] = image_hashes[idx]
-	current_hashes = dict_image_hashes.duplicate()
-	if _set_thumbnails_from_history(query, dict_image_hashes): 
+	#var dict_image_hashes:Dictionary = {}
+	#for idx in image_hashes.size():
+	#	dict_image_hashes[idx] = image_hashes[idx]
+	current_hashes = image_hashes#dict_image_hashes.duplicate()
+	if _set_thumbnails_from_history(query, image_hashes):#dict_image_hashes): 
 		sc.unlock() ; return
 	
   # remove hashes/thumbnails from history and queue if necessary
 	lt.lock()
 	var tq_size:int = loaded_thumbnails.size()
-	var di_size:int = dict_image_hashes.size()
-	if tq_size + di_size > max_loaded_thumbnails:
-		var kept_hashes:Array = loaded_thumbnails.slice(di_size, tq_size)
-		th.lock()
-		for i in di_size:
-			thumb_history.erase(loaded_thumbnails[i])
-		th.unlock()
-		loaded_thumbnails = kept_hashes
+	var _max:int = Global.GetMaxThumbnailsToStore()
+	if tq_size > _max:
+		var tmp:Array = loaded_thumbnails.slice(tq_size-_max, tq_size)
+		loaded_thumbnails = tmp
+	#var di_size:int = dict_image_hashes.size()
+#	if tq_size + di_size > max_loaded_thumbnails:
+#		var kept_hashes:Array = loaded_thumbnails.slice(di_size, tq_size)
+#		th.lock()
+#		for i in di_size:
+#			thumb_history.erase(loaded_thumbnails[i])
+#		th.unlock()
+#		loaded_thumbnails = kept_hashes
 	lt.unlock()
 	tq.lock()
-	for idx in dict_image_hashes:
-		thumb_queue.push_back([idx, dict_image_hashes[idx]])
+	for i in current_hashes.size():
+		thumb_queue.push_back([i, current_hashes[i]])
+	#for idx in dict_image_hashes:
+	#	thumb_queue.push_back([idx, dict_image_hashes[idx]])
 	tq.unlock()
 	if query != current_query: 
 		sc.unlock() ; return
@@ -256,12 +264,13 @@ func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> voi
 	_start_thumbnail_loading_threads()
 	sc.unlock()
 
-func _set_thumbnails_from_history(query:Dictionary, image_hashes:Dictionary) -> bool:
-	var temp:Array = image_hashes.keys()
-	for idx in temp:
+func _set_thumbnails_from_history(query:Dictionary, image_hashes:Array) -> bool:#Dictionary) -> bool:
+	#var temp:Array = image_hashes.keys()
+	#for idx in temp:
+	for idx in image_hashes.size():
 		if query != current_query: return true
 		var image_hash:String = image_hashes[idx]
-		image_hashes.erase(image_hash)
+		#image_hashes.erase(image_hash)
 		th.lock()
 		if not thumb_history.has(image_hash): 
 			th.unlock()

@@ -21,6 +21,7 @@ namespace ImageTagger
         public bool ScanRecursively { get; set; }
         public int MaxImportThreads { get; set; }
 
+        public int MaxExtraQueriedPages { get; set; }
         public int MaxImagesPerPage { get; set; }
         public int MaxThumbnailThreads { get; set; }
         public int MaxPagesToStore { get; set; }
@@ -70,6 +71,7 @@ namespace ImageTagger
             MaxImportThreads = 3;
 
             // thumbnails
+            MaxExtraQueriedPages = 50;
             MaxImagesPerPage = 400;
             MaxThumbnailThreads = 3;
             MaxPagesToStore = 500;

@@ -386,24 +386,47 @@ namespace ImageTagger.Database
             string pageId = $"{info.Id}?{offset}?{limit}";
 
             if (HasPage(pageId, out string[] results)) return results;
+
+            int desired_page = offset / Math.Max(1, limit);
+            int modOffset = Math.Max(0, offset - (limit * Global.Settings.MaxExtraQueriedPages));
+            int modLimit = limit * (desired_page + Global.Settings.MaxExtraQueriedPages);
+
             if (ManageQuery(ref info))
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, offset, limit, countResults);
+                OrderSortQuery(info, modOffset, modLimit, countResults);
                 queryHistory[info.Id] = info;
             }
 
             if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
             {
-                results = info.ResultsRandom?.Skip(offset).Take(limit).ToArray() ?? Array.Empty<string>();
+                results = info.ResultsRandom?.Skip(modOffset).Take(modLimit).ToArray() ?? Array.Empty<string>();
             }
             else
             {
-                results = info.Results?.Offset(offset).Limit(limit).ToArray() ?? Array.Empty<string>();
+                results = info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>();
             }
-            
-            ManagePage(pageId, results);
+
+            //Console.WriteLine(modOffset + " :: " + modLimit);
+            //Console.WriteLine(results.Length);
+
+            if (results.Length > limit)
+            {
+                for (int i = 0; i < results.Length; i += limit)
+                {
+                    string _pageId = $"{info.Id}?{modOffset+i}?{limit}";
+                    if (pageHistory.ContainsKey(_pageId)) continue;
+                    string[] newArr = new string[Math.Min(limit, results.Length - i)];
+                    Array.Copy(results, i, newArr, 0, newArr.Length);
+                    ManagePage(_pageId, newArr);
+                }
+            }
+            else
+            {
+                ManagePage(pageId, results);
+            }
+
             return results;
         }
 
