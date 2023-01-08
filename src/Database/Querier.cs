@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LiteDB;
 using ImageTagger.Metadata;
+using ImageTagger.Core;
 
 namespace ImageTagger.Database
 {
@@ -181,13 +182,7 @@ namespace ImageTagger.Database
             // filtering UI is only implemented for tags, but I will need to fix this in the future
             if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0)
             {
-                var importInfo = ImportInfoAccess.GetImportInfo(info.ImportId);
-                if (importInfo != null)
-                {
-                    info.LastQueriedCount = (info.ImportId.Equals(Global.ALL, System.StringComparison.InvariantCultureIgnoreCase))
-                        ? importInfo.Success
-                        : importInfo.Success + importInfo.Duplicate;
-                }
+                info.LastQueriedCount = info.Success;
             }
 
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));

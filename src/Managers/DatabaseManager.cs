@@ -36,14 +36,18 @@ namespace ImageTagger.Managers
         public string[] TempConstructQueryInfo(string tabId, int offset, int limit, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
             int sort = (int)Sort.HASH, int order = (int)Order.ASCENDING, bool countResults = false, int sortSimilarity = (int)SortSimilarity.AVERAGED)
         {
+            var now = DateTime.Now;
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
             if (tabInfo is null) return Array.Empty<string>();
             var perceptualHashes = ImageImporter.GetPerceptualHashes(tabInfo.SimilarityHash);
             var conditions = Querier.ConvertStringToComplexTags(tagsAll, tagsAny, tagsNone, tagsComplex);
+            string importId = (!tabInfo.ImportId?.Equals(string.Empty) ?? false) ? tabInfo.ImportId : Global.ALL;
+            var importInfo = ImportInfoAccess.GetImportInfo(importId);
+            int success = (importId.Equals(Global.ALL)) ? importInfo?.Success ?? 0 : (importInfo?.Success + importInfo?.Duplicate) ?? 0;
 
             var queryInfo = new QueryInfo
             {
-                ImportId = (!tabInfo.ImportId?.Equals(string.Empty) ?? false) ? tabInfo.ImportId : Global.ALL,
+                ImportId = importId,
                 GroupId = string.Empty,
 
                 TagsAll = conditions.All,
@@ -57,6 +61,7 @@ namespace ImageTagger.Managers
                 SortSimilarity = (SortSimilarity)sortSimilarity,
 
                 MinSimilarity = 74.999f,
+                Success = success,
 
                 SimilarityHash = tabInfo.SimilarityHash,
                 AverageHash = perceptualHashes.Average,
@@ -69,7 +74,10 @@ namespace ImageTagger.Managers
             queryInfo.CalcId();
 
             var hashes = Querier.QueryDatabase(queryInfo, offset, limit, countResults);
-            return hashes.Append(queryInfo.Id).ToArray();
+            var results = hashes.Append(queryInfo.Id).ToArray();
+            GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time").Text = (DateTime.Now - now).ToString();
+
+            return results;
         }
 
         /*=========================================================================================

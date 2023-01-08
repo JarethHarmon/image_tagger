@@ -193,9 +193,27 @@ namespace ImageTagger.Managers
                 var dbInfo = DatabaseAccess.FindImageInfo(hash);
                 if (dbInfo != null) info.Merge(dbInfo);
                 imageInfos.Add(info);
+                // new:
+                info.Imports.Add(importId);
             }
 
-            DatabaseAccess.UpsertImageInfo(imageInfos);
+            lock (locker)
+            {
+                ImportInfo[] infos = new ImportInfo[2]
+                {
+                    ImportInfoAccess.GetImportInfo(importId),
+                    ImportInfoAccess.GetImportInfo(Global.ALL)
+                };
+                infos[0].Sections.Remove(sectionId);
+                DatabaseAccess.Transaction(infos, imageInfos, sectionId);
+                tempHashes.Remove(sectionId);
+
+                if (infos[0].Sections.Count == 0) CompleteImport(importId);
+            }
+
+            // should probably look into putting this into a transaction and rolling back if both are not updated;
+            // then only need to update imageInfos once (and add importId above)
+            /*DatabaseAccess.UpsertImageInfo(imageInfos);
             lock (locker)
             {
                 ImportInfo[] infos = new ImportInfo[2]
@@ -215,7 +233,7 @@ namespace ImageTagger.Managers
             {
                 info.Imports.Add(importId);
             }
-            DatabaseAccess.UpsertImageInfo(imageInfos);
+            DatabaseAccess.UpsertImageInfo(imageInfos);*/
         }
 
         private void CompleteImport(string importId)
