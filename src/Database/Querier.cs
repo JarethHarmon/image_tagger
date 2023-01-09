@@ -408,26 +408,29 @@ namespace ImageTagger.Database
                 results = info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>();
             }
 
-            //Console.WriteLine(modOffset + " :: " + modLimit);
-            //Console.WriteLine(results.Length);
-
+            string[] ret = Array.Empty<string>();
             if (results.Length > limit)
             {
                 for (int i = 0; i < results.Length; i += limit)
                 {
-                    string _pageId = $"{info.Id}?{modOffset+i}?{limit}";
+                    string _pageId = $"{info.Id}?{modOffset + i}?{limit}";
                     if (pageHistory.ContainsKey(_pageId)) continue;
                     string[] newArr = new string[Math.Min(limit, results.Length - i)];
                     Array.Copy(results, i, newArr, 0, newArr.Length);
                     ManagePage(_pageId, newArr);
+                    if (i == offset)
+                    {
+                        ret = newArr;
+                    }
                 }
             }
             else
             {
                 ManagePage(pageId, results);
+                return results;
             }
 
-            return results;
+            return ret;
         }
 
         internal static int GetLastQueriedCount(string id)
