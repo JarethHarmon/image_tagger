@@ -462,6 +462,11 @@ func select_items() -> void:
 	selected_items.clear()
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
+	
+	# TEMPORARY FIX UNTIL I REWRITE SELECTION CODE IN CSHARP
+	current_hashes = ThumbnailManager.GetCurrHashes()
+	
+	
 	for i in arr_index.size():
 		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
 	

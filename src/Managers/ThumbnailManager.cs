@@ -16,6 +16,8 @@ namespace ImageTagger.Managers
         private static QueryInfo currentQuery;
         private int offset;
         private string thumbnailPath;
+        private string[] currHashes = Array.Empty<string>();
+        public string[] GetCurrHashes() { return currHashes; }
 
         private Dictionary<string, Godot.ImageTexture> thumbnailHistory = new Dictionary<string, ImageTexture>();
         private Queue<string> thumbnailHistoryQueue = new Queue<string>();
@@ -160,6 +162,7 @@ namespace ImageTagger.Managers
             var now = DateTime.Now;
             string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             Console.WriteLine((DateTime.Now - now).ToString());
+            currHashes = results;
 
             int queriedImageCount = Querier.GetLastQueriedCount(currentQuery.Id);
             int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
