@@ -284,11 +284,11 @@ func _thread(args:Array) -> void:
 	var thread_id:int = args[2]
 	var actual_format:int = args[3]
 	
-	if DatabaseManager.IncorrectImage(image_hash): return
+	if DatabaseManager.MetadataManager(image_hash): return
 	
 	var dimensions:Vector2 = MetadataManager.GetCurrentDimensions()
 
-	if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+	if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -348,14 +348,14 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		var i:Image = Image.new()
 		e = i.load_jpg_from_buffer(b)
 
 		if e != OK: 
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			print("error ", e, ": ", path)
@@ -363,7 +363,7 @@ func _thread(args:Array) -> void:
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -372,21 +372,21 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_png_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			i = ImportManager.LoadUnsupportedImage(path)
 			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED: 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash): 
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -395,21 +395,21 @@ func _thread(args:Array) -> void:
 		var e:int = f.open(path, File.READ)
 		var b:PoolByteArray = f.get_buffer(f.get_len())
 		f.close()
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return	
 		var i:Image = Image.new()
 		e = i.load_webp_from_buffer(b)
 		if e != OK: 
 			print_debug(e, " :: ", path)
-			if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
+			if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return 
 			i = ImportManager.LoadUnsupportedImage(path)
-			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash): 
+			if i == null or _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash): 
 				call_deferred("_done", thread_id, path, image_hash)
 				return
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return
 		create_current_image(thread_id, i, path, image_hash)
@@ -420,7 +420,7 @@ func _thread(args:Array) -> void:
 		animation_mode = true
 		ImportManager.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
-		if _stop_threads or thread_status[thread_id] == status.CANCELED or DatabaseManager.IncorrectImage(image_hash):
+		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)
 			return 
 		var i = ImportManager.LoadUnsupportedImage(path)
@@ -577,7 +577,7 @@ func remove_animations() -> void:
 	animation_mutex.unlock()
 
 func add_animation_texture(texture:ImageTexture, image_hash:String, delay:float=0.0, new_image:bool=false) -> void:
-	if DatabaseManager.IncorrectImage(image_hash):
+	if MetadataManager.IncorrectImage(image_hash):
 		animation_mutex.lock()
 		if animation_status.has(image_hash): 
 			animation_status[image_hash] = a_status.STOPPING

@@ -12,7 +12,7 @@ namespace ImageTagger.Managers
     {
         private const int BULK_IMPORT_SIZE = 100;
         public Node signals, globals;
-        public DatabaseManager dbm;
+        public MetadataManager mdm;
 
         private static readonly object locker = new object();
         private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
@@ -22,17 +22,7 @@ namespace ImageTagger.Managers
         {
             globals = GetNode<Node>("/root/Globals");
             signals = GetNode<Node>("/root/Signals");
-            dbm = GetNode<DatabaseManager>("/root/DatabaseManager");
-        }
-
-        public void StartPython(string executablePath)
-        {
-            ImageImporter.StartPython(executablePath);
-        }
-
-        public void Shutdown()
-        {
-            ImageImporter.Shutdown();
+            mdm = GetNode<MetadataManager>("/root/MetadataManager");
         }
 
         /*=========================================================================================
@@ -76,7 +66,7 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         internal bool StopLoading(string hash)
         {
-            return dbm.IncorrectImage(hash);
+            return mdm.IncorrectImage(hash);
         }
 
         private bool frameOne = true;

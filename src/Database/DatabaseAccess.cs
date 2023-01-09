@@ -58,25 +58,6 @@ namespace ImageTagger.Database
             dbImportInfo?.Dispose();
         }
 
-        internal static void Transaction(IEnumerable<ImportInfo> imports, IEnumerable<ImageInfo> images, string sectionId)
-        {
-            try
-            {
-                dbImageInfo?.BeginTrans();
-                dbImportInfo?.BeginTrans();
-                UpdateImportInfo(imports);
-                UpsertImageInfo(images);
-                DeleteImportSection(sectionId);
-                dbImportInfo?.Commit();
-                dbImageInfo?.Commit();
-            }
-            catch
-            {
-                dbImageInfo?.Rollback();
-                dbImportInfo?.Rollback();
-            }
-        }
-
         /* ===================================================================================
                                             ImageInfo 
         =================================================================================== */

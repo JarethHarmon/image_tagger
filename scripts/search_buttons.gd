@@ -32,9 +32,9 @@ func _ready() -> void:
 	Signals.connect("order_changed", self, "search_pressed")
 	Signals.connect("similarity_changed", self, "search_pressed")
 
-func _on_include_all_text_entered(new_text:String) -> void: search_pressed()
-func _on_include_any_text_entered(new_text:String) -> void: search_pressed()
-func _on_exclude_all_text_entered(new_text:String) -> void: search_pressed()
+func _on_include_all_text_entered(new_text:String) -> void: ThumbnailManager.UpdateTagsAll(tags_all)#search_pressed()
+func _on_include_any_text_entered(new_text:String) -> void: ThumbnailManager.UpdateTagsAny(tags_any)#search_pressed()
+func _on_exclude_all_text_entered(new_text:String) -> void: ThumbnailManager.UpdateTagsNone(tags_none)#search_pressed()
 
 func _on_include_all_text_changed(new_text:String) -> void: tags_all = new_text.split(",", false)
 func _on_include_any_text_changed(new_text:String) -> void: tags_any = new_text.split(",", false)
@@ -42,11 +42,19 @@ func _on_exclude_all_text_changed(new_text:String) -> void: tags_none = new_text
 
 func tab_button_pressed(tab_id:String) -> void:
 	Globals.current_tab_id = tab_id
+	Global.SetCurrentTabId(tab_id)
 	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
-	search_pressed()
+	#search_pressed()
+	ThumbnailManager.UpdateImportId(tab_id)
+
 func search_pressed() -> void: 
-	Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, true)
-func page_changed(new_page:int=1) -> void: Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, false)
+	#Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, true)
+	ThumbnailManager.QueryDatabaseGD(true) # force update if search pressed, may change this to be F5 only
+	
+func page_changed(new_page:int=1) -> void: 
+	#Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, false)
+	ThumbnailManager.UpdatePage(new_page)
+	
 func refresh_page(tab_id:String) -> void: 
 	if tab_id == "": return
 	if tab_id == Globals.current_tab_id: page_changed()
@@ -66,4 +74,6 @@ func clear_pressed() -> void:
 	search_pressed()
 
 func _on_complex_text_changed(new_text:String) -> void: tags_complex = new_text.split("?", false) # condition strings tag1,tag2%tag4,tag7%tag5 = all:1,2 any:4,7 none:5
-func _on_complex_text_entered(new_text:String) -> void: search_pressed()
+func _on_complex_text_entered(new_text:String) -> void: 
+	#search_pressed()
+	ThumbnailManager.UpdateTagsComplex(tags_complex)

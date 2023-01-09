@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using LiteDB;
 
 namespace ImageTagger.Database
@@ -318,7 +319,7 @@ namespace ImageTagger.Database
             return _results;
         }
 
-        private static void OrderSortQuery(QueryInfo info, int offset, int limit, bool countResults)
+        private static void OrderSortQuery(QueryInfo info, int offset, int limit)
         {
             if (info.Query is null) return;
             var query = info.Query;
@@ -361,11 +362,7 @@ namespace ImageTagger.Database
                     case Sort.DARK_CYAN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Green + x.Blue + x.Dark) : query.OrderByDescending(x => x.Green + x.Blue + x.Dark); break;
                     case Sort.LIGHT_FUSCHIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue + x.Red + x.Light) : query.OrderByDescending(x => x.Blue + x.Red + x.Light); break;
                     case Sort.DARK_FUSCHIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue + x.Red + x.Dark) : query.OrderByDescending(x => x.Blue + x.Red + x.Dark); break;
-                    case Sort.RANDOM:
-                        query = query.OrderBy("RANDOM()");
-                        info.ResultsRandom = query.ToEnumerable().Select(x => x.Hash);
-                        info.Query = query;
-                        return;
+                    case Sort.RANDOM: query = query.OrderBy("RANDOM()"); break;
                     default: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Hash) : query.OrderByDescending(x => x.Hash); break;
                 }
             }
@@ -375,17 +372,17 @@ namespace ImageTagger.Database
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
-            if (info.LastQueriedCount == 0 && countResults) info.LastQueriedCount = query.Count();
+            if (info.LastQueriedCount == 0) info.LastQueriedCount = query.Count();
             info.Query = query;
             info.Results = query.Select(x => x.Hash);
         }
 
-        internal static string[] QueryDatabase(QueryInfo info, int offset, int limit, bool countResults=false)
+        internal static async Task<string[]> QueryDatabase(QueryInfo info, int offset, int limit, bool forceUpdate)
         {
             if (info is null) return Array.Empty<string>();
             string pageId = $"{info.Id}?{offset}?{limit}";
 
-            if (HasPage(pageId, out string[] results)) return results;
+            if (HasPage(pageId, out string[] results) && !forceUpdate) return results;
 
             int desired_page = offset / Math.Max(1, limit);
             int modOffset = Math.Max(0, offset - (limit * Global.Settings.MaxExtraQueriedPages));
@@ -395,22 +392,13 @@ namespace ImageTagger.Database
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, modOffset, modLimit, countResults);
+                OrderSortQuery(info, modOffset, modLimit);
                 queryHistory[info.Id] = info;
             }
 
-            if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
-            {
-                results = info.ResultsRandom?.Skip(modOffset).Take(modLimit).ToArray() ?? Array.Empty<string>();
-            }
-            else
-            {
-                results = info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>();
-            }
+            results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
 
-            //Console.WriteLine(modOffset + " :: " + modLimit);
-            //Console.WriteLine(results.Length);
-
+            string[] ret = Array.Empty<string>();
             if (results.Length > limit)
             {
                 for (int i = 0; i < results.Length; i += limit)
@@ -420,14 +408,19 @@ namespace ImageTagger.Database
                     string[] newArr = new string[Math.Min(limit, results.Length - i)];
                     Array.Copy(results, i, newArr, 0, newArr.Length);
                     ManagePage(_pageId, newArr);
+                    if (i == offset)
+                    {
+                        ret = newArr;
+                    }
                 }
             }
             else
             {
                 ManagePage(pageId, results);
+                return results;
             }
 
-            return results;
+            return ret;
         }
 
         internal static int GetLastQueriedCount(string id)

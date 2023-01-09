@@ -9,31 +9,12 @@ namespace ImageTagger.Managers
 {
     public sealed class DatabaseManager : Node
     {
-        public int Create()
-        {
-            var result = DatabaseAccess.Create();
-            if (result != Error.OK) return (int)result;
-            return (int)DatabaseAccess.Setup();
-        }
-
-        public void Shutdown()
-        {
-            DatabaseAccess.Shutdown();
-        }
-
-        public bool IncorrectImage(string hash)
-        {
-            string _hash = ImageInfoAccess.GetCurrentHash();
-            if (_hash.Equals(string.Empty)) return true;
-            return !hash.Equals(_hash, StringComparison.InvariantCultureIgnoreCase);
-        }
-
         public int GetLastQueriedCount(string id)
         {
             return Querier.GetLastQueriedCount(id);
         }
 
-        public string[] TempConstructQueryInfo(string tabId, int offset, int limit, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
+        /*public string[] TempConstructQueryInfo(string tabId, int offset, int limit, string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex,
             int sort = (int)Sort.HASH, int order = (int)Order.ASCENDING, bool countResults = false, int sortSimilarity = (int)SortSimilarity.AVERAGED)
         {
             var now = DateTime.Now;
@@ -78,7 +59,7 @@ namespace ImageTagger.Managers
             GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time").Text = (DateTime.Now - now).ToString();
 
             return results;
-        }
+        }*/
 
         /*=========================================================================================
                                                 Similarity

@@ -82,6 +82,7 @@ func _ready() -> void:
 #-----------------------------------------------------------------------#
 var first_time:bool = true # prevents scroll from being reset when going back to the same page (would not be needed if I fixed logic to not call this function twice)
 func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], tags_complex:Array = [], new_query:bool=true) -> void: 
+	return
 	var query:Dictionary = {
 		"tab_id" : Globals.current_tab_id,
 		"tags_all" : tags_all,
@@ -127,74 +128,75 @@ func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
 	return true
 
 func _query_thread(args:Array) -> void:
-	buffer.rect_min_size = self.rect_size / 4
-	buffer.show()
+	return
+#	buffer.rect_min_size = self.rect_size / 4
+#	buffer.show()
 	var thread:Thread = args[0]
-	var query:Dictionary = args[1]
-	var tab_id:String = query.tab_id
-	var tags_all:Array = query.tags_all
-	var tags_any:Array = query.tags_any
-	var tags_none:Array = query.tags_none
-	var tags_complex:Array = query.tags_complex
-
-	if _is_invalid_query(thread, query): return
-	
-  # set temp variables	
-	var image_hashes:Array = []
-	var tab_type:int = Globals.current_tab_type
-	var images_per_page:int = Global.GetMaxImagesPerPage()
-	var current_sort:int = Global.GetCurrentSort()
-   # order by descending if Similarity Tab
-	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
-	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
-	var num_threads:int = Global.GetMaxThumbnailThreads()
-	var similarity:int = Global.GetCurrentSortSimilarity()
-	
-  # calculate the offset and whether it should count the query
-	database_offset = (curr_page_number-1) * images_per_page
-	var count_results:bool = not(temp_query_settings == last_query_settings)
-	last_query_settings = temp_query_settings
-	
-  # query the database
-#	if tags_all.empty() and tags_any.empty() and tags_none.empty():
-#		var import_id =  MetadataManager.GetTabImportId(tab_id)
-#		queried_image_count = MetadataManager.GetSuccessCount(import_id)
-#		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-#		var lqh:int = lqc.hash()
+#	var query:Dictionary = args[1]
+#	var tab_id:String = query.tab_id
+#	var tags_all:Array = query.tags_all
+#	var tags_any:Array = query.tags_any
+#	var tags_none:Array = query.tags_none
+#	var tags_complex:Array = query.tags_complex
 #
-#		# print(tab_id, ": ", Storage.HasPage(lqh))
-#		if Storage.HasPage(lqh):
-#			image_hashes = Storage.GetPage(lqh)
-#			Storage.UpdatePageQueuePosition(lqh)
-#			Database.PopulateDictHashes(image_hashes)
-
-	if image_hashes.empty():	
-		if _is_invalid_query(thread, query): return
-		image_hashes = DatabaseManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
-		if empty_results(image_hashes, thread): return
-		var qid:String = image_hashes.pop_back()
-		queried_image_count = DatabaseManager.GetLastQueriedCount(qid)
-#		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-#		var lqh:int = lqc.hash()
-		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
-		# similarity tabs do not support sort currently, so they do not need this check
-#		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
-#			Storage.AddPage(lqh, image_hashes)
-		if _is_invalid_query(thread, query): return
-	
-  # get the correct values for page variables
-	curr_page_image_count = image_hashes.size()
-	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
-	if _is_invalid_query(thread, query): return
-	Signals.emit_signal("max_pages_changed", queried_page_count)
-	Signals.emit_signal("image_count_changed", queried_image_count)
-	
-	create_thumbnail_threads(num_threads)
-	if _is_invalid_query(thread, query): return
-	
-	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
-	thread.call_deferred("wait_to_finish")
-	buffer.hide()
+#	if _is_invalid_query(thread, query): return
+#
+#  # set temp variables	
+#	var image_hashes:Array = []
+#	var tab_type:int = Globals.current_tab_type
+#	var images_per_page:int = Global.GetMaxImagesPerPage()
+#	var current_sort:int = Global.GetCurrentSort()
+#   # order by descending if Similarity Tab
+#	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
+#	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
+#	var num_threads:int = Global.GetMaxThumbnailThreads()
+#	var similarity:int = Global.GetCurrentSortSimilarity()
+#
+#  # calculate the offset and whether it should count the query
+#	database_offset = (curr_page_number-1) * images_per_page
+#	var count_results:bool = not(temp_query_settings == last_query_settings)
+#	last_query_settings = temp_query_settings
+#
+#  # query the database
+##	if tags_all.empty() and tags_any.empty() and tags_none.empty():
+##		var import_id =  MetadataManager.GetTabImportId(tab_id)
+##		queried_image_count = MetadataManager.GetSuccessCount(import_id)
+##		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+##		var lqh:int = lqc.hash()
+##
+##		# print(tab_id, ": ", Storage.HasPage(lqh))
+##		if Storage.HasPage(lqh):
+##			image_hashes = Storage.GetPage(lqh)
+##			Storage.UpdatePageQueuePosition(lqh)
+##			Database.PopulateDictHashes(image_hashes)
+#
+#	if image_hashes.empty():	
+#		if _is_invalid_query(thread, query): return
+#		image_hashes = DatabaseManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
+#		if empty_results(image_hashes, thread): return
+#		var qid:String = image_hashes.pop_back()
+#		queried_image_count = DatabaseManager.GetLastQueriedCount(qid)
+##		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
+##		var lqh:int = lqc.hash()
+#		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
+#		# similarity tabs do not support sort currently, so they do not need this check
+##		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
+##			Storage.AddPage(lqh, image_hashes)
+#		if _is_invalid_query(thread, query): return
+#
+#  # get the correct values for page variables
+#	curr_page_image_count = image_hashes.size()
+#	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
+#	if _is_invalid_query(thread, query): return
+#	Signals.emit_signal("max_pages_changed", queried_page_count)
+#	Signals.emit_signal("image_count_changed", queried_image_count)
+#
+#	create_thumbnail_threads(num_threads)
+#	if _is_invalid_query(thread, query): return
+#
+#	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
+#	thread.call_deferred("wait_to_finish")
+#	buffer.hide()
 
 func empty_results(a:Array, t:Thread) -> bool:
 	if not a.empty(): return false
@@ -203,10 +205,11 @@ func empty_results(a:Array, t:Thread) -> bool:
 	return true
 
 func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
+	return
 	sc.lock()
 	var scroll_mult:float = 0.0
-	if tab_history.has(query.tab_id):
-		scroll_mult = tab_history[query.tab_id].scroll
+	#if tab_history.has(query.tab_id):
+	#	scroll_mult = tab_history[query.tab_id].scroll
 	if self.get_item_count() > 0:
 		yield(get_tree(), "idle_frame")
 		self.clear()
@@ -224,6 +227,7 @@ func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) ->
 
 # think I will have to rewrite this function/script in order to fix the issue
 func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
+	return
 	var max_loaded_thumbnails:int = Global.GetMaxThumbnailsToStore()
 	var thumbnail_path:String = Global.GetThumbnailPath()
 
@@ -265,6 +269,7 @@ func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> voi
 	sc.unlock()
 
 func _set_thumbnails_from_history(query:Dictionary, image_hashes:Array) -> bool:#Dictionary) -> bool:
+	return false
 	#var temp:Array = image_hashes.keys()
 	#for idx in temp:
 	for idx in image_hashes.size():
@@ -324,6 +329,7 @@ func append_args(args):
 	tq.unlock()
 
 func _thread(thread_id:int) -> void:
+	return
 	while not stop_threads:
 		var args = get_args()
 		if args == null: break
@@ -540,6 +546,7 @@ func scroll(down:bool=true) -> void:
 	vscroll.set_value(value)
 
 func _scrolling(value:float=0.0) -> void:
+	return
 	tab_history[Globals.current_tab_id].scroll = value / self.get_v_scroll().max_value
 	 
 func color_selection(index:int, selected:bool) -> void:
