@@ -176,8 +176,8 @@ namespace ImageTagger.Managers
         {
             list.CallDeferred("clear");
             await ToSignal(GetTree(), "idle_frame");
-
             if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+
             for (int i = 0; i < size; i++)
             {
                 list.CallDeferred("add_icon_item", bufferingIcon);

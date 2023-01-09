@@ -389,7 +389,7 @@ namespace ImageTagger.Database
             int modOffset = Math.Max(0, offset - (limit * Global.Settings.MaxExtraQueriedPages));
             int modLimit = limit * (desired_page + Global.Settings.MaxExtraQueriedPages);
 
-            if (ManageQuery(ref info))
+            if (ManageQuery(ref info) || forceUpdate)
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
@@ -420,7 +420,7 @@ namespace ImageTagger.Database
                 for (int i = 0; i < results.Length; i += limit)
                 {
                     string _pageId = $"{info.Id}?{modOffset+i}?{limit}";
-                    if (pageHistory.ContainsKey(_pageId)) continue;
+                    if (pageHistory.ContainsKey(_pageId) && !forceUpdate) continue;
                     string[] newArr = new string[Math.Min(limit, results.Length - i)];
                     Array.Copy(results, i, newArr, 0, newArr.Length);
                     ManagePage(_pageId, newArr);
