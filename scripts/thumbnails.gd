@@ -13,35 +13,16 @@ extends ItemList
 # 	(unless I am just too tired and missing something obvious)
 
 
-const icon_broken:StreamTexture = preload("res://assets/icon-broken.png") 
-const icon_buffering:StreamTexture = preload("res://assets/buffer-01.png")
-
 # need to fix these references
 onready var thumb_size:HSlider = self.get_parent().get_node("sort_buttons/thumbnail_size")
 onready var thumb_size_entry:SpinBox = self.get_parent().get_node("sort_buttons/thumbnail_size_entry")
-
-enum Status { INACTIVE, ACTIVE, CANCELED, ERROR }
-
-onready var lt:Mutex = Mutex.new()			# mutex for interacting with loaded_thumbnails
-onready var sc:Mutex = Mutex.new()			# mutex for interacting with scene
-onready var tq:Mutex = Mutex.new()			# mutex for interacting with thumb_queue
 onready var th:Mutex = Mutex.new()			# mutex for interacting with thumb_history
-
-onready var buffer:CenterContainer = $cc
 
 var tab_history:Dictionary = {} 			# { tab_id:{ "scroll":scroll_percentage , "page":page } }
 var thumb_history:Dictionary = {}			# { image_hash:ImageTexture }
-var current_query:Dictionary = {}			# the query currently being processed
-#var current_hashes:Dictionary = {}			# { index:image_hash } the image_hashes and their index for the currently viewed page
 var current_hashes:Array = []
 var selected_items:Dictionary = {}
 
-var loaded_thumbnails:Array = []			# [ fifo_queue_version_of_thumb_history.keys() ] 
-var thumb_queue:Array = []					# [ hashes_waiting_to_load ]
-var thumbnail_threads:Array = []			# [ threads_used_for_loading_thumbnails ]  
-var last_query_settings:Array = []			# the settings used for the last query (used to avoid counting query results multiple times)
-
-var stop_threads:bool = false				# whether the thumbnail threads should stop processing
 var called_already:bool = false
 var ctrl_pressed:bool = false
 var shift_pressed:bool = false
@@ -49,15 +30,8 @@ var shift_pressed:bool = false
 var selected_item:int = 0
 var last_selected_item:int = 0
 var last_index:int = 0
-var curr_page_number:int = 1				# 
-var curr_page_image_count:int = 0
-var total_image_count:int = 0
-var queried_page_count:int = 1
-var queried_image_count:int = 1
-var database_offset:int = 0
+var curr_page_number:int = 1
 
-var page_label:Label
-func _page_label_ready(node_path:NodePath) -> void: page_label = get_node(node_path) 
 func _curr_page_changed(new_page:int) -> void: 
 	var tab_id:String = Globals.current_tab_id
 	if tab_history.has(tab_id):
@@ -70,350 +44,11 @@ func _curr_page_changed(new_page:int) -> void:
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
 	Signals.connect("page_changed", self, "_curr_page_changed")
-	Signals.connect("search_pressed", self, "prepare_query")
 	Signals.connect("select_all_pressed", self, "select_all_items")
 	Signals.connect("deselect_all_pressed", self, "deselect_all")
 	Signals.connect("toggle_thumbnail_tooltips", self, "_toggle_thumbnail_tooltips")
 	self.get_v_scroll().connect("scrolling", self, "_scrolling")
 	self.get_v_scroll().connect("value_changed", self, "_scrolling")	
-
-#-----------------------------------------------------------------------#
-#					Querying and Loading Thumbnails						#
-#-----------------------------------------------------------------------#
-var first_time:bool = true # prevents scroll from being reset when going back to the same page (would not be needed if I fixed logic to not call this function twice)
-func prepare_query(tags_all:Array=[], tags_any:Array=[], tags_none:Array = [], tags_complex:Array = [], new_query:bool=true) -> void: 
-	return
-	var query:Dictionary = {
-		"tab_id" : Globals.current_tab_id,
-		"tags_all" : tags_all,
-		"tags_any" : tags_any,
-		"tags_none" : tags_none,
-		"tags_complex" : tags_complex,
-	}
-	if new_query:
-		curr_page_number = 1
-		queried_page_count = 0
-		total_image_count = 0
-
-		if tab_history.has(query.tab_id):
-			curr_page_number = tab_history[query.tab_id].page
-		
-		# EXTREMELY IMPORTANT NOTE: SIGNALS, BY DEFAULT, EXECUTE IMMEDIATELY, IN-PLACE, IF ON THE MAIN THREAD
-		# THIS MEANS THAT WITHOUT A DEFERRED CALL THIS FUNCTION ACTUALLY ITERATES INTO THIS CONDITION, RECIEVES THE SIGNAL
-		# THEN ITERATES AGAIN TO COMPLETION (TAKING THE ELSE CONDITION) BEFORE RETURNING AND FINISHING THIS SECTION	
-		# DOES NOT CAUSE MAJOR ISSUES ONLY BECAUSE THIS CONDITION RETURNS
-		Signals.call_deferred("emit_signal", "page_changed", curr_page_number)
-		first_time = false
-		return # not ideal solution; need to restructure overall order; for now prevents querying twice
-		# was: button -> sp -> pq(true)(qt) -> cpc -> pc -> sp -> pq(false) -> qt
-		# now: button -> sp -> pq(true) -> cpc -> pc -> sp -> pq(false) -> qt
-	else:
-		if first_time:
-			tab_history[query.tab_id].scroll = 0.0	
-	current_query = query
-	yield(get_tree(), "idle_frame")
-	yield(get_tree(), "idle_frame") 
-	var thread:Thread = Thread.new()
-	
-	# disable sort buttons for similarity tabs
-	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
-	else: Signals.emit_signal("switch_sort_buttons", false)
-	
-	thread.call_deferred("start", self, "_query_thread", [thread, query])
-	first_time = true
-
-func _is_invalid_query(thread:Thread, query:Dictionary) -> bool:
-	if query == current_query: return false
-	thread.call_deferred("wait_to_finish")
-	return true
-
-func _query_thread(args:Array) -> void:
-	return
-#	buffer.rect_min_size = self.rect_size / 4
-#	buffer.show()
-	var thread:Thread = args[0]
-#	var query:Dictionary = args[1]
-#	var tab_id:String = query.tab_id
-#	var tags_all:Array = query.tags_all
-#	var tags_any:Array = query.tags_any
-#	var tags_none:Array = query.tags_none
-#	var tags_complex:Array = query.tags_complex
-#
-#	if _is_invalid_query(thread, query): return
-#
-#  # set temp variables	
-#	var image_hashes:Array = []
-#	var tab_type:int = Globals.current_tab_type
-#	var images_per_page:int = Global.GetMaxImagesPerPage()
-#	var current_sort:int = Global.GetCurrentSort()
-#   # order by descending if Similarity Tab
-#	var current_order:int = Global.GetCurrentOrder() if tab_type != Globals.TabType.SIMILARITY else Globals.Order.DESCENDING
-#	var temp_query_settings = [tab_id, tags_all, tags_any, tags_none, tags_complex]
-#	var num_threads:int = Global.GetMaxThumbnailThreads()
-#	var similarity:int = Global.GetCurrentSortSimilarity()
-#
-#  # calculate the offset and whether it should count the query
-#	database_offset = (curr_page_number-1) * images_per_page
-#	var count_results:bool = not(temp_query_settings == last_query_settings)
-#	last_query_settings = temp_query_settings
-#
-#  # query the database
-##	if tags_all.empty() and tags_any.empty() and tags_none.empty():
-##		var import_id =  MetadataManager.GetTabImportId(tab_id)
-##		queried_image_count = MetadataManager.GetSuccessCount(import_id)
-##		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-##		var lqh:int = lqc.hash()
-##
-##		# print(tab_id, ": ", Storage.HasPage(lqh))
-##		if Storage.HasPage(lqh):
-##			image_hashes = Storage.GetPage(lqh)
-##			Storage.UpdatePageQueuePosition(lqh)
-##			Database.PopulateDictHashes(image_hashes)
-#
-#	if image_hashes.empty():	
-#		if _is_invalid_query(thread, query): return
-#		image_hashes = DatabaseManager.TempConstructQueryInfo(tab_id, database_offset, images_per_page, tags_all, tags_any, tags_none, tags_complex, current_sort, current_order, count_results, similarity)
-#		if empty_results(image_hashes, thread): return
-#		var qid:String = image_hashes.pop_back()
-#		queried_image_count = DatabaseManager.GetLastQueriedCount(qid)
-##		var lqc:Array = [tab_id, curr_page_number, current_sort, current_order, tags_all, tags_any, tags_none, queried_image_count] # add filters to this once implemented
-##		var lqh:int = lqc.hash()
-#		# > ImageColor accounts for all Rating sorts (should eventually group all of these together)
-#		# similarity tabs do not support sort currently, so they do not need this check
-##		if (Globals.current_tab_type == Globals.Tab.SIMILARITY) or (current_sort != Globals.SortBy.TagCount and not current_sort > Globals.SortBy.ImageColor):# and current_sort != Globals.SortBy.Random: # need to add manual refresh button instead
-##			Storage.AddPage(lqh, image_hashes)
-#		if _is_invalid_query(thread, query): return
-#
-#  # get the correct values for page variables
-#	curr_page_image_count = image_hashes.size()
-#	queried_page_count = ceil(float(queried_image_count)/float(images_per_page)) as int 
-#	if _is_invalid_query(thread, query): return
-#	Signals.emit_signal("max_pages_changed", queried_page_count)
-#	Signals.emit_signal("image_count_changed", queried_image_count)
-#
-#	create_thumbnail_threads(num_threads)
-#	if _is_invalid_query(thread, query): return
-#
-#	call_deferred("_threadsafe_clear", query, image_hashes, curr_page_image_count)
-#	thread.call_deferred("wait_to_finish")
-#	buffer.hide()
-
-func empty_results(a:Array, t:Thread) -> bool:
-	if not a.empty(): return false
-	buffer.hide()
-	t.call_deferred("wait_to_finish")
-	return true
-
-func _threadsafe_clear(query:Dictionary, image_hashes:Array, image_count:int) -> void:
-	return
-	sc.lock()
-	var scroll_mult:float = 0.0
-	#if tab_history.has(query.tab_id):
-	#	scroll_mult = tab_history[query.tab_id].scroll
-	if self.get_item_count() > 0:
-		yield(get_tree(), "idle_frame")
-		self.clear()
-		yield(get_tree(), "idle_frame")
-		yield(get_tree(), "idle_frame")
-	for i in image_count:
-		self.add_item("", icon_buffering) 
-	thumb_queue.clear()
-	var vscroll:VScrollBar = self.get_v_scroll()
-	yield(get_tree(), "idle_frame")
-	vscroll.set_value(vscroll.max_value * scroll_mult)
-	sc.unlock()
-	if query != current_query: return
-	start_loading(query, image_hashes, image_count)
-
-# think I will have to rewrite this function/script in order to fix the issue
-func start_loading(query:Dictionary, image_hashes:Array, image_count:int) -> void:
-	return
-	var max_loaded_thumbnails:int = Global.GetMaxThumbnailsToStore()
-	var thumbnail_path:String = Global.GetThumbnailPath()
-
-  # set current_hashes, iterate it to look for any thumbnails that are already loaded, set them and update their position in queue if found
-	#var dict_image_hashes:Dictionary = {}
-	#for idx in image_hashes.size():
-	#	dict_image_hashes[idx] = image_hashes[idx]
-	current_hashes = image_hashes#dict_image_hashes.duplicate()
-	if _set_thumbnails_from_history(query, image_hashes):#dict_image_hashes): 
-		sc.unlock() ; return
-	
-  # remove hashes/thumbnails from history and queue if necessary
-	lt.lock()
-	var tq_size:int = loaded_thumbnails.size()
-	var _max:int = Global.GetMaxThumbnailsToStore()
-	if tq_size > _max:
-		var tmp:Array = loaded_thumbnails.slice(tq_size-_max, tq_size)
-		loaded_thumbnails = tmp
-	#var di_size:int = dict_image_hashes.size()
-#	if tq_size + di_size > max_loaded_thumbnails:
-#		var kept_hashes:Array = loaded_thumbnails.slice(di_size, tq_size)
-#		th.lock()
-#		for i in di_size:
-#			thumb_history.erase(loaded_thumbnails[i])
-#		th.unlock()
-#		loaded_thumbnails = kept_hashes
-	lt.unlock()
-	tq.lock()
-	for i in current_hashes.size():
-		thumb_queue.push_back([i, current_hashes[i]])
-	#for idx in dict_image_hashes:
-	#	thumb_queue.push_back([idx, dict_image_hashes[idx]])
-	tq.unlock()
-	if query != current_query: 
-		sc.unlock() ; return
-	
-  # start the thumbnail threads to load the remaining thumbnails
-	_start_thumbnail_loading_threads()
-	sc.unlock()
-
-func _set_thumbnails_from_history(query:Dictionary, image_hashes:Array) -> bool:#Dictionary) -> bool:
-	return false
-	#var temp:Array = image_hashes.keys()
-	#for idx in temp:
-	for idx in image_hashes.size():
-		if query != current_query: return true
-		var image_hash:String = image_hashes[idx]
-		#image_hashes.erase(image_hash)
-		th.lock()
-		if not thumb_history.has(image_hash): 
-			th.unlock()
-			continue
-		var im_tex:Texture = thumb_history[image_hash].texture
-		th.unlock() ; lt.lock()
-		loaded_thumbnails.erase(image_hash)
-		loaded_thumbnails.push_back(image_hash)
-		lt.unlock()
-		var text:String = ""
-		if Globals.current_tab_type == Globals.TabType.SIMILARITY:
-			var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
-			var similarity:float = ThumbnailManager.GetAveragedSimilarityTo(compare_hash, image_hash)
-			text = "%1.2f" % [similarity] + "%"
-		if query != current_query: return true
-		self.set_item_icon(idx, im_tex)
-		self.set_item_text(idx, text)
-	return false
-	
-func _start_thumbnail_loading_threads() -> void:
-	for thread_id in thumbnail_threads.size():
-		thumbnail_threads[thread_id].start(self, "_thread", thread_id)
-
-func create_thumbnail_threads(num_threads:int) -> void:
-	stop_thumbnail_threads()
-	thumbnail_threads.clear()
-	for thread_id in num_threads:
-		thumbnail_threads.push_back(Thread.new())
-
-func stop_thumbnail_threads() -> void:
-	stop_threads = true
-	for thread_id in thumbnail_threads.size():
-		stop_thumbnail_thread(thread_id)
-	stop_threads = false
-
-func stop_thumbnail_thread(thread_id:int) -> void:
-	if thumbnail_threads[thread_id].is_active() or thumbnail_threads[thread_id].is_alive():
-		thumbnail_threads[thread_id].wait_to_finish()
-
-func get_args():
-	tq.lock()
-	var result = null
-	if not thumb_queue.empty():
-		result = thumb_queue.pop_front()
-	tq.unlock()
-	return result
-
-func append_args(args):
-	tq.lock()
-	thumb_queue.append(args)
-	tq.unlock()
-
-func _thread(thread_id:int) -> void:
-	return
-	while not stop_threads:
-		var args = get_args()
-		if args == null: break
-		var index:int = args[0]
-		var image_hash:String = args[1]
-		load_thumbnail(image_hash, index)
-	call_deferred("stop_thumbnail_thread", thread_id)
-
-func load_thumbnail(image_hash:String, index:int) -> void:
-	th.lock()
-	if thumb_history.has(image_hash):
-		if thumb_history[image_hash].texture != null:
-			th.unlock()
-			if stop_threads: return
-			_threadsafe_set_icon(image_hash, index)
-			return
-	th.unlock()
-	_set_metadata(image_hash)
-	
-	var f:File = File.new()
-	var p:String = Global.GetThumbnailPath().plus_file(image_hash.substr(0, 2)).plus_file(image_hash) + ".thumb"
-	var e:int = f.open(p, File.READ)
-	
-	if stop_threads: return
-	if e != OK: 
-		_threadsafe_set_icon(image_hash, index, true)
-		return
-
-	if stop_threads: return
-
-	var i:Image = Image.new()
-	var b:PoolByteArray = f.get_buffer(f.get_len())
-	e = i.load_webp_from_buffer(b)
-
-	if stop_threads: return
-	var it:ImageTexture = ImageTexture.new()
-	it.create_from_image(i, 0) # FLAGS # 4
-	it.set_meta("image_hash", image_hash)
-	
-	th.lock() ; thumb_history[image_hash]["texture"] = it ; th.unlock()
-	lt.lock() ; loaded_thumbnails.push_back(image_hash) ; lt.unlock()
-	
-	if stop_threads: return
-	_threadsafe_set_icon(image_hash, index)
-
-func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> void:
-	var im_tex:Texture
-	var dict:Dictionary = {}
-	if failed: im_tex = icon_broken
-	else:
-		th.lock()
-		dict = thumb_history[image_hash]
-		im_tex = dict.texture
-		th.unlock()
-	if stop_threads: return
-	sc.lock()
-	self.set_item_icon(index, im_tex)
-	#if Globals.settings.show_thumbnail_tooltips:
-	#	var tooltip:String = _create_tooltip(image_hash, dict, index)
-	#	set_item_tooltip(index, tooltip)
-
-	# currently it calculates the similarity 1-by-1 while setting the thumbnail, which
-	#	means individual database calls to retrieve the hash info, and then similarity comparisons
-	# I could instead either:
-	#	A. query the hash info all at once, then re-iterate the thumbnails and update their labels
-	#	B. avoid querying the hash info at all, remove the concept of similarity labels, and instead
-	#		display the similarity percentage in the preview window on a per-image basis 
-	if Globals.current_tab_type == Globals.TabType.SIMILARITY:
-		var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
-		var similarity:float = 0.0
-		var curr_simi:int = Global.GetCurrentSortSimilarity()
-		
-		if curr_simi == Globals.SortSimilarity.AVERAGED:
-			similarity = ThumbnailManager.GetAveragedSimilarityTo(compare_hash, image_hash)
-		elif curr_simi == Globals.SortSimilarity.AVERAGE:
-			similarity = ThumbnailManager.GetAverageSimilarityTo(compare_hash, image_hash)
-		elif curr_simi == Globals.SortSimilarity.WAVELET:
-			similarity = ThumbnailManager.GetWaveletSimilarityTo(compare_hash, image_hash)
-		elif curr_simi == Globals.SortSimilarity.PERCEPTUAL:
-			similarity = ThumbnailManager.GetPerceptualSimilarityTo(compare_hash, image_hash)
-		else:
-			similarity = ThumbnailManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
-		set_item_text(index, "%1.2f" % [similarity] + "%")
-	sc.unlock()
 
 #-----------------------------------------------------------------------#
 #					             OTHER									#
@@ -428,16 +63,6 @@ func _create_tooltip(image_hash:String, dict:Dictionary, index:int) -> String:
 	tooltip += "\ndifference hash: " + dict.diff_hash
 	tooltip += "\ncolor hash: " + String(dict.color_hash)
 	return tooltip
-
-# need to entirely rewrite(remove) this function; metadata will now be queried for a single image only, so the
-# entire concept behind the design of this function is wrong; and just serves to cause issues with the dict
-func _set_metadata(image_hash:String) -> void:
-	th.lock()
-	var dict:Dictionary = {
-		"texture" : null,
-	}
-	thumb_history[image_hash] = dict
-	th.unlock()
 	
 func _on_thumbnails_multi_selected(index:int, selected:bool) -> void:
 	selected_item = index
@@ -462,10 +87,6 @@ func select_items() -> void:
 	selected_items.clear()
 	var arr_index:Array = self.get_selected_items()
 	if arr_index.size() == 0: return
-	
-	# TEMPORARY FIX UNTIL I REWRITE SELECTION CODE IN CSHARP
-	current_hashes = ThumbnailManager.GetCurrHashes()
-	
 	
 	for i in arr_index.size():
 		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
@@ -492,7 +113,7 @@ func select_items() -> void:
 func select_all_items() -> void: 
 	selected_items.clear()
 	var tab_id:String = Globals.current_tab_id
-	for i in curr_page_image_count: 
+	for i in current_hashes.size(): 
 		selected_items[i] = current_hashes[i]
 		self.select(i, false)
 	Signals.emit_signal("all_selected_items", selected_items)

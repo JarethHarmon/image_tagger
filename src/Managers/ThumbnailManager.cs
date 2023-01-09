@@ -1,5 +1,4 @@
 ﻿using Godot;
-using ImageTagger.Core;
 using ImageTagger.Database;
 using ImageTagger.Importer;
 using ImageTagger.Metadata;
@@ -16,8 +15,6 @@ namespace ImageTagger.Managers
         private static QueryInfo currentQuery;
         private int offset;
         private string thumbnailPath;
-        private string[] currHashes = Array.Empty<string>();
-        public string[] GetCurrHashes() { return currHashes; }
 
         private Dictionary<string, Godot.ImageTexture> thumbnailHistory = new Dictionary<string, ImageTexture>();
         private Queue<string> thumbnailHistoryQueue = new Queue<string>();
@@ -27,6 +24,7 @@ namespace ImageTagger.Managers
         private ItemList list;
         private ImageTexture failedIcon, bufferingIcon;
         private Node signals;
+        private CenterContainer buffer;
 
         private void Setup()
         {
@@ -44,6 +42,7 @@ namespace ImageTagger.Managers
         {
             list = GetNode<ItemList>("/root/main/margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails");
             signals = GetNode<Node>("/root/Signals");
+            buffer = list.GetNode<CenterContainer>("cc");
 
             var resBroken = ResourceLoader.Load<StreamTexture>("res://assets/icon-broken.png");
             failedIcon = new Godot.ImageTexture();
@@ -153,6 +152,7 @@ namespace ImageTagger.Managers
 
         internal async Task QueryDatabase(bool forceUpdate=false)
         {
+            buffer.Show();
             thumbnailPath = Global.GetThumbnailPath();
             if (thumbnailPath is null) return;
             currentQuery.Query = DatabaseAccess.GetImageInfoQuery();
@@ -162,7 +162,9 @@ namespace ImageTagger.Managers
             var now = DateTime.Now;
             string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             Console.WriteLine((DateTime.Now - now).ToString());
-            currHashes = results;
+
+            // temporary fix until I rewrite selection logic in csharp
+            list.Set("current_hashes", results);
 
             int queriedImageCount = Querier.GetLastQueriedCount(currentQuery.Id);
             int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
@@ -173,6 +175,7 @@ namespace ImageTagger.Managers
 
             await SetupList(results.Length, currentPageId);
             await LoadThumbnails(results);
+            buffer.Hide();
         }
 
         private async Task SetupList(int size, string id)
