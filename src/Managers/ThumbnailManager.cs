@@ -1,4 +1,5 @@
 ﻿using Godot;
+using ImageTagger.Core;
 using ImageTagger.Database;
 using ImageTagger.Metadata;
 using System;
@@ -10,9 +11,9 @@ namespace ImageTagger.Managers
 {
     public sealed class ThumbnailManager : Node
     {
+        private string currentPageId;
         private static QueryInfo currentQuery;
-        private int offset, limit;
-        private bool countResults;
+        private int offset;
         private string thumbnailPath;
 
         private Dictionary<string, Godot.ImageTexture> thumbnailHistory = new Dictionary<string, ImageTexture>();
@@ -22,6 +23,7 @@ namespace ImageTagger.Managers
 
         private ItemList list;
         private ImageTexture failedIcon, bufferingIcon;
+        private Node signals;
 
         private void Setup()
         {
@@ -36,6 +38,7 @@ namespace ImageTagger.Managers
         public override void _Ready()
         {
             list = GetNode<ItemList>("/root/main/margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails");
+            signals = GetNode<Node>("/root/Signals");
 
             var resBroken = ResourceLoader.Load<StreamTexture>("res://assets/icon-broken.png");
             failedIcon = new Godot.ImageTexture();
@@ -100,9 +103,10 @@ namespace ImageTagger.Managers
         {
             var info = TabInfoAccess.GetTabInfo(tabId);
             currentQuery.ImportId = info.ImportId;
+            var iinfo = ImportInfoAccess.GetImportInfo(info.ImportId ?? Global.ALL);
+            currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             _ = QueryDatabase();
         }
-
         public void UpdatePage(int pageNumber)
         {
             offset = (pageNumber - 1) * Global.Settings.MaxImagesPerPage;
@@ -134,6 +138,7 @@ namespace ImageTagger.Managers
             if (thumbnailPath is null) return;
             currentQuery.Query = DatabaseAccess.GetImageInfoQuery();
             currentQuery.CalcId();
+            currentPageId = $"{currentQuery.Id}?{offset}?{Global.Settings.MaxImagesPerPage}";
 
             var now = DateTime.Now;
             string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
@@ -143,9 +148,11 @@ namespace ImageTagger.Managers
             int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
 
             // update control nodes with above values
+            signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
+            signals.Call("emit_signal", "image_count_changed", queriedImageCount);
 
-            await SetupList(results.Length, currentQuery.Id);
-            await LoadThumbnails(currentQuery, results);
+            await SetupList(results.Length, currentPageId);
+            await LoadThumbnails(results);
         }
 
         private async Task SetupList(int size, string id)
@@ -153,18 +160,18 @@ namespace ImageTagger.Managers
             list.CallDeferred("clear");
             await ToSignal(GetTree(), "idle_frame");
 
-            if (!currentQuery.Id.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
             for (int i = 0; i < size; i++)
             {
                 list.CallDeferred("add_icon_item", bufferingIcon);
             }
             await ToSignal(GetTree(), "idle_frame");
 
-            if (!currentQuery.Id.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
             // set scroll value for tab
         }
 
-        private async Task LoadThumbnails(QueryInfo current, string[] hashes)
+        private async Task LoadThumbnails(string[] hashes)
         {
             var tasks = new ActionBlock<ThumbnailTask>(x =>
             {
@@ -173,7 +180,7 @@ namespace ImageTagger.Managers
 
             for (int i = 0; i < hashes.Length; i++)
             {
-                tasks.Post(new ThumbnailTask(current.Id, hashes[i], i));
+                tasks.Post(new ThumbnailTask(currentPageId, hashes[i], i));
             }
 
             try
@@ -190,33 +197,38 @@ namespace ImageTagger.Managers
         private async void LoadThumbnail(ThumbnailTask x)
         {
             if (x.Hash is null) return;
-            if (await ThreadsafeSetIcon(x)) return; // try to set icon from history, return if time to stop loading, or loading succeeded
+            if (ThreadsafeSetIcon(x)) return; // try to set icon from history, return if time to stop loading, or loading succeeded
 
             // if loading from history failed, try to load from disk
             string path = System.IO.Path.Combine(thumbnailPath, $"{x.Hash.Substring(0, 2)}/{x.Hash}.thumb");
             try
             {
-                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
-                byte[] data = System.IO.File.ReadAllBytes(path);
+                await Task.Run(() =>
+                {
+                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    byte[] data = System.IO.File.ReadAllBytes(path);
 
-                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
-                var image = new Godot.Image();
-                var err = image.LoadWebpFromBuffer(data);
-                if (err != Godot.Error.Ok) await ThreadsafeSetIcon(x, true);
+                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    var image = new Godot.Image();
+                    var err = image.LoadWebpFromBuffer(data);
+                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (err != Godot.Error.Ok) ThreadsafeSetIcon(x, true);
 
-                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
-                var texture = new Godot.ImageTexture();
-                texture.CreateFromImage(image, 0);
-                texture.SetMeta("image_hash", x.Hash);
-                AddToHistory(x.Hash, texture); // may as well store it in history once loaded
+                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    var texture = new Godot.ImageTexture();
+                    texture.CreateFromImage(image, 0);
+                    texture.SetMeta("image_hash", x.Hash);
+                    AddToHistory(x.Hash, texture); // may as well store it in history once loaded
 
-                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
-                await ThreadsafeSetIcon(x);
+                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    ThreadsafeSetIcon(x);
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                await ThreadsafeSetIcon(x, true);
+                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                ThreadsafeSetIcon(x, true);
             }
         }
 
@@ -233,7 +245,7 @@ namespace ImageTagger.Managers
             }
         }
 
-        private async Task<bool> ThreadsafeSetIcon(ThumbnailTask x, bool failed=false)
+        private bool ThreadsafeSetIcon(ThumbnailTask x, bool failed=false)
         {
             Godot.ImageTexture icon = null;
             lock (locker)
@@ -243,20 +255,19 @@ namespace ImageTagger.Managers
             }
             if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
-            if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-            list.CallDeferred("set_item_icon", x.Index, icon);
-            await ToSignal(GetTree(), "idle_frame");
+            if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
+            list.SetItemIcon(x.Index, icon);
 
             var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
             if (tabInfo.TabType == TabType.SIMILARITY)
             {
                 switch (Global.Settings.CurrentSortSimilarity)
                 {
-                    case SortSimilarity.AVERAGE: list.CallDeferred("set_item_text", x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.DIFFERENCE: list.CallDeferred("set_item_text", x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.WAVELET: list.CallDeferred("set_item_text", x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.PERCEPTUAL: list.CallDeferred("set_item_text", x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    default: list.CallDeferred("set_item_text", x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    case SortSimilarity.AVERAGE: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    case SortSimilarity.DIFFERENCE: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    case SortSimilarity.WAVELET: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    case SortSimilarity.PERCEPTUAL: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                 }
             }
             return true;

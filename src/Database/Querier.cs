@@ -382,7 +382,7 @@ namespace ImageTagger.Database
             if (info is null) return Array.Empty<string>();
             string pageId = $"{info.Id}?{offset}?{limit}";
 
-            if (!queryHistory.ContainsKey(info.Id)) info.LastQueriedCount = 0; // reset count if new query
+            if (!queryHistory.ContainsKey(info.Id)) info.LastQueriedCount = -1; // reset count if new query
             if (HasPage(pageId, out string[] results) && !forceUpdate) return results;
 
             int desired_page = offset / Math.Max(1, limit);
@@ -411,7 +411,7 @@ namespace ImageTagger.Database
             {
                 if (!info.Filtered) info.LastQueriedCount = info.Success;
                 else if (Global.Settings.PreferSpeed) info.LastQueriedCount = results.Length;
-                else info.LastQueriedCount = info.Query.Count();
+                else if (info.LastQueriedCount == -1) info.LastQueriedCount = info.Query.Count();
             }
 
             string[] ret = Array.Empty<string>();
