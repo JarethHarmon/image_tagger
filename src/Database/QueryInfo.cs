@@ -69,6 +69,7 @@ namespace ImageTagger.Database
         internal int Success { get; set; }
         internal ILiteQueryable<ImageInfo> Query { get; set; }
         internal ILiteQueryableResult<string> Results { get; set; }
+        internal IEnumerable<string> ResultsRandom { get; set; }
         internal int LastQueriedCount { get; set; }
 
         internal QueryInfo()

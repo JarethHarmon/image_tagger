@@ -363,7 +363,11 @@ namespace ImageTagger.Database
                     case Sort.DARK_CYAN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Green + x.Blue + x.Dark) : query.OrderByDescending(x => x.Green + x.Blue + x.Dark); break;
                     case Sort.LIGHT_FUSCHIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue + x.Red + x.Light) : query.OrderByDescending(x => x.Blue + x.Red + x.Light); break;
                     case Sort.DARK_FUSCHIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue + x.Red + x.Dark) : query.OrderByDescending(x => x.Blue + x.Red + x.Dark); break;
-                    case Sort.RANDOM: query = query.OrderBy("RANDOM()"); break;
+                    case Sort.RANDOM:
+                        query = query.OrderBy("RANDOM()");
+                        info.ResultsRandom = query.ToEnumerable().Select(x => x.Hash);
+                        info.Query = query;
+                        return;
                     default: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Hash) : query.OrderByDescending(x => x.Hash); break;
                 }
             }
@@ -399,11 +403,17 @@ namespace ImageTagger.Database
 
             if (info.Filtered && Global.Settings.PreferSpeed)
             {
-                results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
+                if (info.Sort == Sort.RANDOM)
+                    results = await Task.Run(() => info.ResultsRandom?.Skip(modOffset).Take(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
+                else
+                    results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
             }
             else
             {
-                results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
+                if (info.Sort == Sort.RANDOM)
+                    results = await Task.Run(() => info.ResultsRandom?.Skip(modOffset).Take(modLimit).ToArray() ?? Array.Empty<string>());
+                else
+                    results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
             }
 
             // similarity tabs are forced to query all results, and they keep track of count themselves
