@@ -60,19 +60,19 @@ namespace ImageTagger.Managers
         public void UpdateTagsAll(string[] tagsAll)
         {
             currentQuery.TagsAll = tagsAll;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateTagsAny(string[] tagsAny)
         {
             currentQuery.TagsAny = tagsAny;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateTagsNone(string[] tagsNone)
         {
             currentQuery.TagsNone = tagsNone;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateTagsComplex(string[] tagsComplex)
@@ -82,25 +82,25 @@ namespace ImageTagger.Managers
             currentQuery.TagsAny = conditions.Any;
             currentQuery.TagsNone = conditions.None;
             currentQuery.TagsComplex = conditions.Complex;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateSort(int sort)
         {
             currentQuery.Sort = (Sort)sort;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateOrder(int order)
         {
             currentQuery.Order = (Order)order;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateSortSimilarity(int similarity)
         {
             currentQuery.SortSimilarity = (SortSimilarity)similarity;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdateImportId(string tabId)
@@ -122,18 +122,18 @@ namespace ImageTagger.Managers
             currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             currentQuery.QueryType = tabInfo.TabType;
 
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void UpdatePage(int pageNumber)
         {
             offset = (pageNumber - 1) * Global.Settings.MaxImagesPerPage;
-            _ = QueryDatabase();
+            QueryDatabaseGD();
         }
 
         public void QueryDatabaseGD(bool forceUpdate = false)
         {
-            _ = QueryDatabase(forceUpdate);
+            _ = Task.Run(() => QueryDatabase(forceUpdate));
         }
 
         private sealed class ThumbnailTask
@@ -150,7 +150,7 @@ namespace ImageTagger.Managers
             }
         }
 
-        internal async Task QueryDatabase(bool forceUpdate=false)
+        private async Task QueryDatabase(bool forceUpdate=false)
         {
             buffer.Show();
             thumbnailPath = Global.GetThumbnailPath();

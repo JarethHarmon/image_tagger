@@ -249,7 +249,7 @@ namespace ImageTagger.Managers
                 }
                 else
                 {
-                    ImportStatus result = ImportImage(importId, sectionId, path);
+                    ImportStatus result = ImportImage(importId, path);
                     UpdateImportCount(importId, result);
                     signals.Call("emit_signal", "increment_import_buttons", tabs);
                     if (result == ImportStatus.SUCCESS)
@@ -261,7 +261,7 @@ namespace ImageTagger.Managers
             CompleteImportSection(importId, sectionId);
         }
 
-        private ImportStatus ImportImage(string importId, string sectionId, string imagePath)
+        private ImportStatus ImportImage(string importId, string imagePath)
         {
             var fileInfo = new ImageImporter.FileInfo(imagePath);
             if (fileInfo.Size < 0)
@@ -270,6 +270,7 @@ namespace ImageTagger.Managers
                 return ImportStatus.FAILED;
             }
             string hash = file.GetSha256(imagePath);
+            if (hash.Length == 0) return ImportStatus.FAILED;
 
             string thumbPath = $"{Global.GetThumbnailPath()}{hash.Substring(0, 2)}/{hash}.thumb";
             var phashes = new ImageImporter.PerceptualHashes();
