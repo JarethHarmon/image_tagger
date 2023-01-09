@@ -19,7 +19,6 @@ namespace ImageTagger.Managers
         private Queue<string> thumbnailHistoryQueue = new Queue<string>();
 
         private static readonly object locker = new object();
-        private static bool stop = false;
 
         private ItemList list;
         private ImageTexture failedIcon, bufferingIcon;
@@ -197,21 +196,21 @@ namespace ImageTagger.Managers
             string path = System.IO.Path.Combine(thumbnailPath, $"{x.Hash.Substring(0, 2)}/{x.Hash}.thumb");
             try
             {
-                if (stop) return;
+                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
                 byte[] data = System.IO.File.ReadAllBytes(path);
 
-                if (stop) return;
+                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
                 var image = new Godot.Image();
                 var err = image.LoadWebpFromBuffer(data);
                 if (err != Godot.Error.Ok) await ThreadsafeSetIcon(x, true);
 
-                if (stop) return;
+                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
                 var texture = new Godot.ImageTexture();
                 texture.CreateFromImage(image, 0);
                 texture.SetMeta("image_hash", x.Hash);
                 AddToHistory(x.Hash, texture); // may as well store it in history once loaded
 
-                if (stop) return;
+                if (!currentQuery.Id.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
                 await ThreadsafeSetIcon(x);
             }
             catch (Exception ex)
