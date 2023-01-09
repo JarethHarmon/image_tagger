@@ -11,7 +11,7 @@ namespace ImageTagger.Managers
 {
     public sealed class ThumbnailManager : Node
     {
-        private string currentPageId;
+        private static string currentPageId;
         private static QueryInfo currentQuery;
         private int offset;
         private string thumbnailPath;
@@ -157,7 +157,9 @@ namespace ImageTagger.Managers
             if (thumbnailPath is null) return;
             currentQuery.Query = DatabaseAccess.GetImageInfoQuery();
             currentQuery.CalcId();
-            currentPageId = $"{currentQuery.Id}?{offset}?{Global.Settings.MaxImagesPerPage}";
+            string tmp = $"{currentQuery.Id}?{offset}?{Global.Settings.MaxImagesPerPage}";
+            currentPageId = tmp;
+            Querier.CurrentId = tmp;
 
             var now = DateTime.Now;
             string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
@@ -172,38 +174,40 @@ namespace ImageTagger.Managers
             signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
             signals.Call("emit_signal", "image_count_changed", queriedImageCount);
 
-            await SetupList(results.Length, currentPageId);
-            await LoadThumbnails(results);
+            SetupList(results.Length, tmp);
+            await LoadThumbnails(results, tmp);
             buffer.Hide();
         }
 
-        private async Task SetupList(int size, string id)
+        private void SetupList(int size, string id)
         {
-            list.CallDeferred("clear");
-            await ToSignal(GetTree(), "idle_frame");
             if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+            lock (locker) list.Clear();
 
-            for (int i = 0; i < size; i++)
+            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+            lock (locker)
             {
-                list.CallDeferred("add_icon_item", bufferingIcon);
+                for (int i = 0; i < size; i++)
+                {
+                    list.AddIconItem(bufferingIcon);
+                }
             }
-            await ToSignal(GetTree(), "idle_frame");
 
-            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
             // set scroll value for tab
         }
 
-        private async Task LoadThumbnails(string[] hashes)
+        private async Task LoadThumbnails(string[] hashes, string id)
         {
             var tasks = new ActionBlock<ThumbnailTask>(x => LoadThumbnail(x));
 
             for (int i = 0; i < hashes.Length; i++)
             {
-                tasks.Post(new ThumbnailTask(currentPageId, hashes[i], i));
+                tasks.Post(new ThumbnailTask(id, hashes[i], i));
             }
 
             try
             {
+                if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
                 tasks.Complete();
                 await tasks.Completion;
             }
@@ -275,18 +279,21 @@ namespace ImageTagger.Managers
             if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
             if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-            list.SetItemIcon(x.Index, icon);
+            lock (locker) list.SetItemIcon(x.Index, icon);
 
             var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
-            if (tabInfo.TabType == TabType.SIMILARITY)
+            lock (locker)
             {
-                switch (Global.Settings.CurrentSortSimilarity)
+                if (tabInfo.TabType == TabType.SIMILARITY)
                 {
-                    case SortSimilarity.AVERAGE: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.DIFFERENCE: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.WAVELET: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    case SortSimilarity.PERCEPTUAL: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                    default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    switch (Global.Settings.CurrentSortSimilarity)
+                    {
+                        case SortSimilarity.AVERAGE: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.DIFFERENCE: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.WAVELET: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.PERCEPTUAL: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                    }
                 }
             }
             return true;

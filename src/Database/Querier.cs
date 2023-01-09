@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
 
@@ -20,6 +21,7 @@ namespace ImageTagger.Database
         private readonly static Queue<string> queryHistoryQueue = new Queue<string>();
         private readonly static Dictionary<string, string[]> pageHistory = new Dictionary<string, string[]>();
         private readonly static Queue<string> pageHistoryQueue = new Queue<string>();
+        public static string CurrentId { get; set; }
 
         private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
@@ -224,22 +226,28 @@ namespace ImageTagger.Database
             info.Query = query;
         }
 
-        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit)
+        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info?.Query is null) return Array.Empty<string>();
             var query = info.Query;
             var results = Enumerable.Empty<SimilarityQueryResult>();
+            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
 
             if (info.SortSimilarity == SortSimilarity.AVERAGED)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Wavelet = x.WaveletHash,
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
                     Perceptual = x.PerceptualHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results) // results is empty on new que
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
@@ -251,11 +259,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.AVERAGE)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Average = x.AverageHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     float temp = Global.CalcHammingSimilarity(info.AverageHash, result.Average) / 100;
@@ -264,11 +277,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.WAVELET)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Wavelet = x.WaveletHash
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
@@ -276,11 +294,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.DIFFERENCE)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Difference = x.DifferenceHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
@@ -288,11 +311,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.PERCEPTUAL)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Perceptual = x.PerceptualHash
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
@@ -314,7 +342,7 @@ namespace ImageTagger.Database
             return _results;
         }
 
-        private static void OrderSortQuery(QueryInfo info, int offset, int limit)
+        private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info.Query is null) return;
             var query = info.Query;
@@ -367,7 +395,7 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.SIMILARITY)
             {
-                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit));
+                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
@@ -391,9 +419,12 @@ namespace ImageTagger.Database
             {
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, modOffset, modLimit);
+                OrderSortQuery(info, modOffset, modLimit, pageId);
                 queryHistory[info.Id] = info;
             }
+
+            Thread.Sleep(50);
+            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
 
             if (info.Filtered && Global.Settings.PreferSpeed)
             {

@@ -92,7 +92,7 @@ func select_items() -> void:
 		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
 	
 	var image_hash:String = current_hashes[last_index]
-	print(image_hash)
+	#print(image_hash)
 	MetadataManager.LoadCurrentImageInfo(image_hash)
 	var paths:Array = MetadataManager.GetCurrentPaths()
 	var imports:Array = MetadataManager.GetCurrentImports()

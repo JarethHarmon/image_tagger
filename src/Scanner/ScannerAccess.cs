@@ -17,7 +17,7 @@ namespace ImageTagger.Scanner
         private readonly static Dictionary<string, HashSet<string>> tempPaths = new Dictionary<string, HashSet<string>>();
 
         private static bool cancelling = false;
-        private readonly static FileRequirements requirements = null;
+        private readonly static FileRequirements requirements = null; // probably should not be readonly, unless I change check to use default values instead
         private static string currentFolder = string.Empty;
         internal static string GetCurrentFolder() { return currentFolder; }
 

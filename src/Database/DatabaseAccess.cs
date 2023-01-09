@@ -28,6 +28,9 @@ namespace ImageTagger.Database
                 colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
 
+                colImageInfo.EnsureIndex(x => x.Imports);
+                colImageInfo.EnsureIndex(x => x.Tags);
+
                 return Error.OK;
             }
             catch
