@@ -108,10 +108,6 @@ namespace ImageTagger.Managers
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
             currentQuery.ImportId = tabInfo.ImportId ?? Global.ALL;
 
-            var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
-            currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
-            currentQuery.QueryType = tabInfo.TabType;
-
             if (tabInfo.TabType == TabType.SIMILARITY)
             {
                 currentQuery.ImportId = Global.ALL;
@@ -121,6 +117,10 @@ namespace ImageTagger.Managers
                 currentQuery.PerceptualHash = hashes.Perceptual;
                 currentQuery.WaveletHash = hashes.Wavelet;
             }
+
+            var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
+            currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
+            currentQuery.QueryType = tabInfo.TabType;
 
             _ = QueryDatabase();
         }
