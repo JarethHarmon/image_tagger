@@ -403,14 +403,14 @@ namespace ImageTagger.Database
 
             if (info.Filtered && Global.Settings.PreferSpeed)
             {
-                if (info.Sort == Sort.RANDOM)
+                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
                     results = await Task.Run(() => info.ResultsRandom?.Skip(modOffset).Take(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
                 else
                     results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
             }
             else
             {
-                if (info.Sort == Sort.RANDOM)
+                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
                     results = await Task.Run(() => info.ResultsRandom?.Skip(modOffset).Take(modLimit).ToArray() ?? Array.Empty<string>());
                 else
                     results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());

@@ -169,7 +169,6 @@ namespace ImageTagger.Managers
             int queriedImageCount = Querier.GetLastQueriedCount(currentQuery.Id);
             int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
 
-            // update control nodes with above values
             signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
             signals.Call("emit_signal", "image_count_changed", queriedImageCount);
 
@@ -196,10 +195,7 @@ namespace ImageTagger.Managers
 
         private async Task LoadThumbnails(string[] hashes)
         {
-            var tasks = new ActionBlock<ThumbnailTask>(x =>
-            {
-                LoadThumbnail(x);
-            });
+            var tasks = new ActionBlock<ThumbnailTask>(x => LoadThumbnail(x));
 
             for (int i = 0; i < hashes.Length; i++)
             {
