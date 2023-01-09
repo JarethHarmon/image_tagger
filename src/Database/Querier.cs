@@ -313,7 +313,7 @@ namespace ImageTagger.Database
                 .OrderByDescending(x => x.Similarity)
                 .Select(x => x.Hash)
                 .Skip(offset)
-                .Take(limit)
+                .Take(limit) // consider removing/increasing this limit
                 .ToArray();
 
             info.LastQueriedCount = _results.Length;
@@ -398,9 +398,13 @@ namespace ImageTagger.Database
             }
 
             if (info.Filtered && Global.Settings.PreferSpeed)
-                results = await Task.Run(() => info.Results?.Offset(modOffset).ToArray() ?? Array.Empty<string>());
+            {
+                results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(limit * Global.Settings.MaxPagesToStore).ToArray() ?? Array.Empty<string>());
+            }
             else
+            {
                 results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
+            }
 
             // similarity tabs are forced to query all results, and they keep track of count themselves
             if (info.QueryType != TabType.SIMILARITY)
