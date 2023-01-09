@@ -8,7 +8,7 @@ namespace ImageTagger.Metadata
 {
     internal sealed class ImportInfoAccess
     {
-        private static Dictionary<string, ImportInfo> dictImportInfo = new Dictionary<string, ImportInfo>();
+        private readonly static Dictionary<string, ImportInfo> dictImportInfo = new Dictionary<string, ImportInfo>();
 
         internal static void CreateDictionary(IEnumerable<ImportInfo> imports)
         {

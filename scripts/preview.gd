@@ -334,7 +334,7 @@ func _thread(args:Array) -> void:
 				# not a major point of concern
 				ima.rect_position = Vector2((im_width * x) - x, (im_height * y) - y)
 				
-		ImportManager.LoadLargeImage(path, image_hash, num_columns, num_rows)
+		var err:int = ImportManager.LoadLargeImage(path, image_hash, num_columns, num_rows)
 		call_deferred("_done", thread_id, path, image_hash)
 		return
 	
@@ -415,10 +415,10 @@ func _thread(args:Array) -> void:
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
 		animation_mode = true
-		ImportManager.LoadAPng(path, image_hash)
+		var err:int = ImportManager.LoadAPng(path, image_hash)
 	elif actual_format == Globals.ImageType.GIF: 
 		animation_mode = true
-		ImportManager.LoadGif(path, image_hash)
+		var err:int = ImportManager.LoadGif(path, image_hash)
 	elif actual_format == Globals.ImageType.OTHER:
 		if _stop_threads or thread_status[thread_id] == status.CANCELED or MetadataManager.IncorrectImage(image_hash):
 			call_deferred("_done", thread_id, path, image_hash)

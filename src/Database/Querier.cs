@@ -1,10 +1,7 @@
 ﻿using System;
-using System.CodeDom.Compiler;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ImageTagger.Core;
 using LiteDB;
 
 namespace ImageTagger.Database
@@ -19,10 +16,10 @@ namespace ImageTagger.Database
 
     internal sealed class Querier
     {
-        private static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
-        private static Queue<string> queryHistoryQueue = new Queue<string>();
-        private static Dictionary<string, string[]> pageHistory = new Dictionary<string, string[]>();
-        private static Queue<string> pageHistoryQueue = new Queue<string>();
+        private readonly static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
+        private readonly static Queue<string> queryHistoryQueue = new Queue<string>();
+        private readonly static Dictionary<string, string[]> pageHistory = new Dictionary<string, string[]>();
+        private readonly static Queue<string> pageHistoryQueue = new Queue<string>();
 
         private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
@@ -172,16 +169,10 @@ namespace ImageTagger.Database
             }
 
             // consider usage of GC.Collect();
-            _All = null;
-            _None = null;
 
             all = All.ToArray();
             any = Any.ToArray();
             none = None.ToArray();
-
-            All = null;
-            Any = null;
-            None = null;
 
             return new TagConditions
             {
@@ -307,7 +298,10 @@ namespace ImageTagger.Database
                     result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
                 }
             }
-            else return Array.Empty<string>();
+            else
+            {
+                return Array.Empty<string>();
+            }
 
             var _results = results.Where(x => x.Similarity > info.MinSimilarity)
                 .OrderByDescending(x => x.Similarity)

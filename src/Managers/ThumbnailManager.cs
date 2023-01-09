@@ -16,8 +16,8 @@ namespace ImageTagger.Managers
         private int offset;
         private string thumbnailPath;
 
-        private Dictionary<string, Godot.ImageTexture> thumbnailHistory = new Dictionary<string, ImageTexture>();
-        private Queue<string> thumbnailHistoryQueue = new Queue<string>();
+        private readonly Dictionary<string, Godot.ImageTexture> thumbnailHistory = new Dictionary<string, ImageTexture>();
+        private readonly Queue<string> thumbnailHistoryQueue = new Queue<string>();
 
         private static readonly object locker = new object();
 
