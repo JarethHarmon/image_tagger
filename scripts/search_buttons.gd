@@ -46,6 +46,8 @@ func tab_button_pressed(tab_id:String) -> void:
 	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
 	#search_pressed()
 	ThumbnailManager.UpdateImportId(tab_id)
+	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
+	else: Signals.emit_signal("switch_sort_buttons", false)
 
 func search_pressed() -> void: 
 	#Signals.emit_signal("search_pressed", tags_all, tags_any, tags_none, tags_complex, true)

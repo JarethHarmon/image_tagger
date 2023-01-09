@@ -284,7 +284,7 @@ func _thread(args:Array) -> void:
 	var thread_id:int = args[2]
 	var actual_format:int = args[3]
 	
-	if DatabaseManager.MetadataManager(image_hash): return
+	if MetadataManager.IncorrectImage(image_hash): return
 	
 	var dimensions:Vector2 = MetadataManager.GetCurrentDimensions()
 

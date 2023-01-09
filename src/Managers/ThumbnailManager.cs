@@ -1,6 +1,7 @@
 ﻿using Godot;
 using ImageTagger.Core;
 using ImageTagger.Database;
+using ImageTagger.Importer;
 using ImageTagger.Metadata;
 using System;
 using System.Collections.Generic;
@@ -29,9 +30,11 @@ namespace ImageTagger.Managers
         {
             currentQuery = new QueryInfo
             {
+                QueryType = TabType.DEFAULT,
                 Order = Global.Settings.CurrentOrder,
                 Sort = Global.Settings.CurrentSort,
-                SortSimilarity = Global.Settings.CurrentSortSimilarity
+                SortSimilarity = Global.Settings.CurrentSortSimilarity,
+                MinSimilarity = 74.999f,
             };
         }
 
@@ -101,12 +104,26 @@ namespace ImageTagger.Managers
 
         public void UpdateImportId(string tabId)
         {
-            var info = TabInfoAccess.GetTabInfo(tabId);
-            currentQuery.ImportId = info.ImportId;
-            var iinfo = ImportInfoAccess.GetImportInfo(info.ImportId ?? Global.ALL);
+            var tabInfo = TabInfoAccess.GetTabInfo(tabId);
+            currentQuery.ImportId = tabInfo.ImportId ?? Global.ALL;
+
+            var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
             currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
+
+            currentQuery.QueryType = tabInfo.TabType;
+            if (tabInfo.TabType == TabType.SIMILARITY)
+            {
+                currentQuery.ImportId = Global.ALL;
+                var hashes = ImageImporter.GetPerceptualHashes(tabInfo.SimilarityHash);
+                currentQuery.AverageHash = hashes.Average;
+                currentQuery.DifferenceHash = hashes.Difference;
+                currentQuery.PerceptualHash = hashes.Perceptual;
+                currentQuery.WaveletHash = hashes.Wavelet;
+            }
+
             _ = QueryDatabase();
         }
+
         public void UpdatePage(int pageNumber)
         {
             offset = (pageNumber - 1) * Global.Settings.MaxImagesPerPage;
@@ -276,7 +293,7 @@ namespace ImageTagger.Managers
         /*=========================================================================================
                                                 Similarity
         =========================================================================================*/
-        private float GetAveragedSimilarityTo(string hash1, string hash2)
+        public float GetAveragedSimilarityTo(string hash1, string hash2)
         {
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
@@ -287,28 +304,28 @@ namespace ImageTagger.Managers
             return (simi1 + simi2 + simi3 + simi4) / 4;
         }
 
-        private float GetAverageSimilarityTo(string hash1, string hash2)
+        public float GetAverageSimilarityTo(string hash1, string hash2)
         {
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
             return Global.CalcHammingSimilarity(info1.AverageHash, info2.AverageHash);
         }
 
-        private float GetDifferenceSimilarityTo(string hash1, string hash2)
+        public float GetDifferenceSimilarityTo(string hash1, string hash2)
         {
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
             return Global.CalcHammingSimilarity(info1.DifferenceHash, info2.DifferenceHash);
         }
 
-        private float GetWaveletSimilarityTo(string hash1, string hash2)
+        public float GetWaveletSimilarityTo(string hash1, string hash2)
         {
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
             return Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
         }
 
-        private float GetPerceptualSimilarityTo(string hash1, string hash2)
+        public float GetPerceptualSimilarityTo(string hash1, string hash2)
         {
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);

@@ -32,7 +32,6 @@ config/auto_accept_quit=false
 [autoload]
 
 ImportManager="*res://src/Managers/ImportManager.cs"
-DatabaseManager="*res://src/Managers/DatabaseManager.cs"
 ScanManager="*res://src/Managers/ScanManager.cs"
 MetadataManager="*res://src/Managers/MetadataManager.cs"
 Global="*res://src/Global.cs"

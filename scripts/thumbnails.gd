@@ -288,7 +288,7 @@ func _set_thumbnails_from_history(query:Dictionary, image_hashes:Array) -> bool:
 		var text:String = ""
 		if Globals.current_tab_type == Globals.TabType.SIMILARITY:
 			var compare_hash:String = MetadataManager.GetTabSimilarityHash(Globals.current_tab_id)
-			var similarity:float = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
+			var similarity:float = ThumbnailManager.GetAveragedSimilarityTo(compare_hash, image_hash)
 			text = "%1.2f" % [similarity] + "%"
 		if query != current_query: return true
 		self.set_item_icon(idx, im_tex)
@@ -403,15 +403,15 @@ func _threadsafe_set_icon(image_hash:String, index:int, failed:bool=false) -> vo
 		var curr_simi:int = Global.GetCurrentSortSimilarity()
 		
 		if curr_simi == Globals.SortSimilarity.AVERAGED:
-			similarity = DatabaseManager.GetAveragedSimilarityTo(compare_hash, image_hash)
+			similarity = ThumbnailManager.GetAveragedSimilarityTo(compare_hash, image_hash)
 		elif curr_simi == Globals.SortSimilarity.AVERAGE:
-			similarity = DatabaseManager.GetAverageSimilarityTo(compare_hash, image_hash)
+			similarity = ThumbnailManager.GetAverageSimilarityTo(compare_hash, image_hash)
 		elif curr_simi == Globals.SortSimilarity.WAVELET:
-			similarity = DatabaseManager.GetWaveletSimilarityTo(compare_hash, image_hash)
+			similarity = ThumbnailManager.GetWaveletSimilarityTo(compare_hash, image_hash)
 		elif curr_simi == Globals.SortSimilarity.PERCEPTUAL:
-			similarity = DatabaseManager.GetPerceptualSimilarityTo(compare_hash, image_hash)
+			similarity = ThumbnailManager.GetPerceptualSimilarityTo(compare_hash, image_hash)
 		else:
-			similarity = DatabaseManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
+			similarity = ThumbnailManager.GetDifferenceSimilarityTo(compare_hash, image_hash)
 		set_item_text(index, "%1.2f" % [similarity] + "%")
 	sc.unlock()
 
