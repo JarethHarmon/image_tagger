@@ -1,7 +1,10 @@
 ﻿using System;
+using System.CodeDom.Compiler;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ImageTagger.Core;
 using LiteDB;
 
 namespace ImageTagger.Database
@@ -85,6 +88,7 @@ namespace ImageTagger.Database
             if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
 
             // apply filters
+            // these will also need to set info.Filtered if any are active (ideally this will be done automatically when they change)
 
             info.Query = query;
         }
@@ -193,12 +197,9 @@ namespace ImageTagger.Database
             var query = info.Query;
             if (query is null) return;
 
-            // this block is almost pointless now; basic idea is to just look up the actual count if there are no filters applied, but
-            // that requires checking that info in numerical filters as well (and keeping track of it);; no issues for now because the 
-            // filtering UI is only implemented for tags, but I will need to fix this in the future
             if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0)
             {
-                info.LastQueriedCount = info.Success;
+                info.Filtered = true;
             }
 
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
@@ -372,7 +373,6 @@ namespace ImageTagger.Database
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
-            if (info.LastQueriedCount == 0) info.LastQueriedCount = query.Count();
             info.Query = query;
             info.Results = query.Select(x => x.Hash);
         }
@@ -382,6 +382,7 @@ namespace ImageTagger.Database
             if (info is null) return Array.Empty<string>();
             string pageId = $"{info.Id}?{offset}?{limit}";
 
+            if (!queryHistory.ContainsKey(info.Id)) info.LastQueriedCount = 0; // reset count if new query
             if (HasPage(pageId, out string[] results) && !forceUpdate) return results;
 
             int desired_page = offset / Math.Max(1, limit);
@@ -396,7 +397,18 @@ namespace ImageTagger.Database
                 queryHistory[info.Id] = info;
             }
 
-            results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
+            if (info.Filtered && Global.Settings.PreferSpeed)
+                results = await Task.Run(() => info.Results?.Offset(modOffset).ToArray() ?? Array.Empty<string>());
+            else
+                results = await Task.Run(() => info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>());
+
+            // similarity tabs are forced to query all results, and they keep track of count themselves
+            if (info.QueryType != TabType.SIMILARITY)
+            {
+                if (!info.Filtered) info.LastQueriedCount = info.Success;
+                else if (Global.Settings.PreferSpeed) info.LastQueriedCount = results.Length;
+                else info.LastQueriedCount = info.Query.Count();
+            }
 
             string[] ret = Array.Empty<string>();
             if (results.Length > limit)

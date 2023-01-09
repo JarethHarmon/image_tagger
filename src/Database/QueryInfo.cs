@@ -33,6 +33,7 @@ namespace ImageTagger.Database
         internal Sort Sort { get; set; }
         internal Order Order { get; set; }
         internal SortSimilarity SortSimilarity { get; set; }
+        internal bool Filtered { get; set; }
 
         internal string SimilarityHash { get; set; }
         internal ulong AverageHash { get; set; }
@@ -80,6 +81,7 @@ namespace ImageTagger.Database
             Sort = Sort.HASH;
             Order = Order.ASCENDING;
             SortSimilarity = SortSimilarity.AVERAGE;
+            Filtered = false;
 
             MinSimilarity = 81.25f;
             BucketPrecision = 3;

@@ -50,7 +50,7 @@ namespace ImageTagger.Managers
 
             CallDeferred(nameof(Setup));
         }
-         
+
         public void UpdateTagsAll(string[] tagsAll)
         {
             currentQuery.TagsAll = tagsAll;
