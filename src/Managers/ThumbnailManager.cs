@@ -133,7 +133,15 @@ namespace ImageTagger.Managers
 
         public void QueryDatabaseGD(bool forceUpdate = false)
         {
-            _ = Task.Run(() => QueryDatabase(forceUpdate));
+            var info = currentQuery.Clone();
+            info.LastQueriedCount = -1;
+            string queryId = info.CalcId();
+
+            string pageId = $"{queryId}?{offset}?{Global.Settings.MaxImagesPerPage}";
+            currentPageId = pageId;
+            Querier.CurrentId = pageId;
+
+            _ = Task.Run(() => QueryDatabase(info, pageId, forceUpdate));
         }
 
         private sealed class ThumbnailTask
@@ -150,64 +158,63 @@ namespace ImageTagger.Managers
             }
         }
 
-        private async Task QueryDatabase(bool forceUpdate=false)
+        private async Task QueryDatabase(QueryInfo info, string pageId, bool forceUpdate=false)
         {
             buffer.Show();
             thumbnailPath = Global.GetThumbnailPath();
             if (thumbnailPath is null) return;
-            currentQuery.Query = DatabaseAccess.GetImageInfoQuery();
-            currentQuery.CalcId();
-            string tmp = $"{currentQuery.Id}?{offset}?{Global.Settings.MaxImagesPerPage}";
-            currentPageId = tmp;
-            Querier.CurrentId = tmp;
 
-            var now = DateTime.Now;
-            string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
-            Console.WriteLine((DateTime.Now - now).ToString());
+            //var now = DateTime.Now;
+            string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
+            //string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
+            //Console.WriteLine((DateTime.Now - now).ToString());
 
-            // temporary fix until I rewrite selection logic in csharp
-            list.Set("current_hashes", results);
-
-            int queriedImageCount = Querier.GetLastQueriedCount(currentQuery.Id);
-            int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
-
-            signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
-            signals.Call("emit_signal", "image_count_changed", queriedImageCount);
-
-            SetupList(results.Length, tmp);
-            await LoadThumbnails(results, tmp);
-            buffer.Hide();
-        }
-
-        private void SetupList(int size, string id)
-        {
-            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
-            lock (locker) list.Clear();
-
-            if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
             lock (locker)
             {
+                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+                int queriedImageCount = Querier.GetLastQueriedCount(pageId);
+                int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
+                signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
+                signals.Call("emit_signal", "image_count_changed", queriedImageCount);
+
+                // temporary fix until I rewrite selection logic in csharp
+                list.Set("current_hashes", results);
+            }
+
+            SetupList(results.Length, pageId);
+            await LoadThumbnails(results, pageId);
+            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
+                buffer.Hide();
+        }
+
+        private void SetupList(int size, string pageId)
+        {
+            lock (locker)
+            {
+                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+                list.Clear();
+
                 for (int i = 0; i < size; i++)
                 {
                     list.AddIconItem(bufferingIcon);
                 }
+                // set scroll value for tab
             }
-
-            // set scroll value for tab
         }
 
-        private async Task LoadThumbnails(string[] hashes, string id)
+        private async Task LoadThumbnails(string[] hashes, string pageId)
         {
-            var tasks = new ActionBlock<ThumbnailTask>(x => LoadThumbnail(x));
+            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
 
+            var tasks = new ActionBlock<ThumbnailTask>(x => LoadThumbnail(x));
             for (int i = 0; i < hashes.Length; i++)
             {
-                tasks.Post(new ThumbnailTask(id, hashes[i], i));
+                tasks.Post(new ThumbnailTask(pageId, hashes[i], i));
             }
 
             try
             {
-                if (!currentPageId.Equals(id, StringComparison.InvariantCultureIgnoreCase)) return;
+                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
                 tasks.Complete();
                 await tasks.Completion;
             }
@@ -270,20 +277,19 @@ namespace ImageTagger.Managers
 
         private bool ThreadsafeSetIcon(ThumbnailTask x, bool failed=false)
         {
-            Godot.ImageTexture icon = null;
             lock (locker)
             {
+                Godot.ImageTexture icon = null;
                 if (failed) icon = failedIcon;
                 else thumbnailHistory.TryGetValue(x.Hash, out icon);
-            }
-            if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
-            if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-            lock (locker) list.SetItemIcon(x.Index, icon);
+                if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
-            var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
-            lock (locker)
-            {
+                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
+                list.SetItemIcon(x.Index, icon);
+
+                var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
+                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
                 if (tabInfo.TabType == TabType.SIMILARITY)
                 {
                     switch (Global.Settings.CurrentSortSimilarity)
@@ -295,8 +301,8 @@ namespace ImageTagger.Managers
                         default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                     }
                 }
+                return true;
             }
-            return true;
         }
 
         /*=========================================================================================

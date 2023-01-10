@@ -160,7 +160,7 @@ namespace ImageTagger.Database
             return CalcHashFromString(string.Concat(list));
         }
 
-        internal void CalcId()
+        internal string CalcId()
         {
             Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}",
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
@@ -168,6 +168,42 @@ namespace ImageTagger.Database
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success,
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
             ));
+            return Id;
+        }
+
+        internal QueryInfo Clone()
+        {
+            QueryInfo queryInfo = this;
+            return new QueryInfo
+            {
+                Id = queryInfo.Id,
+                ImportId = queryInfo.ImportId,
+                GroupId = queryInfo.GroupId,
+
+                TagsAll = queryInfo.TagsAll,
+                TagsAny = queryInfo.TagsAny,
+                TagsNone = queryInfo.TagsNone,
+                TagsComplex = queryInfo.TagsComplex,
+
+                QueryType = queryInfo.QueryType,
+                Sort = queryInfo.Sort,
+                Order = queryInfo.Order,
+                SortSimilarity = queryInfo.SortSimilarity,
+                Filtered = queryInfo.Filtered,
+
+                SimilarityHash = queryInfo.SimilarityHash,
+                AverageHash = queryInfo.AverageHash,
+                DifferenceHash = queryInfo.DifferenceHash,
+                PerceptualHash = queryInfo.PerceptualHash,
+                WaveletHash = queryInfo.WaveletHash,
+                MinSimilarity = queryInfo.MinSimilarity,
+                BucketPrecision = queryInfo.BucketPrecision,
+
+                // numerical
+
+                Success = queryInfo.Success,
+                LastQueriedCount = -1,
+            };
         }
     }
 }
