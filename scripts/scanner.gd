@@ -81,7 +81,7 @@ func _thread() -> void:
 	while not scan_queue.empty():
 		var scan:Array = scan_queue.pop_front()
 		ScanManager.SetRecursive(scan[1])
-		image_count += ScanManager.ScanFolder(scan[0])#, scan[1], import_id)
+		image_count = ScanManager.ScanFolder(scan[0])#, scan[1], import_id)
 		# there will only every be one scan im progress/waiting to import at a time
 		# need to store the count and the array of found paths globally somewhere
 		# need to display array of found paths to user (in item list)
@@ -110,7 +110,7 @@ func _folder_selected(folder:String) -> void: queue_append(folder, recursively.p
 # should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
-	image_count += ScanManager.ScanFiles(files)#, import_id)
+	image_count = ScanManager.ScanFiles(files)#, import_id)
 	#var paths_sizes:Array = ImageScanner.GetPathsSizes()
 	#create_item_lists(paths_sizes)
 

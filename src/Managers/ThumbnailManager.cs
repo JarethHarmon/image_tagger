@@ -166,7 +166,6 @@ namespace ImageTagger.Managers
 
             //var now = DateTime.Now;
             string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
-            //string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             //Console.WriteLine((DateTime.Now - now).ToString());
 
             SetupList(results.Length, pageId, results);
