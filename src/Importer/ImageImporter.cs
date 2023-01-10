@@ -8,7 +8,7 @@ namespace ImageTagger.Importer
     internal sealed class ImageImporter
     {
         private const int MAX_BYTES_FOR_APNG_CHECK = 256;
-        private const string acTL = "acTL";
+        private const string acTL = "6163544C";
 
         /*=========================================================================================
 									         Initialization
@@ -325,6 +325,7 @@ namespace ImageTagger.Importer
                 if (bytesRead < MAX_BYTES_FOR_APNG_CHECK) return false;
 
                 string hex = BitConverter.ToString(data).Replace("-", string.Empty);
+
                 if (hex?.Equals(string.Empty) ?? true) return false;
                 return hex.Contains(acTL);
             }

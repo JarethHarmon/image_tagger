@@ -415,7 +415,7 @@ func _thread(args:Array) -> void:
 		create_current_image(thread_id, i, path, image_hash)
 	elif actual_format == Globals.ImageType.APNG: 
 		animation_mode = true
-		var err:int = ImportManager.LoadAPng(path, image_hash)
+		var err:int = ImportManager.LoadApng(path, image_hash)
 	elif actual_format == Globals.ImageType.GIF: 
 		animation_mode = true
 		var err:int = ImportManager.LoadGif(path, image_hash)
