@@ -317,6 +317,10 @@ func _thread(args:Array) -> void:
 		if rx > 0: ncols += 1
 		if ry > 0: nrows += 1
 		
+		var smooth:bool = Global.GetUseSmoothPixel()
+		var filter:bool = Global.GetUseImageFilter()
+		var _material = smooth_pixel if (smooth and filter) else null 
+		
 		for y in nrows:
 			for x in ncols:
 				var _dimensions:Vector2 = im_dimensions
@@ -326,6 +330,7 @@ func _thread(args:Array) -> void:
 					_dimensions.y = ry
 					
 				var ima = display_image.instance()
+				ima.set_material(_material)
 				tiled_image.add_child(ima)
 				ima.rect_size = _dimensions
 				# - x and - y shift the images over by 1*(x || y) pixel to prevent godot's rendering issues from causing gaps
@@ -521,15 +526,22 @@ func calc_relative_size(size1:Vector2, size2:Vector2) -> Vector2:
 # need to update settings dictionary here as well
 func _on_smooth_pixel_toggled(button_pressed:bool) -> void:
 	Global.SetUseSmoothPixel(button_pressed)
-	if button_pressed and Global.GetUseImageFilter(): preview_image.set_material(smooth_pixel)
-	else: preview_image.set_material(null)
+	if button_pressed and Global.GetUseImageFilter(): 
+		preview_image.set_material(smooth_pixel)
+		for rect in tiled_image.get_children(): rect.set_material(smooth_pixel)
+	else: 
+		preview_image.set_material(null)
+		for rect in tiled_image.get_children(): rect.set_material(null)
 	
 func _on_filter_toggled(button_pressed:bool) -> void:
 	Global.SetUseImageFilter(button_pressed)
 	if button_pressed: smooth_pixel_button.disabled = false
 	else: smooth_pixel_button.disabled = true
-	#_on_smooth_pixel_toggled(smooth_pixel_button.pressed)
-	change_filter()
+
+	var flags:int = 4 if button_pressed else 0
+	preview_image.texture.flags = flags
+	for image in animation_images: image.flags = flags
+	for rect in tiled_image.get_children(): rect.texture.flags = flags
 	
 func _on_fxaa_toggled(button_pressed:bool) -> void: 
 	Global.SetUseFXAA(button_pressed)
@@ -601,7 +613,9 @@ func add_large_image_section(texture:ImageTexture, image_hash:String, grid_index
 	
 	animation_mutex.lock()
 	var section:TextureRect = tiled_image.get_child(grid_index)
-	if section != null: section.texture = texture
+	if section != null: 
+		texture.flags = 4 if Global.GetUseImageFilter() else 0
+		section.texture = texture
 	animation_mutex.unlock()
 
 func update_animation(new_image:bool=false) -> void:
