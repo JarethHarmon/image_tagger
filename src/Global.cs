@@ -113,9 +113,6 @@ namespace ImageTagger
         public int Setup(string executablePath)
         {
             Settings = Settings.LoadFromJsonFile();
-            var result = DatabaseAccess.Create();
-            if (result != Error.OK) return (int)result;
-
             try
             {
                 System.IO.Directory.CreateDirectory(GetMetadataPath());
@@ -125,6 +122,9 @@ namespace ImageTagger
             {
                 return (int)Error.IO;
             }
+
+            var result = DatabaseAccess.Create();
+            if (result != Error.OK) return (int)result;
 
             result = DatabaseAccess.Setup();
             if (result != Error.OK) return (int)result;
