@@ -165,6 +165,8 @@ namespace ImageTagger.Managers
             if (thumbnailPath is null) return;
 
             //var now = DateTime.Now;
+            System.Threading.Thread.Sleep(100);
+            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
             string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             //Console.WriteLine((DateTime.Now - now).ToString());
 
