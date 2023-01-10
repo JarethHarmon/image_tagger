@@ -65,6 +65,31 @@ namespace ImageTagger.Database
 
         // numerical condition functions
 
+        // I imagine the UI for creating this array as a container with a dropdown and add button next to it
+        //  user selects the types they want to show up from the dropdown, click Add button, and then it adds
+        //  the index to the array and adds a little node that shows the name to the container; then the user
+        //  can select it and delete it (like tag container); it will also automatically prevent duplicates;
+        //  there will also be grouped options available (large/static/animated)
+        private static void AddImageTypeFilter(QueryInfo info, ImageType[] types)
+        {
+            if (types.Length == 0) return;
+            info.Filtered = true;
+
+            if (types.Length == 1)
+            {
+                info.Query = info.Query.Where(x => x.ImageType == types[0]);
+            }
+            else
+            {
+                var list = new List<BsonExpression>();
+                foreach (ImageType _type in types)
+                {
+                    list.Add(Query.EQ("$.ImageType", (BsonValue)_type.ToString()));
+                }
+                info.Query = info.Query.Where(Query.Or(list.ToArray()));
+            }
+        }
+
         private static bool HasPage(string pageId, out Page page)
         {
             if (pageHistory.TryGetValue(pageId, out page)) return true;
@@ -104,6 +129,8 @@ namespace ImageTagger.Database
             // not sure if these are best to have as first filter or not
             if (!info.ImportId.Equals(Global.ALL)) query = query.Where(x => x.Imports.Contains(info.ImportId));
             if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
+
+            //AddImageTypeFilter(info, new ImageType[2] { ImageType.APNG, ImageType.GIF });
 
             // apply filters
             // these will also need to set info.Filtered if any are active (ideally this will be done automatically when they change)
@@ -211,9 +238,10 @@ namespace ImageTagger.Database
 
             if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0)
             {
-                info.Filtered = true;
+                return;
             }
 
+            info.Filtered = true;
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
             if (info.TagsAny?.Length > 0) query = query.Where("$.Tags ANY IN @0", BsonMapper.Global.Serialize(info.TagsAny));
             if (info.TagsNone?.Length > 0) query = query.Where("($.Tags[*] ANY IN @0) != true", BsonMapper.Global.Serialize(info.TagsNone));
