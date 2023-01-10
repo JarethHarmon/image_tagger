@@ -184,6 +184,31 @@ namespace ImageTagger.Importer
             }
         }
 
+        internal static (PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColorsOther(string imagePath, string thumbPath, int thumbSize)
+        {
+            try
+            {
+                var image = new MagickImage(imagePath);
+
+                // to avoid wasting more time on broken images, this should only check relevant images
+                // another option is to use the file extension, but that is obviously less reliable
+                if (image.Format != MagickFormat.Heic) return (new PerceptualHashes(), new ColorBuckets());
+
+                image.Strip();
+                image.Thumbnail(thumbSize, thumbSize);
+                //image.Resize(thumbSize, thumbSize);
+                image.Format = MagickFormat.WebP;
+                image.Write(thumbPath);
+
+                return GetPerceptualHashesAndColors(thumbPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return (new PerceptualHashes(), new ColorBuckets());
+            }
+        }
+
         /*=========================================================================================
 									                IO
         =========================================================================================*/

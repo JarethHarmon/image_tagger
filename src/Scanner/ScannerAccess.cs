@@ -12,7 +12,7 @@ namespace ImageTagger.Scanner
 
     internal sealed class ScannerAccess
     {
-        private readonly static HashSet<string> extensionsToImport = new HashSet<string> { ".png", ".jpeg", ".jpg", ".jfif", ".apng", ".gif", ".webp", ".bmp" };
+        private readonly static HashSet<string> extensionsToImport = new HashSet<string> { ".png", ".jpeg", ".jpg", ".jfif", ".apng", ".gif", ".webp", ".bmp", ".heic" };
         private readonly static List<string> blacklistedFolders = new List<string> { "SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN", "TEMP_DELETION" };
         private readonly static Dictionary<string, HashSet<string>> tempPaths = new Dictionary<string, HashSet<string>>();
 

@@ -304,10 +304,17 @@ namespace ImageTagger.Managers
             if (!ImageImporter.FileExists(thumbPath))
             {
                 thumbnailExisted = false;
-                (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
+                // will need to check other types that require imageMagick here as well
+                if (System.IO.Path.GetExtension(imagePath).Equals(".heic", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColorsOther(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
+                }
+                else
+                {
+                    (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
+                }
                 if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath))
                 {
-                    Console.WriteLine("file path or diff hash");
                     return ImportStatus.FAILED;
                 }
             }

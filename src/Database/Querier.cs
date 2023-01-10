@@ -432,6 +432,13 @@ namespace ImageTagger.Database
                     case Sort.LIGHT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Light) : query.OrderByDescending(x => x.Light); break;
                     case Sort.DARK: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Dark) : query.OrderByDescending(x => x.Dark); break;
                     case Sort.ALPHA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Alpha) : query.OrderByDescending(x => x.Alpha); break;
+                    case Sort.DARK_LIGHT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Light * x.Dark) : query.OrderByDescending(x => x.Light * x.Dark); break;
+                    case Sort.ORANGE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Red) : query.OrderByDescending(x => x.Yellow * x.Red); break;
+                    case Sort.PURPLE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Fuchsia) : query.OrderByDescending(x => x.Blue * x.Fuchsia); break;
+                    case Sort.LIME: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Green) : query.OrderByDescending(x => x.Yellow * x.Green); break;
+                    case Sort.AQUAMARINE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Cyan * x.Green) : query.OrderByDescending(x => x.Cyan * x.Green); break;
+                    case Sort.TEAL: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Cyan) : query.OrderByDescending(x => x.Blue * x.Cyan); break;
+                    case Sort.HOT_PINK: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Red * x.Fuchsia) : query.OrderByDescending(x => x.Red * x.Fuchsia); break;
                     case Sort.RANDOM:
                         query = query.OrderBy("RANDOM()");
                         info.ResultsRandom = query.ToEnumerable().Select(x => x.Hash);
