@@ -1,4 +1,6 @@
 using Godot;
+using ImageTagger.Database;
+using ImageTagger.Importer;
 using System;
 using System.Security.Cryptography;
 
@@ -24,6 +26,9 @@ namespace ImageTagger
     {
         public const string ALL = "All";
         public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
+
+        internal static string currentTabId = ALL;
+        public static void SetCurrentTabId(string id) { currentTabId = id; }
 
         // I hope to find a better solution eventually, Godot is convinced that Settings is null, even if I make it not static
         public static Settings Settings;
@@ -105,14 +110,24 @@ namespace ImageTagger
             3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
         };
 
-        public void Setup()
+        public int Setup(string executablePath)
         {
             Settings = Settings.LoadFromJsonFile();
+            var result = DatabaseAccess.Create();
+            if (result != Error.OK) return (int)result;
+
+            result = DatabaseAccess.Setup();
+            if (result != Error.OK) return (int)result;
+
+            result = ImageImporter.StartPython(executablePath);
+            return (int)result;
         }
 
-        public void SaveSettings()
+        public void Shutdown()
         {
             Settings.Save();
+            DatabaseAccess.Shutdown();
+            ImageImporter.Shutdown();
         }
 
         internal static int CountBits(ulong hash)

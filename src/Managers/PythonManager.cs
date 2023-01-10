@@ -6,7 +6,7 @@ namespace ImageTagger.Managers
     // also this does get added to the scene tree, but should do so itself instead of always being in the scene tree
     public sealed class PythonManager : Node
     {
-        private ImportManager importer;
+        private readonly ImportManager importer;
         public PythonManager()
         {
             var mainloop = Engine.GetMainLoop();

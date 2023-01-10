@@ -8,8 +8,7 @@ namespace ImageTagger.Metadata
 {
     internal sealed class TabInfoAccess
     {
-        private static Dictionary<string, TabInfo> dictTabInfo = new Dictionary<string, TabInfo>();
-
+        private readonly static Dictionary<string, TabInfo> dictTabInfo = new Dictionary<string, TabInfo>();
 
         /* ===================================================================================
                                                 Manage 
@@ -45,7 +44,6 @@ namespace ImageTagger.Metadata
             dictTabInfo.Remove(id);
             DatabaseAccess.DeleteTabInfo(id);
         }
-
 
         /* ===================================================================================
                                               Get Info 

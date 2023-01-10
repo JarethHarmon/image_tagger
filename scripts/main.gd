@@ -15,14 +15,11 @@ func _notification(what) -> void:
 	if what == MainLoop.NOTIFICATION_WM_QUIT_REQUEST or what == MainLoop.NOTIFICATION_CRASH or what == MainLoop.NOTIFICATION_WM_GO_BACK_REQUEST:
 		quitting = true
 		OS.set_window_minimized(true)
-		thumbnails.stop_thumbnail_threads()
 		importer.cancel_all()
 		importer.cancel_manager()
 		importer.cancel_IS_thread()
 		previewer.stop_threads()
-		Global.SaveSettings()
-		DatabaseManager.Shutdown()
-		ImportManager.Shutdown()		
+		Global.Shutdown()		
 		print_debug("exiting program")
 		get_tree().quit()
 
@@ -32,9 +29,10 @@ func _ready() -> void:
 	get_viewport().transparent_bg = true
 	var dir:Directory = Directory.new()
 
-	Global.Setup()
+	if Global.Setup(Globals._get_program_directory()) != Globals.Error.OK: _notification(NOTIFICATION_WM_QUIT_REQUEST)
 	Signals.emit_signal("settings_loaded") 
-
+	Signals.emit_signal("import_info_load_finished") # consider changing to "setup_finished"
+	
  # make and set default metadata folder
 	var metadata_path:String = Global.GetMetadataPath()
 	if (dir.make_dir_recursive(metadata_path) != OK): return
@@ -48,8 +46,3 @@ func _ready() -> void:
 	for hex1 in arr:
 		for hex2 in arr:
 			dir.make_dir_recursive(thumbnail_path.plus_file(hex1 + hex2 + "/"))
-	
- # create database
-	if DatabaseManager.Create() != Globals.Error.OK: _notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-	Signals.emit_signal("import_info_load_finished") # consider changing to "setup_finished"
-	ImportManager.StartPython(Globals._get_program_directory())

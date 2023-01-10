@@ -55,10 +55,10 @@ namespace ImageTagger.Core
 
         public void Merge(ImageInfo other)
         {
-            this.Paths.UnionWith(other.Paths);
-            this.Imports.UnionWith(other.Imports);
-            this.Groups.UnionWith(other.Groups);
-            this.Tags = this.Tags.Union(other.Tags).ToArray();
+            Paths.UnionWith(other.Paths);
+            Imports.UnionWith(other.Imports);
+            Groups.UnionWith(other.Groups);
+            Tags = Tags.Union(other.Tags).ToArray();
         }
     }
 }

@@ -1,6 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ImageTagger.Metadata;
 using LiteDB;
 
 namespace ImageTagger.Database
@@ -13,12 +16,31 @@ namespace ImageTagger.Database
         public List<Dictionary<ExpressionType, HashSet<string>>> Complex;
     }
 
+    internal sealed class Page
+    {
+        internal int TotalQueriedCount { get; set; }
+        internal string[] Hashes { get; set; }
+
+        internal Page()
+        {
+            TotalQueriedCount = -1;
+            Hashes = Array.Empty<string>();
+        }
+
+        internal Page(int count, string[] hashes)
+        {
+            TotalQueriedCount = count;
+            Hashes = hashes;
+        }
+    }
+
     internal sealed class Querier
     {
-        private static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
-        private static Queue<string> queryHistoryQueue = new Queue<string>();
-        private static Dictionary<string, string[]> pageHistory = new Dictionary<string, string[]>();
-        private static Queue<string> pageHistoryQueue = new Queue<string>();
+        private readonly static Dictionary<string, QueryInfo> queryHistory = new Dictionary<string, QueryInfo>();
+        private readonly static Queue<string> queryHistoryQueue = new Queue<string>();
+        private readonly static Dictionary<string, Page> pageHistory = new Dictionary<string, Page>();
+        private readonly static Queue<string> pageHistoryQueue = new Queue<string>();
+        public static string CurrentId { get; set; }
 
         private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
@@ -43,19 +65,19 @@ namespace ImageTagger.Database
 
         // numerical condition functions
 
-        private static bool HasPage(string pageId, out string[] results)
+        private static bool HasPage(string pageId, out Page page)
         {
-            if (pageHistory.TryGetValue(pageId, out results)) return true;
-            results = Array.Empty<string>();
+            if (pageHistory.TryGetValue(pageId, out page)) return true;
+            page = new Page();
             return false;
         }
 
-        private static void ManagePage(string pageId, string[] results)
+        private static void ManagePage(string pageId, Page page)
         {
             if (pageHistoryQueue.Count == Global.Settings.MaxPagesToStore)
                 pageHistory.Remove(pageHistoryQueue.Dequeue());
             pageHistoryQueue.Enqueue(pageId);
-            pageHistory[pageId] = results;
+            pageHistory[pageId] = page;
         }
 
         private static bool ManageQuery(ref QueryInfo info)
@@ -84,6 +106,7 @@ namespace ImageTagger.Database
             if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
 
             // apply filters
+            // these will also need to set info.Filtered if any are active (ideally this will be done automatically when they change)
 
             info.Query = query;
         }
@@ -167,16 +190,10 @@ namespace ImageTagger.Database
             }
 
             // consider usage of GC.Collect();
-            _All = null;
-            _None = null;
 
             all = All.ToArray();
             any = Any.ToArray();
             none = None.ToArray();
-
-            All = null;
-            Any = null;
-            None = null;
 
             return new TagConditions
             {
@@ -192,12 +209,9 @@ namespace ImageTagger.Database
             var query = info.Query;
             if (query is null) return;
 
-            // this block is almost pointless now; basic idea is to just look up the actual count if there are no filters applied, but
-            // that requires checking that info in numerical filters as well (and keeping track of it);; no issues for now because the 
-            // filtering UI is only implemented for tags, but I will need to fix this in the future
             if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0)
             {
-                info.LastQueriedCount = info.Success;
+                info.Filtered = true;
             }
 
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
@@ -231,22 +245,28 @@ namespace ImageTagger.Database
             info.Query = query;
         }
 
-        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit)
+        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info?.Query is null) return Array.Empty<string>();
             var query = info.Query;
             var results = Enumerable.Empty<SimilarityQueryResult>();
+            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
 
             if (info.SortSimilarity == SortSimilarity.AVERAGED)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Wavelet = x.WaveletHash,
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
                     Perceptual = x.PerceptualHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results) // results is empty on new que
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
@@ -258,11 +278,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.AVERAGE)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Average = x.AverageHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     float temp = Global.CalcHammingSimilarity(info.AverageHash, result.Average) / 100;
@@ -271,11 +296,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.WAVELET)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Wavelet = x.WaveletHash
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
@@ -283,11 +313,16 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.DIFFERENCE)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Difference = x.DifferenceHash,
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
@@ -295,33 +330,42 @@ namespace ImageTagger.Database
             }
             else if (info.SortSimilarity == SortSimilarity.PERCEPTUAL)
             {
-                results = query.Select(x => new SimilarityQueryResult
+                var tmp = query.Select(x => new SimilarityQueryResult
                 {
                     Hash = x.Hash,
                     Perceptual = x.PerceptualHash
-                }).ToArray();
+                });
+
+                Thread.Sleep(100);
+                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
                 foreach (var result in results)
                 {
                     result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
                 }
             }
-            else return Array.Empty<string>();
+            else
+            {
+                return Array.Empty<string>();
+            }
 
             var _results = results.Where(x => x.Similarity > info.MinSimilarity)
                 .OrderByDescending(x => x.Similarity)
                 .Select(x => x.Hash)
                 .Skip(offset)
-                .Take(limit)
+                .Take(limit) // consider removing/increasing this limit
                 .ToArray();
 
             info.LastQueriedCount = _results.Length;
             return _results;
         }
 
-        private static void OrderSortQuery(QueryInfo info, int offset, int limit, bool countResults)
+        private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info.Query is null) return;
             var query = info.Query;
+
             if (info.QueryType == TabType.DEFAULT)
             {
                 switch (info.Sort)
@@ -371,53 +415,92 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.SIMILARITY)
             {
-                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit));
+                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
-            if (info.LastQueriedCount == 0 && countResults) info.LastQueriedCount = query.Count();
             info.Query = query;
             info.Results = query.Select(x => x.Hash);
         }
 
-        internal static string[] QueryDatabase(QueryInfo info, int offset, int limit, bool countResults=false)
+        internal static async Task<string[]> QueryDatabase(QueryInfo info, int offset, int limit, bool forceUpdate)
         {
             if (info is null) return Array.Empty<string>();
             string pageId = $"{info.Id}?{offset}?{limit}";
 
-            if (HasPage(pageId, out string[] results)) return results;
+            if (HasPage(pageId, out Page page) && !forceUpdate)
+                return page.Hashes;
 
             int desired_page = offset / Math.Max(1, limit);
             int modOffset = Math.Max(0, offset - (limit * Global.Settings.MaxExtraQueriedPages));
             int modLimit = limit * (desired_page + Global.Settings.MaxExtraQueriedPages);
 
-            if (ManageQuery(ref info))
+            if (ManageQuery(ref info) || forceUpdate)
             {
+                info.Query = DatabaseAccess.GetImageInfoQuery();
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, modOffset, modLimit, countResults);
+                OrderSortQuery(info, modOffset, modLimit, pageId);
                 queryHistory[info.Id] = info;
             }
 
-            if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
+            Thread.Sleep(50);
+            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+
+            if (info.Filtered && Global.Settings.PreferSpeed)
             {
-                results = info.ResultsRandom?.Skip(modOffset).Take(modLimit).ToArray() ?? Array.Empty<string>();
+                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
+                {
+                    page.Hashes = await Task.Run(() => info.ResultsRandom?
+                        .Skip(modOffset)
+                        .Take(limit * Global.Settings.MaxPagesToStore)
+                        .ToArray() ?? Array.Empty<string>());
+                }
+                else
+                {
+                    page.Hashes = await Task.Run(() => info.Results?
+                        .Offset(modOffset)
+                        .Limit(limit * Global.Settings.MaxPagesToStore)
+                        .ToArray() ?? Array.Empty<string>());
+                }
             }
             else
             {
-                results = info.Results?.Offset(modOffset).Limit(modLimit).ToArray() ?? Array.Empty<string>();
+                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
+                {
+                    page.Hashes = await Task.Run(() => info.ResultsRandom?
+                        .Skip(modOffset)
+                        .Take(modLimit)
+                        .ToArray() ?? Array.Empty<string>());
+                }
+                else
+                {
+                    page.Hashes = await Task.Run(() => info.Results?
+                        .Offset(modOffset)
+                        .Limit(modLimit)
+                        .ToArray() ?? Array.Empty<string>());
+                }
+            }
+
+            // similarity tabs are forced to query all results, and they keep track of count themselves
+            if (info.QueryType != TabType.SIMILARITY)
+            {
+                if (!info.Filtered) info.LastQueriedCount = info.Success;
+                else if (Global.Settings.PreferSpeed) info.LastQueriedCount = page.Hashes.Length;
+                else if (info.LastQueriedCount == -1) info.LastQueriedCount = info.Query.Count();
+                queryHistory[info.Id] = info;
             }
 
             string[] ret = Array.Empty<string>();
-            if (results.Length > limit)
+            if (page.Hashes.Length > limit)
             {
-                for (int i = 0; i < results.Length; i += limit)
+                for (int i = 0; i < page.Hashes.Length; i += limit)
                 {
-                    string _pageId = $"{info.Id}?{modOffset + i}?{limit}";
-                    if (pageHistory.ContainsKey(_pageId)) continue;
-                    string[] newArr = new string[Math.Min(limit, results.Length - i)];
-                    Array.Copy(results, i, newArr, 0, newArr.Length);
-                    ManagePage(_pageId, newArr);
+                    string _pageId = $"{info.Id}?{modOffset+i}?{limit}";
+                    if (pageHistory.ContainsKey(_pageId) && !forceUpdate) continue;
+                    string[] newArr = new string[Math.Min(limit, page.Hashes.Length - i)];
+                    Array.Copy(page.Hashes, i, newArr, 0, newArr.Length);
+                    ManagePage(_pageId, new Page(info.LastQueriedCount, newArr));
                     if (i == offset)
                     {
                         ret = newArr;
@@ -426,8 +509,8 @@ namespace ImageTagger.Database
             }
             else
             {
-                ManagePage(pageId, results);
-                return results;
+                ManagePage(pageId, new Page(info.LastQueriedCount, page.Hashes));
+                return page.Hashes;
             }
 
             return ret;
@@ -435,11 +518,11 @@ namespace ImageTagger.Database
 
         internal static int GetLastQueriedCount(string id)
         {
-            if (queryHistory.TryGetValue(id, out var info))
+            if (pageHistory.TryGetValue(id, out var page))
             {
-                return info.LastQueriedCount;
+                return page.TotalQueriedCount;
             }
-            return 0;
+            return -1;
         }
     }
 }

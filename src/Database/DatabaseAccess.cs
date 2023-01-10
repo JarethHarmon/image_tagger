@@ -28,6 +28,9 @@ namespace ImageTagger.Database
                 colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
 
+                colImageInfo.EnsureIndex(x => x.Imports);
+                colImageInfo.EnsureIndex(x => x.Tags);
+
                 return Error.OK;
             }
             catch
@@ -56,25 +59,6 @@ namespace ImageTagger.Database
         {
             dbImageInfo?.Dispose();
             dbImportInfo?.Dispose();
-        }
-
-        internal static void Transaction(IEnumerable<ImportInfo> imports, IEnumerable<ImageInfo> images, string sectionId)
-        {
-            try
-            {
-                dbImageInfo?.BeginTrans();
-                dbImportInfo?.BeginTrans();
-                UpdateImportInfo(imports);
-                UpsertImageInfo(images);
-                DeleteImportSection(sectionId);
-                dbImportInfo?.Commit();
-                dbImageInfo?.Commit();
-            }
-            catch
-            {
-                dbImageInfo?.Rollback();
-                dbImportInfo?.Rollback();
-            }
         }
 
         /* ===================================================================================

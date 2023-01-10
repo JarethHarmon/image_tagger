@@ -11,6 +11,13 @@ namespace ImageTagger.Managers
         /*=========================================================================================
                                                  ImageInfo
         =========================================================================================*/
+        public bool IncorrectImage(string hash)
+        {
+            string _hash = ImageInfoAccess.GetCurrentHash();
+            if (_hash.Equals(string.Empty)) return true;
+            return !hash.Equals(_hash, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public void LoadCurrentImageInfo(string hash)
         {
             ImageInfoAccess.SetCurrentImageInfo(hash);

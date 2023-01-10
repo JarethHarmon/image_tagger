@@ -83,9 +83,8 @@ namespace ImageTagger.Metadata
             if (hashes.Length == 0 || tags.Length == 0) return;
             var _hashes = new HashSet<string>(hashes);
 
-            if (currentImageInfo != null)
-                if (_hashes.Contains(currentImageInfo.Hash))
-                    currentImageInfo.Tags = currentImageInfo.Tags.Union(tags).ToArray();
+            if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
+                currentImageInfo.Tags = currentImageInfo.Tags.Union(tags).ToArray();
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)
@@ -99,9 +98,8 @@ namespace ImageTagger.Metadata
             if (hashes.Length == 0 || tags.Length == 0) return;
             var _hashes = new HashSet<string>(hashes);
 
-            if (currentImageInfo != null)
-                if (_hashes.Contains(currentImageInfo.Hash))
-                    currentImageInfo.Tags = currentImageInfo.Tags.Except(tags).ToArray();
+            if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
+                currentImageInfo.Tags = currentImageInfo.Tags.Except(tags).ToArray();
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)

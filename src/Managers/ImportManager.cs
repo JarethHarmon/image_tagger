@@ -12,27 +12,17 @@ namespace ImageTagger.Managers
     {
         private const int BULK_IMPORT_SIZE = 100;
         public Node signals, globals;
-        public DatabaseManager dbm;
+        public MetadataManager mdm;
 
         private static readonly object locker = new object();
-        private Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
+        private readonly Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
         private readonly Godot.File file = new Godot.File();
 
         public override void _Ready()
         {
             globals = GetNode<Node>("/root/Globals");
             signals = GetNode<Node>("/root/Signals");
-            dbm = GetNode<DatabaseManager>("/root/DatabaseManager");
-        }
-
-        public void StartPython(string executablePath)
-        {
-            ImageImporter.StartPython(executablePath);
-        }
-
-        public void Shutdown()
-        {
-            ImageImporter.Shutdown();
+            mdm = GetNode<MetadataManager>("/root/MetadataManager");
         }
 
         /*=========================================================================================
@@ -53,22 +43,26 @@ namespace ImageTagger.Managers
             return image;
         }
 
-        public void LoadGif(string path, string hash)
+        public int LoadGif(string path, string hash)
         {
-            Error error = ImageImporter.LoadGif(path, hash);
+            var error = ImageImporter.LoadGif(path, hash);
             signals.Call("emit_signal", "finish_animation", hash);
+            return (int)error;
         }
 
-        public void LoadApng(string path, string hash)
+        public int LoadApng(string path, string hash)
         {
-            Error error = ImageImporter.LoadApng(path, hash);
+            var error = ImageImporter.LoadApng(path, hash);
             signals.Call("emit_signal", "finish_animation", hash);
+            return (int)error;
         }
 
-        public void LoadLargeImage(string path, string hash, int columns, int rows)
+        public int LoadLargeImage(string path, string hash, int columns, int rows)
         {
-            Error error = ImageImporter.LoadLargeImage(path, hash, columns, rows);
+            currentGridIndex = 0;
+            var error = ImageImporter.LoadLargeImage(path, hash, columns, rows);
             signals.Call("emit_signal", "finish_large_image", hash);
+            return (int)error;
         }
 
         /*=========================================================================================
@@ -76,7 +70,7 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         internal bool StopLoading(string hash)
         {
-            return dbm.IncorrectImage(hash);
+            return mdm.IncorrectImage(hash);
         }
 
         private bool frameOne = true;
@@ -147,16 +141,26 @@ namespace ImageTagger.Managers
                     info.Success++;
                     allInfo.Success++;
                 }
-                else if (result == ImportStatus.DUPLICATE) info.Duplicate++;
-                else if (result == ImportStatus.IGNORED) info.Ignored++;
-                else info.Failed++;
+                else if (result == ImportStatus.DUPLICATE)
+                {
+                    info.Duplicate++;
+                }
+                else if (result == ImportStatus.IGNORED)
+                {
+                    info.Ignored++;
+                }
+                else
+                {
+                    info.Failed++;
+                }
+
                 info.Processed++;
 
                 ImportInfoAccess.SetImportInfo(importId, info);
                 ImportInfoAccess.SetImportInfo(Global.ALL, allInfo);
             }
         }
-        
+
         private void StoreTempImageInfo(string importId, ImageInfo info)
         {
             lock (locker)
@@ -168,7 +172,11 @@ namespace ImageTagger.Managers
                         info.Merge(_info);
                     }
                 }
-                else tempImageInfo[importId] = new Dictionary<string, ImageInfo>();
+                else
+                {
+                    tempImageInfo[importId] = new Dictionary<string, ImageInfo>();
+                }
+
                 tempImageInfo[importId][info.Hash] = info;
 
                 if (tempImageInfo[importId].Count >= BULK_IMPORT_SIZE)
@@ -190,8 +198,13 @@ namespace ImageTagger.Managers
             lock (locker)
             {
                 if (tempImageInfo.TryGetValue(importId, out var dict))
+                {
                     if (dict.TryGetValue(hash, out var info))
+                    {
                         return info;
+                    }
+                }
+
                 return ImageInfoAccess.GetImageInfo(hash);
             }
         }
@@ -259,7 +272,7 @@ namespace ImageTagger.Managers
                 }
                 else
                 {
-                    ImportStatus result = ImportImage(importId, sectionId, path);
+                    ImportStatus result = ImportImage(importId, path);
                     UpdateImportCount(importId, result);
                     signals.Call("emit_signal", "increment_import_buttons", tabs);
                     if (result == ImportStatus.SUCCESS)
@@ -271,7 +284,7 @@ namespace ImageTagger.Managers
             CompleteImportSection(importId, sectionId);
         }
 
-        private ImportStatus ImportImage(string importId, string sectionId, string imagePath)
+        private ImportStatus ImportImage(string importId, string imagePath)
         {
             var fileInfo = new ImageImporter.FileInfo(imagePath);
             if (fileInfo.Size < 0)
@@ -280,6 +293,7 @@ namespace ImageTagger.Managers
                 return ImportStatus.FAILED;
             }
             string hash = file.GetSha256(imagePath);
+            if (hash.Length == 0) return ImportStatus.FAILED;
 
             string thumbPath = $"{Global.GetThumbnailPath()}{hash.Substring(0, 2)}/{hash}.thumb";
             var phashes = new ImageImporter.PerceptualHashes();

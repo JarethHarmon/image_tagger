@@ -32,13 +32,13 @@ config/auto_accept_quit=false
 [autoload]
 
 ImportManager="*res://src/Managers/ImportManager.cs"
-DatabaseManager="*res://src/Managers/DatabaseManager.cs"
 ScanManager="*res://src/Managers/ScanManager.cs"
 MetadataManager="*res://src/Managers/MetadataManager.cs"
 Global="*res://src/Global.cs"
 Inputs="*res://globals/Inputs.gd"
 Signals="*res://globals/Signals.gd"
 Globals="*res://globals/Globals.gd"
+ThumbnailManager="*res://src/Managers/ThumbnailManager.cs"
 
 [debug]
 
