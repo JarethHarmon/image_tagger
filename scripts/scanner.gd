@@ -4,7 +4,6 @@ onready var recursively:CheckBox = $margin/vsplit/panel2/margin/vbox/hbox1/recur
 onready var import_name:LineEdit = $margin/vsplit/panel2/margin/vbox/hbox1/import_name
 onready var currently_scanning_path:Label = $margin/vsplit/panel2/margin/vbox/hbox/currently_scanning
 onready var scanned_count:Label = $margin/vsplit/panel2/margin/vbox/hbox/scanned_count
-
 onready var indices:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/indices
 onready var paths:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit21/paths
 onready var types:ItemList = $margin/vsplit/path_list/vbox/hsplit2/hsplit22/types
@@ -61,7 +60,6 @@ func _files_dropped(file_paths:Array, _screen:int) -> void:
 	if file_paths.size() > 0: 
 		Signals.emit_signal("show_import_menu")
 
-# needs to take into account a blacklist of folders (can be stored on c# side though)
 func queue_append(scan_folder:String, recursive:bool=true) -> void:
 	if scan_folder == "": return
 	if not Directory.new().dir_exists(scan_folder): return
@@ -81,14 +79,7 @@ func _thread() -> void:
 	while not scan_queue.empty():
 		var scan:Array = scan_queue.pop_front()
 		ScanManager.SetRecursive(scan[1])
-		image_count = ScanManager.ScanFolder(scan[0])#, scan[1], import_id)
-		# there will only every be one scan im progress/waiting to import at a time
-		# need to store the count and the array of found paths globally somewhere
-		# need to display array of found paths to user (in item list)
-		# need to allow user to remove paths/folders, filter by image size/date, etc
-		# user should be able to find and scan additional folders while the first set is still scanning
-		# once import process starts, user should be able to scan and begin importing new folders while it is running
-		#print(image_count)
+		image_count = ScanManager.ScanFolder(scan[0])
 		OS.delay_msec(50)
 	call_deferred("_done")
 
@@ -98,22 +89,15 @@ func _done() -> void:
 	scanner_active = false
 	scan_mutex.unlock()
 	print("scan finished")
-	
-	#var paths:Array = ScanManager.GetPaths()
-	#create_item_lists(paths)
 
 func _on_add_folders_button_up() -> void: Signals.emit_signal("add_folders")
 func _on_add_files_button_up() -> void: Signals.emit_signal("add_files")
 
-# should populate path list once scanning finishes
 func _folder_selected(folder:String) -> void: queue_append(folder, recursively.pressed)
-# should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
 	timer.start(0.01)
 	image_count = ScanManager.ScanFiles(files)#, import_id)
-	#var paths_sizes:Array = ImageScanner.GetPathsSizes()
-	#create_item_lists(paths_sizes)
 
 #func create_item_lists(paths_sizes:Array) -> void: return
 #	for path_size in paths_sizes:

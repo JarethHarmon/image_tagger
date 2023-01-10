@@ -33,19 +33,16 @@ func _switch_sort_buttons(swap:bool) -> void:
 
 func _on_sort_by_item_selected(index:int) -> void:
 	Global.SetCurrentSort(index)
-	#Signals.emit_signal("sort_changed")
 	ThumbnailManager.UpdateSort(index)
 	
 func _on_order_by_item_selected(index:int) -> void:
 	Global.SetCurrentOrder(index)
-	#Signals.emit_signal("order_changed")
 	ThumbnailManager.UpdateOrder(index)
-
+	
+func _on_similarity_item_selected(index:int) -> void:
+	Global.SetCurrentSortSimilarity(index)
+	ThumbnailManager.UpdateSortSimilarity(index)
+	
 func _on_select_all_button_up() -> void:
 	if deselect: Signals.emit_signal("deselect_all_pressed")
 	else: Signals.emit_signal("select_all_pressed")
-
-func _on_similarity_item_selected(index:int) -> void:
-	Global.SetCurrentSortSimilarity(index)
-	#Signals.emit_signal("similarity_changed")
-	ThumbnailManager.UpdateSortSimilarity(index)

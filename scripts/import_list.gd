@@ -315,6 +315,7 @@ func pause(thread_id:int) -> void:
 func cancel_all() -> void:
 	for thread_id in thread_status.size():
 		set_thread_status(thread_id, Status.CANCELED)
+		
 	for thread_id in thread_pool.size():
 		_stop(thread_id)
 

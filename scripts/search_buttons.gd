@@ -27,9 +27,6 @@ func _ready() -> void:
 	Signals.connect("image_import_finished", self, "refresh_page")
 	Signals.connect("clear_pressed", self, "clear_pressed")
 	Signals.connect("default_pressed", self, "default_pressed")
-	Signals.connect("sort_changed", self, "search_pressed")
-	Signals.connect("order_changed", self, "search_pressed")
-	Signals.connect("similarity_changed", self, "search_pressed")
 
 func _on_include_all_text_entered(new_text:String) -> void: ThumbnailManager.QueryDatabaseGD(false)
 func _on_include_any_text_entered(new_text:String) -> void: ThumbnailManager.QueryDatabaseGD(false)

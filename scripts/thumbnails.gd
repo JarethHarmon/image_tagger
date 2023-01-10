@@ -1,18 +1,5 @@
 extends ItemList
 
-# one issue with the current approach to page history is that if the page has changed by a method not included
-# in the hash (e.g. additional/removed tags on images when sorting by tag count) ; the page will not update, and 
-# cannot be updated for the current query settings
-
-# one option is to just allow manual refreshes with F5 and the search button; though it requires a manual action
-# for each page that was previously loaded into memory for the tab with changed images
-
-# another option is to always re-query pages sorted by tag count, or any similar concepts in the future (like ratings)
-
-# another option is to only re-query when it needs to, but that is not at all easy to determine 
-# 	(unless I am just too tired and missing something obvious)
-
-
 # need to fix these references
 onready var thumb_size:HSlider = self.get_parent().get_node("sort_buttons/thumbnail_size")
 onready var thumb_size_entry:SpinBox = self.get_parent().get_node("sort_buttons/thumbnail_size_entry")
@@ -92,10 +79,10 @@ func select_items() -> void:
 		selected_items[arr_index[i]] = current_hashes[arr_index[i]]
 	
 	var image_hash:String = current_hashes[last_index]
-	#print(image_hash)
 	MetadataManager.LoadCurrentImageInfo(image_hash)
 	var paths:Array = MetadataManager.GetCurrentPaths()
 	var imports:Array = MetadataManager.GetCurrentImports()
+	
 	Signals.emit_signal("load_image_tags", image_hash, selected_items)
 	Signals.emit_signal("create_path_buttons", image_hash, paths)
 	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)

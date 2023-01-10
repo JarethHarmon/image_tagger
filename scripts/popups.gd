@@ -59,8 +59,11 @@ func show_file_dialog(select_folders:bool=false) -> void:
 	var popup_offset:int = Global.GetOffsetPopupH()
 	file_dialog.popup(Rect2(popup_offset, popup_offset, parent_size.x-popup_offset*2, parent_size.y-popup_offset*2))
 
-func _on_FileDialog_files_selected(paths:Array) -> void: Signals.emit_signal("files_selected", paths)
-func _on_FileDialog_dir_selected(dir:String) -> void: Signals.emit_signal("folder_selected", dir)
+func _on_FileDialog_files_selected(paths:Array) -> void: 
+	Signals.emit_signal("files_selected", paths)
+	
+func _on_FileDialog_dir_selected(dir:String) -> void: 
+	Signals.emit_signal("folder_selected", dir)
 
 # move this and others to global input handler, use signals
 func _unhandled_input(event:InputEvent) -> void:
@@ -68,21 +71,27 @@ func _unhandled_input(event:InputEvent) -> void:
 		if event.scancode == KEY_1 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.FileButtons)
 			Signals.emit_signal("toggle_file_section", checked)
+			
 		elif event.scancode == KEY_2 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.TabButtons)
 			Signals.emit_signal("toggle_tab_section", checked)
+			
 		elif event.scancode == KEY_3 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.SearchButtons)
 			Signals.emit_signal("toggle_search_section", checked)
+			
 		elif event.scancode == KEY_4 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.ThumbnailList)
 			Signals.emit_signal("toggle_thumbnail_section", checked)
+			
 		elif event.scancode == KEY_5 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.PreviewSection)
 			Signals.emit_signal("toggle_preview_section", checked)
+			
 		elif event.scancode == KEY_6 and event.pressed:
 			var checked:bool = get_set_view_context_checked(view_context_menu.TabList)
 			Signals.emit_signal("toggle_tablist_section", checked)
+			
 		elif event.scancode == KEY_7 and event.pressed: 
 			var checked:bool = get_set_view_context_checked(view_context_menu.TagList)
 			Signals.emit_signal("toggle_tag_section", checked)
@@ -90,30 +99,34 @@ func _unhandled_input(event:InputEvent) -> void:
 func _on_pmenu_view_context_index_pressed(index:int) -> void:
 	if index == view_context_menu.FullScreen:
 		var checked:bool = get_set_view_context_checked(index)
-		#Globals.settings.use_fullscreen = checked
 		Global.SetUseFullscreen(checked)
 		set_fullscreen(checked)
+		
 	elif index == view_context_menu.ShowThumbnailTooltips:
 		var checked:bool = get_set_view_context_checked(index)
-		#Globals.settings.show_thumbnail_tooltips = checked
 		Global.SetShowThumbnailTooltips(checked)
 		Signals.emit_signal("toggle_thumbnail_tooltips")
 	
 	elif index == view_context_menu.FileButtons:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_file_section", checked)
+		
 	elif index == view_context_menu.TabButtons:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_tab_section", checked)
+		
 	elif index == view_context_menu.SearchButtons:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_search_section", checked)
+		
 	elif index == view_context_menu.ThumbnailList:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_thumbnail_section", checked)
+		
 	elif index == view_context_menu.PreviewSection:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_preview_section", checked)
+		
 	elif index == view_context_menu.TagList:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_tag_section", checked)
