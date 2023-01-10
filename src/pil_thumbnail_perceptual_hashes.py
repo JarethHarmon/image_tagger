@@ -112,26 +112,36 @@ def calc_phash_simple(imageL):
     return convert_binary_to_ulong(flat)
 
 def calc_color_buckets(image):
-    pixels = np.asarray(image.convert('RGBA'))
+    a = np.asarray(image.convert('RGBA'))[:,:,3]
     divisor = int(math.sqrt(image.width * image.height))
+    alpha = (a < 127).sum() // divisor
+    aa = (a > 127)
     
-    r = pixels[:,:,0]
-    g = pixels[:,:,1]
-    b = pixels[:,:,2]
-    a = pixels[:,:,3]
-    
-    rr = np.logical_or(np.logical_and(r > g, r >= b), np.logical_and(r >= g, r > b))
-    gg = np.logical_or(np.logical_and(g > b, g >= r), np.logical_and(g >= b, g > r))
-    bb = np.logical_or(np.logical_and(b > r, b >= g), np.logical_and(b >= r, b > g))
+    pixels = np.asarray(image.convert('HSV'))
+    h = pixels[:,:,0]
+    s = pixels[:,:,1]
+    v = pixels[:,:,2] 
 
+    sv = np.logical_and(s > 35, v > 35)
+    
+    rr = np.logical_and(np.logical_or(h < 21, h > 234), sv)
+    gg = np.logical_and(np.logical_and(h > 63, h < 106), sv)
+    bb = np.logical_and(np.logical_and(h > 149, h < 191), sv)
+
+    yy = np.logical_and(np.logical_and(h >= 21, h <= 63), sv)
+    cc = np.logical_and(np.logical_and(h >= 106, h <= 149), sv)
+    ff = np.logical_and(np.logical_and(h >= 191, h <= 234), sv)
+    
     red = rr.sum() // divisor
     green = gg.sum() // divisor
     blue = bb.sum() // divisor
-    alpha = (a < 127).sum() // divisor
-
-    avg = np.add(np.sum(pixels, axis=2), -1 * a) // 3
-    aa = (a > 127)
-    light = (np.logical_and((avg > 195), aa)).sum() // divisor
-    dark = (np.logical_and((avg < 64), aa)).sum() // divisor
     
-    return f'{red}?{green}?{blue}?{alpha}?{light}?{dark}'
+    yellow = yy.sum() // divisor
+    cyan = cc.sum() // divisor
+    fuchsia  = ff.sum() // divisor
+
+    light = np.logical_and(np.logical_and(v > 75, s < 25), aa).sum() // divisor
+    dark = np.logical_and(v < 25, aa).sum() // divisor
+    
+    return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{light}?{dark}?{alpha}'
+ 

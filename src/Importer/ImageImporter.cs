@@ -69,16 +69,19 @@ namespace ImageTagger.Importer
             public int Red;
             public int Green;
             public int Blue;
-            public int Alpha;
+            public int Yellow;
+            public int Cyan;
+            public int Fuchsia;
             public int Light;
             public int Dark;
+            public int Alpha;
 
             public ColorBuckets(string _colors)
             {
                 string[] temp = _colors.Split('?');
-                if (temp?.Length == 6)
+                if (temp?.Length == 9)
                 {
-                    int[] colors = new int[6];
+                    int[] colors = new int[9];
                     for (int i = 0; i < temp.Length; i++)
                     {
                         if (!int.TryParse(temp[i], out colors[i])) colors[i] = 0;
@@ -87,18 +90,24 @@ namespace ImageTagger.Importer
                     Red = colors[0];
                     Green = colors[1];
                     Blue = colors[2];
-                    Alpha = colors[3];
-                    Light = colors[4];
-                    Dark = colors[5];
+                    Yellow = colors[3];
+                    Cyan = colors[4];
+                    Fuchsia = colors[5];
+                    Light = colors[6];
+                    Dark = colors[7];
+                    Alpha = colors[8];
                 }
                 else
                 {
                     Red = 0;
                     Green = 0;
                     Blue = 0;
-                    Alpha = 0;
+                    Yellow = 0;
+                    Cyan = 0;
+                    Fuchsia = 0;
                     Light = 0;
                     Dark = 0;
+                    Alpha = 0;
                 }
             }
         }

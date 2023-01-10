@@ -345,9 +345,12 @@ namespace ImageTagger.Managers
                     Red = colors.Red,
                     Green = colors.Green,
                     Blue = colors.Blue,
-                    Alpha = colors.Alpha,
+                    Yellow = colors.Yellow,
+                    Cyan = colors.Cyan,
+                    Fuchsia = colors.Fuchsia,
                     Light = colors.Light,
                     Dark = colors.Dark,
+                    Alpha = colors.Alpha,
 
                     Width = imageInfoPart.Width,
                     Height = imageInfoPart.Height,
