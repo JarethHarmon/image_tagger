@@ -2,7 +2,6 @@
 using ImageTagger.Database;
 using ImageTagger.Importer;
 using ImageTagger.Metadata;
-using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -132,6 +131,8 @@ namespace ImageTagger.Managers
             var info = currentQuery.Clone();
             info.LastQueriedCount = -1;
             info.Filtered = false;
+            var iinfo = ImportInfoAccess.GetImportInfo(info.ImportId);
+            info.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             string queryId = info.CalcId();
 
             string pageId = $"{queryId}?{offset}?{Global.Settings.MaxImagesPerPage}";
