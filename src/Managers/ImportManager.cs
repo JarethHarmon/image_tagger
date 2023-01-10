@@ -59,6 +59,7 @@ namespace ImageTagger.Managers
 
         public int LoadLargeImage(string path, string hash, int columns, int rows)
         {
+            currentGridIndex = 0;
             var error = ImageImporter.LoadLargeImage(path, hash, columns, rows);
             signals.Call("emit_signal", "finish_large_image", hash);
             return (int)error;
