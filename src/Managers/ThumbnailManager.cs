@@ -169,6 +169,14 @@ namespace ImageTagger.Managers
             //string[] results = await Querier.QueryDatabase(currentQuery, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             //Console.WriteLine((DateTime.Now - now).ToString());
 
+            SetupList(results.Length, pageId, results);
+            await LoadThumbnails(results, pageId);
+            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
+                buffer.Hide();
+        }
+
+        private void SetupList(int size, string pageId, string[] results)
+        {
             lock (locker)
             {
                 if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
@@ -177,21 +185,7 @@ namespace ImageTagger.Managers
                 signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
                 signals.Call("emit_signal", "image_count_changed", queriedImageCount);
 
-                // temporary fix until I rewrite selection logic in csharp
                 list.Set("current_hashes", results);
-            }
-
-            SetupList(results.Length, pageId);
-            await LoadThumbnails(results, pageId);
-            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
-                buffer.Hide();
-        }
-
-        private void SetupList(int size, string pageId)
-        {
-            lock (locker)
-            {
-                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
                 list.Clear();
 
                 for (int i = 0; i < size; i++)
@@ -286,6 +280,7 @@ namespace ImageTagger.Managers
                 if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
                 if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
+                if (list.GetItemCount() < x.Index) return true;
                 list.SetItemIcon(x.Index, icon);
 
                 var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
