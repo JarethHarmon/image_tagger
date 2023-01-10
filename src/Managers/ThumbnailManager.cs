@@ -2,6 +2,7 @@
 using ImageTagger.Database;
 using ImageTagger.Importer;
 using ImageTagger.Metadata;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -56,32 +57,28 @@ namespace ImageTagger.Managers
             CallDeferred(nameof(Setup));
         }
 
-        public void UpdateTagsAll(string[] tagsAll)
+        public void SetTagsAll(string[] tagsAll)
         {
             currentQuery.TagsAll = tagsAll;
-            QueryDatabaseGD();
         }
 
-        public void UpdateTagsAny(string[] tagsAny)
+        public void SetTagsAny(string[] tagsAny)
         {
             currentQuery.TagsAny = tagsAny;
-            QueryDatabaseGD();
         }
 
-        public void UpdateTagsNone(string[] tagsNone)
+        public void SetTagsNone(string[] tagsNone)
         {
             currentQuery.TagsNone = tagsNone;
-            QueryDatabaseGD();
         }
 
-        public void UpdateTagsComplex(string[] tagsComplex)
+        public void SetTagsComplex(string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex)
         {
-            var conditions = Querier.ConvertStringToComplexTags(currentQuery.TagsAll, currentQuery.TagsAny, currentQuery.TagsNone, tagsComplex);
+            var conditions = Querier.ConvertStringToComplexTags(tagsAll, tagsAny, tagsNone, tagsComplex);
             currentQuery.TagsAll = conditions.All;
             currentQuery.TagsAny = conditions.Any;
             currentQuery.TagsNone = conditions.None;
             currentQuery.TagsComplex = conditions.Complex;
-            QueryDatabaseGD();
         }
 
         public void UpdateSort(int sort)
@@ -134,6 +131,7 @@ namespace ImageTagger.Managers
         {
             var info = currentQuery.Clone();
             info.LastQueriedCount = -1;
+            info.Filtered = false;
             string queryId = info.CalcId();
 
             string pageId = $"{queryId}?{offset}?{Global.Settings.MaxImagesPerPage}";
