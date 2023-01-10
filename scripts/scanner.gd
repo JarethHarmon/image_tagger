@@ -110,6 +110,7 @@ func _folder_selected(folder:String) -> void: queue_append(folder, recursively.p
 # should populate path list immediately (actually need to obtain size using c# first)
 func _files_selected(files:Array) -> void:
 	if files.size() == 0: return
+	timer.start(0.01)
 	image_count = ScanManager.ScanFiles(files)#, import_id)
 	#var paths_sizes:Array = ImageScanner.GetPathsSizes()
 	#create_item_lists(paths_sizes)
