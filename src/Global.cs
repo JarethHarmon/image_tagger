@@ -116,6 +116,16 @@ namespace ImageTagger
             var result = DatabaseAccess.Create();
             if (result != Error.OK) return (int)result;
 
+            try
+            {
+                System.IO.Directory.CreateDirectory(GetMetadataPath());
+                System.IO.Directory.CreateDirectory(GetThumbnailPath());
+            }
+            catch
+            {
+                return (int)Error.IO;
+            }
+
             result = DatabaseAccess.Setup();
             if (result != Error.OK) return (int)result;
 
