@@ -18,6 +18,7 @@ namespace ImageTagger
         public Order CurrentOrder { get; set; }
         public SortSimilarity CurrentSortSimilarity { get; set; }
         public bool PreferSpeed { get; set; }
+        public float MinSimilarity { get; set; }
 
         public bool ScanRecursively { get; set; }
         public int MaxImportThreads { get; set; }
@@ -65,6 +66,7 @@ namespace ImageTagger
             CurrentOrder = Order.ASCENDING;
             CurrentSortSimilarity = SortSimilarity.AVERAGED;
             PreferSpeed = true; // whether to prefer speed or RAM when counting results
+            MinSimilarity = 74.999f;
 
             // scanning
             ScanRecursively = false;

@@ -84,7 +84,7 @@ namespace ImageTagger.Database
             SortSimilarity = SortSimilarity.AVERAGE;
             Filtered = false;
 
-            MinSimilarity = 81.25f;
+            MinSimilarity = MinSimilarity = Global.Settings.MinSimilarity;
             BucketPrecision = 3;
 
             TagsAll = Array.Empty<string>();

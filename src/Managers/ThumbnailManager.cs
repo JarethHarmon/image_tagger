@@ -34,7 +34,6 @@ namespace ImageTagger.Managers
                 Order = Global.Settings.CurrentOrder,
                 Sort = Global.Settings.CurrentSort,
                 SortSimilarity = Global.Settings.CurrentSortSimilarity,
-                MinSimilarity = 74.999f,
             };
         }
 
