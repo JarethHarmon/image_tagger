@@ -36,7 +36,7 @@ def load_large_image(impath, imhash, num_y, num_x):
     
     for x in range(0, npim.shape[0], M):
         for y in range(0, npim.shape[1], N):
-            if csharp.StopLoading(imhash): break
+            if csharp.StopLoading(imhash): return
             bi = io.BytesIO()
             nim = Image.fromarray(npim[x:x+M, y:y+N])
             if is_png: nim.save(bi, 'png', compress_level=0)
