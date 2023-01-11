@@ -17,20 +17,18 @@ var shift_pressed:bool = false
 var selected_item:int = 0
 var last_selected_item:int = 0
 var last_index:int = 0
-var curr_page_number:int = 1
 
-func _curr_page_changed(new_page:int) -> void: 
+func _check_tab_in_history() -> void:
 	var tab_id:String = Globals.current_tab_id
 	if tab_history.has(tab_id):
-		tab_history[tab_id].page = new_page
+		Signals.emit_signal("change_page", tab_history[tab_id].page)
 	else:
-		tab_history[tab_id] = {"scroll":0.0, "page":new_page}
-	curr_page_number = new_page
-	Signals.emit_signal("change_page", new_page)
+		tab_history[tab_id] = {"scroll":0.0, "page":1}
+		Signals.emit_signal("change_page", 1)
 
 func _ready() -> void:
 	Signals.connect("page_label_ready", self, "_page_label_ready")
-	Signals.connect("page_changed", self, "_curr_page_changed")
+	Signals.connect("check_tab_history", self, "_check_tab_in_history")
 	Signals.connect("select_all_pressed", self, "select_all_items")
 	Signals.connect("deselect_all_pressed", self, "deselect_all")
 	Signals.connect("toggle_thumbnail_tooltips", self, "_toggle_thumbnail_tooltips")

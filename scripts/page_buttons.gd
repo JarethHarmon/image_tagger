@@ -35,11 +35,7 @@ func change_page(page:int) -> void:
 	if (page < 1): return
 	if (page > max_pages): return
 	if (current_page == page): return
-	if last_tab_id != Globals.current_tab_id and current_page > 1:
-		current_page = 1
-	else: current_page = page
-	last_tab_id = Globals.current_tab_id
-	Signals.emit_signal("page_changed", current_page)
+	Signals.emit_signal("change_page", page)
 
 # using this signal is not ideal as it sets values twice for normal page changing, but this allows tab_history to work until I think of a better solution
 func _change_page(page:int) -> void:
@@ -51,18 +47,23 @@ func _max_pages_changed(page_count:int) -> void:
 	max_pages = page_count
 	current_page_spinbox.max_value = page_count
 	total_pages_label.text = " / " + String(page_count)
+	
 func _on_prev_page_pressed() -> void: 
 	prev_button.release_focus()
 	change_page(current_page-1)
+	
 func _on_next_page_pressed() -> void: 
 	next_button.release_focus()
 	change_page(current_page+1)
+	
 func _on_last_page_pressed() -> void:
 	last_button.release_focus()
 	change_page(max_pages)
+	
 func _on_first_page_pressed() -> void:
 	first_button.release_focus()
 	change_page(1)
+	
 func _on_current_page_value_changed(value:int) -> void: 
 	current_page_spinbox.release_focus()
 	change_page(value)

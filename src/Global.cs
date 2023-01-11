@@ -31,6 +31,7 @@ namespace ImageTagger
         public static void SetCurrentTabId(string id) { currentTabId = id; }
 
         // I hope to find a better solution eventually, Godot is convinced that Settings is null, even if I make it not static
+        // might be possible to fix this by moving all godot functions that access settings at program start into call_deferred
         public static Settings Settings;
 
         // manual get/set of Setting properties, because see above

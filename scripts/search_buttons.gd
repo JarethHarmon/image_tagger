@@ -23,7 +23,6 @@ func _ready() -> void:
 	search_button.connect("button_up", self, "search_pressed")
 	
 	Signals.connect("change_page", self, "page_changed")
-	Signals.connect("tab_button_pressed", self, "tab_button_pressed")
 	Signals.connect("image_import_finished", self, "refresh_page")
 	Signals.connect("clear_pressed", self, "clear_pressed")
 	Signals.connect("default_pressed", self, "default_pressed")
@@ -48,14 +47,6 @@ func _on_exclude_all_text_changed(new_text:String) -> void:
 func _on_complex_text_changed(new_text:String) -> void: 
 	tags_complex = new_text.split(",", false)
 	ThumbnailManager.SetTagsComplex(tags_all, tags_any, tags_none, tags_complex)
-
-func tab_button_pressed(tab_id:String) -> void:
-	Globals.current_tab_id = tab_id
-	Global.SetCurrentTabId(tab_id)
-	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
-	ThumbnailManager.UpdateImportId(tab_id)
-	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
-	else: Signals.emit_signal("switch_sort_buttons", false)
 
 func search_pressed() -> void: ThumbnailManager.QueryDatabaseGD(true) # force update if search pressed, may change this to be F5 only
 func page_changed(new_page:int=1) -> void: ThumbnailManager.UpdatePage(new_page)

@@ -3,11 +3,12 @@ extends Node
 signal settings_loaded
 signal resize_preview_image
 
-signal change_page
+signal change_page(page)
 signal page_changed(current_page)
 signal max_pages_changed(count)
 signal search_pressed(tags_all, tags_any, tags_none, tags_complex, new_query)
 signal image_import_finished(tab_id)
+signal check_tab_history
 
 signal load_full_image(image_hash, path, found)
 signal load_image_tags(image_hash, selected_items)

@@ -116,8 +116,6 @@ namespace ImageTagger.Managers
             var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
             currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             currentQuery.QueryType = tabInfo.TabType;
-
-            QueryDatabaseGD();
         }
 
         public void UpdatePage(int pageNumber)

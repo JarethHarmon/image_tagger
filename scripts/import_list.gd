@@ -62,12 +62,21 @@ func _settings_loaded() -> void:
 func _toggle_tab_section(_visible:bool) -> void: 
 	self.visible = _visible
 
+func _tab_button_press(tab_id:String) -> void:
+	Globals.current_tab_id = tab_id
+	Global.SetCurrentTabId(tab_id)
+	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
+	ThumbnailManager.UpdateImportId(tab_id)
+	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
+	else: Signals.emit_signal("switch_sort_buttons", false)
+	Signals.emit_signal("check_tab_history")
+
 func _on_all_button_button_up() -> void: 
-	Signals.emit_signal("tab_button_pressed", Global.ALL)
+	_tab_button_press(Global.ALL)
 	indicate_selected_button(Global.ALL)
 	
 func _on_tab_button_pressed(tab_id:String) -> void: 
-	Signals.emit_signal("tab_button_pressed", tab_id)
+	_tab_button_press(tab_id)
 	indicate_selected_button(tab_id)
 
 func indicate_selected_button(tab_id:String) -> void:
