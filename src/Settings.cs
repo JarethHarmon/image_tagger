@@ -115,8 +115,7 @@ namespace ImageTagger
 
             try
             {
-                string path = ProjectSettings.GlobalizePath("user://settings.txt");
-                reader = new StreamReader(path);
+                reader = new StreamReader("./settings.txt");
                 var json = reader.ReadToEnd();
                 settings = JsonConvert.DeserializeObject<Settings>(json);
             }
@@ -136,9 +135,8 @@ namespace ImageTagger
         {
             try
             {
-                string path = ProjectSettings.GlobalizePath("user://settings.txt");
                 string json = JsonConvert.SerializeObject(this, Formatting.Indented);
-                using (StreamWriter file = System.IO.File.CreateText(path))
+                using (StreamWriter file = System.IO.File.CreateText("./settings.txt"))
                     file.Write(json);
             }
             catch

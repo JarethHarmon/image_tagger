@@ -14,13 +14,13 @@ namespace ImageTagger.Importer
 									         Initialization
         =========================================================================================*/
         private static IntPtr state;
-        internal static Error StartPython(string executableDirectory)
+        internal static Error StartPython()
         {
             try
             {
                 // will need to handle this better if I intend to release on other OS
-                string pyPath = executableDirectory + @"lib\python-3.10.7-embed-amd64\python310.dll";
-                System.Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPath);
+                const string pyPathWin10 = "./lib/python-3.10.7-embed-amd64/python310.dll";
+                Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPathWin10);
                 PythonEngine.Initialize();
                 state = PythonEngine.BeginAllowThreads();
                 return Error.OK;

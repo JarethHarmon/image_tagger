@@ -96,7 +96,7 @@ margin_left = 1850.0
 margin_top = 3.0
 margin_right = 1909.0
 margin_bottom = 17.0
-text = "v0.11.6.1"
+text = "v0.11.7.0"
 
 [connection signal="pressed" from="margin/flow/file_button" to="." method="_on_file_button_pressed"]
 [connection signal="button_up" from="margin/flow/view_button" to="." method="_on_view_button_button_up"]

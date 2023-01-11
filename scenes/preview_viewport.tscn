@@ -90,7 +90,7 @@ mouse_filter = 2
 copy_mode = 2
 rect = Rect2( 0, 0, 0, 0 )
 
-[node name="Shader" type="ColorRect" parent="single_image/Shaders/HalfTone/BackBufferCopy"]
+[node name="Shader" type="ColorRect" parent="single_image/Shaders/HalfTone"]
 material = ExtResource( 5 )
 anchor_right = 1.0
 anchor_bottom = 1.0

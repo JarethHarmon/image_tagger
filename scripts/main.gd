@@ -29,7 +29,7 @@ func _ready() -> void:
 	get_viewport().transparent_bg = true
 	var dir:Directory = Directory.new()
 
-	if Global.Setup(Globals._get_program_directory()) != Globals.Error.OK: _notification(NOTIFICATION_WM_QUIT_REQUEST)
+	if Global.Setup() != Globals.Error.OK: _notification(NOTIFICATION_WM_QUIT_REQUEST)
 	Signals.emit_signal("settings_loaded") 
 	Signals.emit_signal("import_info_load_finished") # consider changing to "setup_finished"
 	

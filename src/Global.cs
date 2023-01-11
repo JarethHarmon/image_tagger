@@ -24,10 +24,10 @@ namespace ImageTagger
 
     public sealed class Global : Node
     {
-        public const string ALL = "All";
         public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
-
+        public const string ALL = "All";
         internal static string currentTabId = ALL;
+
         public static void SetCurrentTabId(string id) { currentTabId = id; }
 
         // I hope to find a better solution eventually, Godot is convinced that Settings is null, even if I make it not static
@@ -110,7 +110,7 @@ namespace ImageTagger
             3,4,4,5,4,5,5,6, 4,5,5,6,5,6,6,7, 4,5,5,6,5,6,6,7, 5,6,6,7,6,7,7,8,
         };
 
-        public int Setup(string executablePath)
+        public int Setup()
         {
             Settings = Settings.LoadFromJsonFile();
             try
@@ -129,7 +129,7 @@ namespace ImageTagger
             result = DatabaseAccess.Setup();
             if (result != Error.OK) return (int)result;
 
-            result = ImageImporter.StartPython(executablePath);
+            result = ImageImporter.StartPython();
             return (int)result;
         }
 
