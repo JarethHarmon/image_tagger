@@ -66,7 +66,7 @@ func _tab_button_press(tab_id:String) -> void:
 	Globals.current_tab_id = tab_id
 	Global.SetCurrentTabId(tab_id)
 	Globals.current_tab_type = MetadataManager.GetTabType(tab_id)
-	ThumbnailManager.UpdateImportId(tab_id)
+	ThumbnailManager.SetImportId(tab_id)
 	if Globals.current_tab_type == Globals.TabType.SIMILARITY: Signals.emit_signal("switch_sort_buttons", true)
 	else: Signals.emit_signal("switch_sort_buttons", false)
 	Signals.emit_signal("check_tab_history")

@@ -98,7 +98,7 @@ namespace ImageTagger.Managers
             QueryDatabaseGD();
         }
 
-        public void UpdateImportId(string tabId)
+        public void SetImportId(string tabId)
         {
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
             currentQuery.ImportId = tabInfo.ImportId ?? Global.ALL;
