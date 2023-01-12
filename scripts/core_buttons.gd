@@ -18,4 +18,4 @@ func _toggle_file_section(_visible:bool) -> void:
 	self.visible = _visible
 
 func _on_settings_button_button_up() -> void:
-	OS.shell_open(ProjectSettings.globalize_path("user://settings.txt"))
+	Global.OpenSettingsFile()

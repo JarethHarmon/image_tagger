@@ -215,17 +215,11 @@ namespace ImageTagger.Database
                 if (presentInEveryCondition) None.Add(tag);
             }
 
-            // consider usage of GC.Collect();
-
-            all = All.ToArray();
-            any = Any.ToArray();
-            none = None.ToArray();
-
             return new TagConditions
             {
-                All = all,
-                Any = any,
-                None = none,
+                All = All.ToArray(),
+                Any = Any.ToArray(),
+                None = None.ToArray(),
                 Complex = conditions
             };
         }
@@ -234,11 +228,7 @@ namespace ImageTagger.Database
         {
             var query = info.Query;
             if (query is null) return;
-
-            if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0)
-            {
-                return;
-            }
+            if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0) return;
             info.Filtered = true;
 
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
@@ -294,7 +284,7 @@ namespace ImageTagger.Database
                 if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
-                foreach (var result in results) // results is empty on new que
+                foreach (var result in results)
                 {
                     float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
                     float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);
@@ -381,7 +371,7 @@ namespace ImageTagger.Database
                 .OrderByDescending(x => x.Similarity)
                 .Select(x => x.Hash)
                 .Skip(offset)
-                .Take(limit) // consider removing/increasing this limit
+                .Take(limit)
                 .ToArray();
 
             info.LastQueriedCount = _results.Length;

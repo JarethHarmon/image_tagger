@@ -141,6 +141,14 @@ namespace ImageTagger
             ImageImporter.Shutdown();
         }
 
+        public static void OpenSettingsFile()
+        {
+            string path = (OS.IsDebugBuild())
+                ? ProjectSettings.GlobalizePath("res://")
+                : OS.GetExecutablePath();
+            OS.ShellOpen(path.PlusFile("/settings.txt"));
+        }
+
         internal static int CountBits(ulong hash)
         {
             ulong temp = hash;
@@ -152,10 +160,8 @@ namespace ImageTagger
 
         public static float CalcHammingSimilarity(ulong hash1, ulong hash2)
         {
-            int hammingDistance = 0;
-            ulong temp = hash1 ^ hash2;
-            for (; temp > 0; temp >>= 8)
-                hammingDistance += _bitCounts[temp & 0xff];
+            ulong xor = hash1 ^ hash2;
+            int hammingDistance = CountBits(xor);
             return (64 - hammingDistance) * 1.5625f; // 100/64
         }
 
