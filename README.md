@@ -4,7 +4,7 @@
 ### Information
 ---
 ##### Supported Formats
-- Currently supports PNG/JPG/JPEG/BMP/WEBP/GIF/APNG.
+- Currently supports PNG/JPG/JPEG/BMP/WEBP/GIF/APNG/HEIC.
 - Support for most static image formats should only take a few lines of code.
 
 ##### Multithreading
