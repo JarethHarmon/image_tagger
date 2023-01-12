@@ -146,7 +146,7 @@ namespace ImageTagger
             string path = (OS.IsDebugBuild())
                 ? ProjectSettings.GlobalizePath("res://")
                 : OS.GetExecutablePath();
-            OS.ShellOpen(path.PlusFile("/settings.txt"));
+            OS.ShellOpen(path.PlusFile("settings.txt"));
         }
 
         internal static int CountBits(ulong hash)
