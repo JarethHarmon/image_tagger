@@ -25,7 +25,11 @@ namespace ImageTagger.Managers
         private ImageTexture failedIcon, bufferingIcon;
         private Node signals;
         private CenterContainer buffer;
+        private Label timeTaken;
 
+        /*=========================================================================================
+									           Initialization
+        =========================================================================================*/
         private void Setup()
         {
             currentQuery = new QueryInfo
@@ -39,6 +43,7 @@ namespace ImageTagger.Managers
 
         public override void _Ready()
         {
+            timeTaken = GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time");
             list = GetNode<ItemList>("/root/main/margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails");
             signals = GetNode<Node>("/root/Signals");
             buffer = list.GetNode<CenterContainer>("cc");
@@ -56,6 +61,9 @@ namespace ImageTagger.Managers
             CallDeferred(nameof(Setup));
         }
 
+        /*=========================================================================================
+									           Query Construction
+        =========================================================================================*/
         public void SetTagsAll(string[] tagsAll)
         {
             currentQuery.TagsAll = tagsAll;
@@ -80,24 +88,6 @@ namespace ImageTagger.Managers
             currentQuery.TagsComplex = conditions.Complex;
         }
 
-        public void UpdateSort(int sort)
-        {
-            currentQuery.Sort = (Sort)sort;
-            QueryDatabaseGD();
-        }
-
-        public void UpdateOrder(int order)
-        {
-            currentQuery.Order = (Order)order;
-            QueryDatabaseGD();
-        }
-
-        public void UpdateSortSimilarity(int similarity)
-        {
-            currentQuery.SortSimilarity = (SortSimilarity)similarity;
-            QueryDatabaseGD();
-        }
-
         public void SetImportId(string tabId)
         {
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
@@ -118,10 +108,49 @@ namespace ImageTagger.Managers
             currentQuery.QueryType = tabInfo.TabType;
         }
 
+        public void UpdateSort(int sort)
+        {
+            currentQuery.Sort = (Sort)sort;
+            QueryDatabaseGD();
+        }
+
+        public void UpdateOrder(int order)
+        {
+            currentQuery.Order = (Order)order;
+            QueryDatabaseGD();
+        }
+
+        public void UpdateSortSimilarity(int similarity)
+        {
+            currentQuery.SortSimilarity = (SortSimilarity)similarity;
+            QueryDatabaseGD();
+        }
+
         public void UpdatePage(int pageNumber)
         {
             offset = (pageNumber - 1) * Global.Settings.MaxImagesPerPage;
             QueryDatabaseGD();
+        }
+
+        /*=========================================================================================
+									               Querying
+        =========================================================================================*/
+        private async Task QueryDatabase(QueryInfo info, string pageId, bool forceUpdate = false)
+        {
+            buffer.Show();
+            thumbnailPath = Global.GetThumbnailPath();
+            if (thumbnailPath is null) return;
+
+            var now = DateTime.Now;
+            System.Threading.Thread.Sleep(100);
+            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+            string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
+            timeTaken.Text = (DateTime.Now - now).ToString();
+
+            SetupList(results.Length, pageId, results);
+            await LoadThumbnails(results, pageId);
+            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
+                buffer.Hide();
         }
 
         public void QueryDatabaseGD(bool forceUpdate = false)
@@ -140,6 +169,9 @@ namespace ImageTagger.Managers
             _ = Task.Run(() => QueryDatabase(info, pageId, forceUpdate));
         }
 
+        /*=========================================================================================
+									          Thumbnail Loading
+        =========================================================================================*/
         private sealed class ThumbnailTask
         {
             public string Id { get; set; }
@@ -152,24 +184,6 @@ namespace ImageTagger.Managers
                 Hash = hash;
                 Index = index;
             }
-        }
-
-        private async Task QueryDatabase(QueryInfo info, string pageId, bool forceUpdate=false)
-        {
-            buffer.Show();
-            thumbnailPath = Global.GetThumbnailPath();
-            if (thumbnailPath is null) return;
-
-            //var now = DateTime.Now;
-            System.Threading.Thread.Sleep(100);
-            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
-            string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
-            //Console.WriteLine((DateTime.Now - now).ToString());
-
-            SetupList(results.Length, pageId, results);
-            await LoadThumbnails(results, pageId);
-            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
-                buffer.Hide();
         }
 
         private void SetupList(int size, string pageId, string[] results)
