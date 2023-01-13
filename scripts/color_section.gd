@@ -9,6 +9,7 @@ var max_colors:int = 8
 
 func _ready() -> void:
 	Signals.connect("settings_loaded", self, "_settings_loaded")
+	Signals.connect("switch_sort_buttons", self, "_switch_sort_buttons")
 
 func _on_select_color_item_selected(index:int) -> void: curr_color = index
 
@@ -55,6 +56,9 @@ func _settings_loaded() -> void:
 
 func settings_loaded() -> void:
 	_on_sort_by_item_selected(Global.GetCurrentSort())
+
+func _switch_sort_buttons(hide:bool) -> void:
+	self.visible = not hide
 
 func _on_sort_by_item_selected(index:int) -> void:
 	if index == Globals.Sort.COLOR: self.visible = true
