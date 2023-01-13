@@ -6,7 +6,6 @@ using System;
 
 namespace ImageTagger.Managers
 {
-    // should call ScannerAccess.GetCurrentFolder() every 20ms or so to update label while scanning
     public sealed class ScanManager : Node
     {
         private bool recursive = false;
@@ -44,7 +43,6 @@ namespace ImageTagger.Managers
             };
 
             ImportInfoAccess.CreateImport(info, paths);
-            // this needs to create a tab button, or be called by something that also handles that
             return info.Id;
         }
 

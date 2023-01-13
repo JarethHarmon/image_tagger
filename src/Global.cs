@@ -6,21 +6,20 @@ using System.Security.Cryptography;
 
 namespace ImageTagger
 {
-    public enum Error {  OK, GENERIC, DATABASE, DICTIONARY, IO, PYTHON }
-    public enum ImportStatus {  SUCCESS, DUPLICATE, IGNORED, FAILED }
+    public enum Error {  OK, Generic, Database, Dictionary, IO, Python}
+    public enum ImportStatus {  Success, Duplicate, Ignored, Failed }
 
-    public enum ImageType { JPEG, PNG, APNG, GIF, WEBP, OTHER=15, ERROR=-1 }
-    public enum Order { ASCENDING, DESCENDING }
-    public enum Sort
-    {
-        HASH, PATH, NAME, SIZE, UPLOAD, CREATION, LAST_WRITE, LAST_EDIT, DIMENSIONS, WIDTH, HEIGHT, TAG_COUNT, QUALITY, APPEAL, ART_STYLE,
-        RED, LIGHT_RED, DARK_RED, GREEN, LIGHT_GREEN, DARK_GREEN, BLUE, LIGHT_BLUE, DARK_BLUE, YELLOW, LIGHT_YELLOW, DARK_YELLOW, CYAN, LIGHT_CYAN,
-        DARK_CYAN, FUCHSIA, LIGHT_FUCHSIA, DARK_FUCHSIA, LIGHT, DARK, ALPHA, RANDOM, DARK_LIGHT, ORANGE, PURPLE, LIME, AQUAMARINE, TEAL, HOT_PINK
+    public enum ImageType { Jpeg, Png, Apng, Gif, Webp, Other=15, Error=-1 }
+    public enum Order { Ascending, Descending }
+    public enum Sort {
+        Hash, Path, Name, Size, UploadTime, CreationTime, LastWriteTime, LastEditTime,
+        Dimensions, Width, Height, TagCount, Quality, Appeal, ArtStyle, Color, Random
     }
-    public enum SortSimilarity { AVERAGED=0, AVERAGE, DIFFERENCE, WAVELET, PERCEPTUAL }
+    public enum Colors { Red, Green, Blue, Yellow, Cyan, Fuchsia, Light, Dark, Alpha };
+    public enum SortSimilarity { Averaged=0, Average, Difference, Wavelet, Perceptual }
 
-    public enum TabType { DEFAULT, SIMILARITY }
-    public enum ExpressionType { ALL, ANY, NONE }
+    public enum TabType { Default, Similarity }
+    public enum ExpressionType { All, Any, None }
 
     public sealed class Global : Node
     {

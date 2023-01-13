@@ -36,15 +36,15 @@ namespace ImageTagger.Database
             catch
             {
                 // log error
-                return Error.DATABASE; // maybe should switch to an int flag and return database and IO as the flags
+                return Error.Database; // maybe should switch to an int flag and return database and IO as the flags
             }
         }
 
         internal static Error Setup()
         {
-            if (colImageInfo is null) return Error.DATABASE;
-            if (colImportInfo is null) return Error.DATABASE;
-            if (colTabInfo is null) return Error.DATABASE;
+            if (colImageInfo is null) return Error.Database;
+            if (colImportInfo is null) return Error.Database;
+            if (colTabInfo is null) return Error.Database;
 
             var imports = colImportInfo.FindAll();
             ImportInfoAccess.CreateDictionary(imports);

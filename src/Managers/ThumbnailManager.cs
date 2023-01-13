@@ -4,6 +4,7 @@ using ImageTagger.Importer;
 using ImageTagger.Metadata;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
@@ -34,7 +35,7 @@ namespace ImageTagger.Managers
         {
             currentQuery = new QueryInfo
             {
-                QueryType = TabType.DEFAULT,
+                QueryType = TabType.Default,
                 Order = Global.Settings.CurrentOrder,
                 Sort = Global.Settings.CurrentSort,
                 SortSimilarity = Global.Settings.CurrentSortSimilarity,
@@ -93,7 +94,7 @@ namespace ImageTagger.Managers
             var tabInfo = TabInfoAccess.GetTabInfo(tabId);
             currentQuery.ImportId = tabInfo.ImportId ?? Global.ALL;
 
-            if (tabInfo.TabType == TabType.SIMILARITY)
+            if (tabInfo.TabType == TabType.Similarity)
             {
                 currentQuery.ImportId = Global.ALL;
                 var hashes = ImageImporter.GetPerceptualHashes(tabInfo.SimilarityHash);
@@ -106,6 +107,22 @@ namespace ImageTagger.Managers
             var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
             currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             currentQuery.QueryType = tabInfo.TabType;
+        }
+
+        public void AddColor(int color)
+        {
+            var set = new HashSet<Colors>(currentQuery.Colors)
+            {
+                (Colors)color
+            };
+            currentQuery.Colors = set.ToArray();
+            if (currentQuery.Sort == Sort.Color) QueryDatabaseGD();
+        }
+
+        public void ClearColors()
+        {
+            currentQuery.Colors = Array.Empty<Colors>();
+            if (currentQuery.Sort == Sort.Color) QueryDatabaseGD();
         }
 
         public void UpdateSort(int sort)
@@ -203,7 +220,7 @@ namespace ImageTagger.Managers
                 {
                     list.AddIconItem(bufferingIcon);
                 }
-                // set scroll value for tab
+                // set scroll value for tab (from tab history)
             }
         }
 
@@ -296,14 +313,14 @@ namespace ImageTagger.Managers
 
                 var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
                 if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-                if (tabInfo.TabType == TabType.SIMILARITY)
+                if (tabInfo.TabType == TabType.Similarity)
                 {
                     switch (Global.Settings.CurrentSortSimilarity)
                     {
-                        case SortSimilarity.AVERAGE: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.DIFFERENCE: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.WAVELET: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.PERCEPTUAL: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Average: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Difference: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Wavelet: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Perceptual: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                         default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                     }
                 }

@@ -62,7 +62,7 @@ namespace ImageTagger.Managers
 
         public int GetCurrentFormat()
         {
-            return (int)(ImageInfoAccess.GetCurrentImageInfo()?.ImageType ?? ImageType.ERROR);
+            return (int)(ImageInfoAccess.GetCurrentImageInfo()?.ImageType ?? ImageType.Error);
         }
 
         public void AddTags(string[] hashes, string[] tags)
@@ -167,7 +167,7 @@ namespace ImageTagger.Managers
         public int GetTabType(string id)
         {
             var info = TabInfoAccess.GetTabInfo(id);
-            return (int)(info?.TabType ?? TabType.DEFAULT);
+            return (int)(info?.TabType ?? TabType.Default);
         }
 
         public string GetTabImportId(string id)

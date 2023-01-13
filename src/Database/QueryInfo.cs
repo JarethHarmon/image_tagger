@@ -34,6 +34,7 @@ namespace ImageTagger.Database
         internal Order Order { get; set; }
         internal SortSimilarity SortSimilarity { get; set; }
         internal bool Filtered { get; set; }
+        internal Colors[] Colors { get; set; }
 
         internal string SimilarityHash { get; set; }
         internal ulong AverageHash { get; set; }
@@ -78,10 +79,10 @@ namespace ImageTagger.Database
             ImportId = Global.ALL;
             GroupId = string.Empty;
 
-            QueryType = TabType.DEFAULT;
-            Sort = Sort.HASH;
-            Order = Order.ASCENDING;
-            SortSimilarity = SortSimilarity.AVERAGE;
+            QueryType = TabType.Default;
+            Sort = Sort.Hash;
+            Order = Order.Ascending;
+            SortSimilarity = SortSimilarity.Average;
             Filtered = false;
 
             MinSimilarity = MinSimilarity = Global.Settings.MinSimilarity;
@@ -90,6 +91,7 @@ namespace ImageTagger.Database
             TagsAll = Array.Empty<string>();
             TagsAny = Array.Empty<string>();
             TagsNone = Array.Empty<string>();
+            Colors = Array.Empty<Colors>();
 
             MinWidth = -1;
             MaxWidth = -1;
@@ -134,14 +136,22 @@ namespace ImageTagger.Database
             return CalcHashFromString(text);
         }
 
+        private string CalcHashFromArray(Colors[] colors)
+        {
+            string[] _colors = new string[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+                _colors[i] = colors[i].ToString();
+            return CalcHashFromArray(_colors);
+        }
+
         private string CalcHashFromCondition(Dictionary<ExpressionType, HashSet<string>> condition)
         {
             string[] arr = new string[]
             {
                 // really would like Span<T>, but Godot uses net472
-                CalcHashFromArray(condition[ExpressionType.ALL].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.ANY].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.NONE].ToArray()),
+                CalcHashFromArray(condition[ExpressionType.All].ToArray()),
+                CalcHashFromArray(condition[ExpressionType.Any].ToArray()),
+                CalcHashFromArray(condition[ExpressionType.None].ToArray()),
             };
             return CalcHashFromString(string.Join("?", arr)); // to ensure they stay in correct relative order (instead of CalcHashFromArray() which calls Sort())
         }
@@ -162,10 +172,10 @@ namespace ImageTagger.Database
 
         internal string CalcId()
         {
-            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}",
+            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}",
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
                 QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash,
-                MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success,
+                MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success, CalcHashFromArray(Colors),
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
             ));
             return Id;
@@ -198,6 +208,8 @@ namespace ImageTagger.Database
                 WaveletHash = queryInfo.WaveletHash,
                 MinSimilarity = queryInfo.MinSimilarity,
                 BucketPrecision = queryInfo.BucketPrecision,
+
+                Colors = queryInfo.Colors,
 
                 // numerical
 

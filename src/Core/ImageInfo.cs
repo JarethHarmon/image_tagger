@@ -47,7 +47,7 @@ namespace ImageTagger.Core
 
         public ImageInfo()
         {
-            ImageType = ImageType.ERROR;
+            ImageType = ImageType.Error;
             IsGroupLeader = false;
             Imports = new HashSet<string>();
             Paths = new HashSet<string>();

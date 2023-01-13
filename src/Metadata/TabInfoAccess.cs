@@ -25,7 +25,7 @@ namespace ImageTagger.Metadata
                 {
                     Id = Global.ALL,
                     Name = Global.ALL,
-                    TabType = TabType.DEFAULT,
+                    TabType = TabType.Default,
                     ImportId = Global.ALL,
                 };
                 dictTabInfo[Global.ALL] = allInfo;

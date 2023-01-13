@@ -27,7 +27,7 @@ namespace ImageTagger.Importer
             }
             catch
             {
-                return Error.PYTHON;
+                return Error.Python;
             }
         }
 
@@ -307,19 +307,19 @@ namespace ImageTagger.Importer
                         ? new MagickImageInfo(path)
                         : new MagickImageInfo(TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>());
 
-                    ImageType = ImageType.OTHER;
+                    ImageType = ImageType.Other;
                     Width = info.Width;
                     Height = info.Height;
 
                     string format = info.Format.ToString().ToUpperInvariant().Replace("JPG", "JPEG").Replace("JFIF", "JPEG");
-                    if (format.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.JPEG;
-                    else if (format.Equals("png", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.PNG;
-                    else if (format.Equals("gif", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.GIF;
-                    else if (format.Equals("webp", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.WEBP;
+                    if (format.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Jpeg;
+                    else if (format.Equals("png", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Png;
+                    else if (format.Equals("gif", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Gif;
+                    else if (format.Equals("webp", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Webp;
                 }
                 catch
                 {
-                    ImageType = ImageType.ERROR;
+                    ImageType = ImageType.Error;
                     Width = -1;
                     Height = -1;
                 }
@@ -339,7 +339,7 @@ namespace ImageTagger.Importer
                 }
                 catch
                 {
-                    ImageType = ImageType.ERROR;
+                    ImageType = ImageType.Error;
                     Width = -1;
                     Height = -1;
                 }
@@ -372,11 +372,10 @@ namespace ImageTagger.Importer
         internal static ImageInfoPart GetImageInfoPart(string path)
         {
             return (IsApng(path))
-                ? new ImageInfoPart(path, ImageType.APNG)
+                ? new ImageInfoPart(path, ImageType.Apng)
                 : new ImageInfoPart(path);
         }
 
-        // have 3rd script create the image instead to avoid using Godot here
         internal static (ImageType, byte[]) LoadUnsupportedImage(string path)
         {
             if (TryLoadFile(path, out byte[] data))
@@ -390,27 +389,26 @@ namespace ImageTagger.Importer
                     if (image.Format == MagickFormat.Jpeg || image.Format == MagickFormat.Jpg)
                     {
                         image.Format = MagickFormat.Png;
-                        return (ImageType.PNG, image.ToByteArray());
+                        return (ImageType.Png, image.ToByteArray());
                     }
                     else
                     {
                         image.Format = MagickFormat.Jpeg;
                         image.Quality = 95;
-                        return (ImageType.JPEG, image.ToByteArray());
+                        return (ImageType.Jpeg, image.ToByteArray());
                     }
                 }
                 catch
                 {
-                    return (ImageType.ERROR, Array.Empty<byte>());
+                    return (ImageType.Error, Array.Empty<byte>());
                 }
             }
-            return (ImageType.ERROR, Array.Empty<byte>());
+            return (ImageType.Error, Array.Empty<byte>());
         }
 
         /*=========================================================================================
 									      Animations & Large Images
         =========================================================================================*/
-        // have whatever calls this emit the signal instead
         internal static Error LoadGif(string path, string hash)
         {
             const string pyScript = "pil_load_animation";
@@ -425,12 +423,12 @@ namespace ImageTagger.Importer
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return Error.PYTHON;
+                    return Error.Python;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return Error.GENERIC;
+                    return Error.Generic;
                 }
             }
         }
@@ -449,12 +447,12 @@ namespace ImageTagger.Importer
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return Error.PYTHON;
+                    return Error.Python;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return Error.GENERIC;
+                    return Error.Generic;
                 }
             }
         }
@@ -473,12 +471,12 @@ namespace ImageTagger.Importer
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return Error.PYTHON;
+                    return Error.Python;
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return Error.GENERIC;
+                    return Error.Generic;
                 }
             }
         }

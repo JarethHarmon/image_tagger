@@ -32,12 +32,12 @@ namespace ImageTagger.Managers
         public Godot.Image LoadUnsupportedImage(string path)
         {
             (ImageType type, byte[] data) = ImageImporter.LoadUnsupportedImage(path);
-            if (type == ImageType.ERROR) return null;
+            if (type == ImageType.Error) return null;
             if (data.Length == 0) return null;
 
             var image = new Godot.Image();
-            if (type == ImageType.PNG) image.LoadPngFromBuffer(data);
-            else if (type == ImageType.JPEG) image.LoadJpgFromBuffer(data);
+            if (type == ImageType.Png) image.LoadPngFromBuffer(data);
+            else if (type == ImageType.Jpeg) image.LoadJpgFromBuffer(data);
             else return null;
 
             return image;
@@ -136,16 +136,16 @@ namespace ImageTagger.Managers
 
                 // note: there is a bug in this implementation where it will count the same images a second time if the user deletes only the image_info.db file
                 //  this is because importInfo no longer stores the hashes it contains, that information is stored on the images
-                if (result == ImportStatus.SUCCESS)
+                if (result == ImportStatus.Success)
                 {
                     info.Success++;
                     allInfo.Success++;
                 }
-                else if (result == ImportStatus.DUPLICATE)
+                else if (result == ImportStatus.Duplicate)
                 {
                     info.Duplicate++;
                 }
-                else if (result == ImportStatus.IGNORED)
+                else if (result == ImportStatus.Ignored)
                 {
                     info.Ignored++;
                 }
@@ -267,7 +267,7 @@ namespace ImageTagger.Managers
             {
                 if (!ImageImporter.FileExists(path))
                 {
-                    UpdateImportCount(importId, ImportStatus.FAILED);
+                    UpdateImportCount(importId, ImportStatus.Failed);
                     Console.WriteLine("file path");
                 }
                 else
@@ -275,7 +275,7 @@ namespace ImageTagger.Managers
                     ImportStatus result = ImportImage(importId, path);
                     UpdateImportCount(importId, result);
                     signals.Call("emit_signal", "increment_import_buttons", tabs);
-                    if (result == ImportStatus.SUCCESS)
+                    if (result == ImportStatus.Success)
                     {
                         signals.Call("emit_signal", "increment_all_button");
                     }
@@ -290,15 +290,15 @@ namespace ImageTagger.Managers
             if (fileInfo.Size < 0)
             {
                 Console.WriteLine("file size");
-                return ImportStatus.FAILED;
+                return ImportStatus.Failed;
             }
             string hash = file.GetSha256(imagePath);
-            if (hash.Length == 0) return ImportStatus.FAILED;
+            if (hash.Length == 0) return ImportStatus.Failed;
 
             string thumbPath = $"{Global.GetThumbnailPath()}{hash.Substring(0, 2)}/{hash}.thumb";
             var phashes = new ImageImporter.PerceptualHashes();
             var colors = new ImageImporter.ColorBuckets();
-            var result = ImportStatus.SUCCESS;
+            var result = ImportStatus.Success;
 
             bool thumbnailExisted = true;
             if (!ImageImporter.FileExists(thumbPath))
@@ -315,7 +315,7 @@ namespace ImageTagger.Managers
                 }
                 if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath))
                 {
-                    return ImportStatus.FAILED;
+                    return ImportStatus.Failed;
                 }
             }
 
@@ -323,10 +323,10 @@ namespace ImageTagger.Managers
             if (imageInfo is null)
             {
                 var imageInfoPart = ImageImporter.GetImageInfoPart(imagePath);
-                if (imageInfoPart.ImageType == ImageType.ERROR)
+                if (imageInfoPart.ImageType == ImageType.Error)
                 {
                     Console.WriteLine("image error");
-                    return ImportStatus.FAILED;
+                    return ImportStatus.Failed;
                 }
 
                 if (thumbnailExisted)
@@ -335,7 +335,7 @@ namespace ImageTagger.Managers
                     if (phashes.Difference == 0)
                     {
                         Console.WriteLine("diff hash");
-                        return ImportStatus.FAILED;
+                        return ImportStatus.Failed;
                     }
                 }
 
@@ -378,16 +378,15 @@ namespace ImageTagger.Managers
                 imageInfo.Paths.Add(imagePath);
                 if (imageInfo.Imports.Contains(importId))
                 {
-                    result = ImportStatus.IGNORED;
+                    result = ImportStatus.Ignored;
                 }
                 else
                 {
                     imageInfo.Imports.Add(importId);
-                    result = ImportStatus.DUPLICATE;
+                    result = ImportStatus.Duplicate;
                 }
             }
 
-            //StoreTempImageInfo(importId, sectionId, imageInfo);
             StoreTempImageInfo(importId, imageInfo);
             return result;
         }

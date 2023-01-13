@@ -44,7 +44,7 @@ namespace ImageTagger.Database
         private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
         {
             // NONE
-            if (type == ExpressionType.NONE)
+            if (type == ExpressionType.None)
                 return (BsonExpression)$"($.Tags[*] ANY IN {BsonMapper.Global.Serialize(tags)}) != true";
 
             // one ALL or ANY
@@ -57,7 +57,7 @@ namespace ImageTagger.Database
                 list.Add(Query.Contains("$.Tags[*] ANY", tag));
 
             // return And (ALL) or Or (ANY)
-            if (type == ExpressionType.ALL)
+            if (type == ExpressionType.All)
                 return Query.And(list.ToArray());
             return Query.Or(list.ToArray());
         }
@@ -148,9 +148,9 @@ namespace ImageTagger.Database
             {
                 var condition = new Dictionary<ExpressionType, HashSet<string>>
                 {
-                    { ExpressionType.ALL, new HashSet<string>(all) },
-                    { ExpressionType.ANY, new HashSet<string>(any) },
-                    { ExpressionType.NONE, new HashSet<string>(none) }
+                    { ExpressionType.All, new HashSet<string>(all) },
+                    { ExpressionType.Any, new HashSet<string>(any) },
+                    { ExpressionType.None, new HashSet<string>(none) }
                 };
                 conditions.Add(condition);
             }
@@ -167,9 +167,9 @@ namespace ImageTagger.Database
 
                 var dict = new Dictionary<ExpressionType, HashSet<string>>
                 {
-                    { ExpressionType.ALL, new HashSet<string>(_all) },
-                    { ExpressionType.ANY, new HashSet<string>(_any) },
-                    { ExpressionType.NONE, new HashSet<string>(_none) },
+                    { ExpressionType.All, new HashSet<string>(_all) },
+                    { ExpressionType.Any, new HashSet<string>(_any) },
+                    { ExpressionType.None, new HashSet<string>(_none) },
                 };
                 conditions.Add(dict);
 
@@ -184,7 +184,7 @@ namespace ImageTagger.Database
                 bool presentInEveryCondition = true;
                 foreach (var condition in conditions)
                 {
-                    if (!condition[ExpressionType.ALL].Contains(tag))
+                    if (!condition[ExpressionType.All].Contains(tag))
                     {
                         presentInEveryCondition = false;
                         Any.Add(tag);
@@ -197,7 +197,7 @@ namespace ImageTagger.Database
             // find tags that should be added to global ANY
             foreach (var condition in conditions)
             {
-                Any.UnionWith(condition[ExpressionType.ANY]);
+                Any.UnionWith(condition[ExpressionType.Any]);
             }
 
             // find tags that should be added to global NONE
@@ -206,7 +206,7 @@ namespace ImageTagger.Database
                 bool presentInEveryCondition = true;
                 foreach (var condition in conditions)
                 {
-                    if (!condition[ExpressionType.NONE].Contains(tag))
+                    if (!condition[ExpressionType.None].Contains(tag))
                     {
                         presentInEveryCondition = false;
                         break;
@@ -239,15 +239,15 @@ namespace ImageTagger.Database
                 var conditions = new List<BsonExpression>();
                 foreach (var condition in info.TagsComplex)
                 {
-                    if (condition[ExpressionType.ALL].Count == 0 && condition[ExpressionType.ANY].Count == 0 && condition[ExpressionType.NONE].Count == 0) continue;
+                    if (condition[ExpressionType.All].Count == 0 && condition[ExpressionType.Any].Count == 0 && condition[ExpressionType.None].Count == 0) continue;
 
                     var list = new List<BsonExpression>();
-                    if (condition[ExpressionType.ALL].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.ALL].ToArray(), ExpressionType.ALL));
-                    if (condition[ExpressionType.ANY].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.ANY].ToArray(), ExpressionType.ANY));
-                    if (condition[ExpressionType.NONE].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.NONE].ToArray(), ExpressionType.NONE));
+                    if (condition[ExpressionType.All].Count > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.All].ToArray(), ExpressionType.All));
+                    if (condition[ExpressionType.Any].Count > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.Any].ToArray(), ExpressionType.Any));
+                    if (condition[ExpressionType.None].Count > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.None].ToArray(), ExpressionType.None));
 
                     if (list.Count == 0) continue;
                     else if (list.Count == 1) conditions.Add(list[0]);
@@ -269,7 +269,7 @@ namespace ImageTagger.Database
             var results = Enumerable.Empty<SimilarityQueryResult>();
             if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
 
-            if (info.SortSimilarity == SortSimilarity.AVERAGED)
+            if (info.SortSimilarity == SortSimilarity.Averaged)
             {
                 var tmp = query.Select(x => new SimilarityQueryResult
                 {
@@ -293,7 +293,7 @@ namespace ImageTagger.Database
                     result.Similarity = (simi1 + simi2 + simi3 + simi4) / 4;
                 }
             }
-            else if (info.SortSimilarity == SortSimilarity.AVERAGE)
+            else if (info.SortSimilarity == SortSimilarity.Average)
             {
                 var tmp = query.Select(x => new SimilarityQueryResult
                 {
@@ -311,7 +311,7 @@ namespace ImageTagger.Database
                     result.Similarity = (float)Math.Pow(temp, 3) * 100;
                 }
             }
-            else if (info.SortSimilarity == SortSimilarity.WAVELET)
+            else if (info.SortSimilarity == SortSimilarity.Wavelet)
             {
                 var tmp = query.Select(x => new SimilarityQueryResult
                 {
@@ -328,7 +328,7 @@ namespace ImageTagger.Database
                     result.Similarity = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
                 }
             }
-            else if (info.SortSimilarity == SortSimilarity.DIFFERENCE)
+            else if (info.SortSimilarity == SortSimilarity.Difference)
             {
                 var tmp = query.Select(x => new SimilarityQueryResult
                 {
@@ -345,7 +345,7 @@ namespace ImageTagger.Database
                     result.Similarity = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
                 }
             }
-            else if (info.SortSimilarity == SortSimilarity.PERCEPTUAL)
+            else if (info.SortSimilarity == SortSimilarity.Perceptual)
             {
                 var tmp = query.Select(x => new SimilarityQueryResult
                 {
@@ -378,66 +378,47 @@ namespace ImageTagger.Database
             return _results;
         }
 
+        private static BsonExpression ConstructColorSort(Colors[] colors)
+        {
+            if (colors.Length == 0) return (BsonExpression)"$.Hash";
+            if (colors.Length == 1) return (BsonExpression)$"$.{colors[0]}";
+
+            string expr = "$.";
+            for (int i = 0; i < colors.Length - 1; i++)
+            {
+                expr += $"{colors[i]} * $.";
+            }
+            expr += colors[colors.Length - 1];
+            return (BsonExpression)expr;
+        }
+
         private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info.Query is null) return;
             var query = info.Query;
 
-            if (info.QueryType == TabType.DEFAULT)
+            if (info.QueryType == TabType.Default)
             {
+                int order = (info.Order == Order.Ascending) ? 1 : -1;
+                //info.Colors = new Colors[3] { Colors.Light, Colors.Green, Colors.Dark };
                 switch (info.Sort)
                 {
-                    case Sort.PATH: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Paths.FirstOrDefault()) : query.OrderByDescending(x => x.Paths.FirstOrDefault()); break;
-                    case Sort.NAME: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Name) : query.OrderByDescending(x => x.Name); break;
-                    case Sort.SIZE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Size) : query.OrderByDescending(x => x.Size); break;
-                    case Sort.UPLOAD: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.UploadTime) : query.OrderByDescending(x => x.UploadTime); break;
-                    case Sort.CREATION: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.CreationTime) : query.OrderByDescending(x => x.CreationTime); break;
-                    case Sort.LAST_WRITE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.LastWriteTime) : query.OrderByDescending(x => x.LastWriteTime); break;
-                    case Sort.LAST_EDIT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.LastEditTime) : query.OrderByDescending(x => x.LastEditTime); break;
-                    case Sort.DIMENSIONS: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Width * x.Height) : query.OrderByDescending(x => x.Width * x.Height); break;
-                    case Sort.WIDTH: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Width) : query.OrderByDescending(x => x.Width); break;
-                    case Sort.HEIGHT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Height) : query.OrderByDescending(x => x.Height); break;
-                    case Sort.TAG_COUNT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Tags.Length) : query.OrderByDescending(x => x.Tags.Length); break;
-                    case Sort.QUALITY: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Ratings["Quality"]) : query.OrderByDescending(x => x.Ratings["Quality"]); break;
-                    case Sort.APPEAL: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Ratings["Appeal"]) : query.OrderByDescending(x => x.Ratings["Appeal"]); break;
-                    case Sort.ART_STYLE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Ratings["Art"]) : query.OrderByDescending(x => x.Ratings["Art"]); break;
-                    case Sort.RED: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Red) : query.OrderByDescending(x => x.Red); break;
-                    case Sort.LIGHT_RED: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Red * x.Light) : query.OrderByDescending(x => x.Red * x.Light); break;
-                    case Sort.DARK_RED: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Red * x.Dark) : query.OrderByDescending(x => x.Red * x.Dark); break;
-                    case Sort.GREEN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Green) : query.OrderByDescending(x => x.Green); break;
-                    case Sort.LIGHT_GREEN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Green * x.Light) : query.OrderByDescending(x => x.Green * x.Light); break;
-                    case Sort.DARK_GREEN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Green * x.Dark) : query.OrderByDescending(x => x.Green * x.Dark); break;
-                    case Sort.BLUE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue) : query.OrderByDescending(x => x.Blue); break;
-                    case Sort.LIGHT_BLUE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Light) : query.OrderByDescending(x => x.Blue * x.Light); break;
-                    case Sort.DARK_BLUE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Dark) : query.OrderByDescending(x => x.Blue * x.Dark); break;
-                    case Sort.YELLOW: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow) : query.OrderByDescending(x => x.Yellow); break;
-                    case Sort.LIGHT_YELLOW: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Light) : query.OrderByDescending(x => x.Yellow * x.Light); break;
-                    case Sort.DARK_YELLOW: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Dark) : query.OrderByDescending(x => x.Yellow * x.Dark); break;
-                    case Sort.CYAN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Cyan) : query.OrderByDescending(x => x.Cyan); break;
-                    case Sort.LIGHT_CYAN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Cyan * x.Light) : query.OrderByDescending(x => x.Cyan * x.Light); break;
-                    case Sort.DARK_CYAN: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Cyan * x.Dark) : query.OrderByDescending(x => x.Cyan * x.Dark); break;
-                    case Sort.FUCHSIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Fuchsia) : query.OrderByDescending(x => x.Fuchsia); break;
-                    case Sort.LIGHT_FUCHSIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Fuchsia * x.Light) : query.OrderByDescending(x => x.Fuchsia * x.Light); break;
-                    case Sort.DARK_FUCHSIA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Fuchsia * x.Dark) : query.OrderByDescending(x => x.Fuchsia * x.Dark); break;
-                    case Sort.LIGHT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Light) : query.OrderByDescending(x => x.Light); break;
-                    case Sort.DARK: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Dark) : query.OrderByDescending(x => x.Dark); break;
-                    case Sort.ALPHA: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Alpha) : query.OrderByDescending(x => x.Alpha); break;
-                    case Sort.DARK_LIGHT: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Light * x.Dark) : query.OrderByDescending(x => x.Light * x.Dark); break;
-                    case Sort.ORANGE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Red) : query.OrderByDescending(x => x.Yellow * x.Red); break;
-                    case Sort.PURPLE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Fuchsia) : query.OrderByDescending(x => x.Blue * x.Fuchsia); break;
-                    case Sort.LIME: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Yellow * x.Green) : query.OrderByDescending(x => x.Yellow * x.Green); break;
-                    case Sort.AQUAMARINE: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Cyan * x.Green) : query.OrderByDescending(x => x.Cyan * x.Green); break;
-                    case Sort.TEAL: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Blue * x.Cyan) : query.OrderByDescending(x => x.Blue * x.Cyan); break;
-                    case Sort.HOT_PINK: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Red * x.Fuchsia) : query.OrderByDescending(x => x.Red * x.Fuchsia); break;
-                    case Sort.RANDOM:
+                    case Sort.Path: query = query.OrderBy(x => x.Paths.FirstOrDefault(), order); break;
+                    case Sort.Dimensions: query = query.OrderBy(x => x.Width * x.Height, order); break;
+                    case Sort.TagCount: query = query.OrderBy(x => x.Tags.Length, order); break;
+                    case Sort.Quality: query = query.OrderBy(x => x.Ratings["Quality"], order); break;
+                    case Sort.Appeal: query = query.OrderBy(x => x.Ratings["Appeal"], order); break;
+                    case Sort.ArtStyle: query = query.OrderBy(x => x.Ratings["Art"], order); break;
+                    case Sort.Color: query = query.OrderBy(ConstructColorSort(info.Colors), order); break;
+                    case Sort.Random:
                         query = query.OrderBy("RANDOM()");
                         info.ResultsRandom = query.ToEnumerable().Select(x => x.Hash);
                         info.Query = query;
                         return;
-                    default: query = (info.Order == Order.ASCENDING) ? query.OrderBy(x => x.Hash) : query.OrderByDescending(x => x.Hash); break;
+                    default: query = query.OrderBy($"$.{info.Sort}", order); break;
                 }
             }
-            else if (info.QueryType == TabType.SIMILARITY)
+            else if (info.QueryType == TabType.Similarity)
             {
                 var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
@@ -473,7 +454,7 @@ namespace ImageTagger.Database
 
             if (info.Filtered && Global.Settings.PreferSpeed)
             {
-                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
+                if (info.Sort == Sort.Random && info.QueryType != TabType.Similarity)
                 {
                     page.Hashes = await Task.Run(() => info.ResultsRandom?
                         .Skip(modOffset)
@@ -490,7 +471,7 @@ namespace ImageTagger.Database
             }
             else
             {
-                if (info.Sort == Sort.RANDOM && info.QueryType != TabType.SIMILARITY)
+                if (info.Sort == Sort.Random && info.QueryType != TabType.Similarity)
                 {
                     page.Hashes = await Task.Run(() => info.ResultsRandom?
                         .Skip(modOffset)
@@ -507,7 +488,7 @@ namespace ImageTagger.Database
             }
 
             // similarity tabs are forced to query all results, and they keep track of count themselves
-            if (info.QueryType != TabType.SIMILARITY)
+            if (info.QueryType != TabType.Similarity)
             {
                 if (!info.Filtered) info.LastQueriedCount = info.Success;
                 else if (Global.Settings.PreferSpeed) info.LastQueriedCount = page.Hashes.Length;

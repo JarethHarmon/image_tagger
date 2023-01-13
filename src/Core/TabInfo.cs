@@ -16,7 +16,7 @@
             //Id = Global.CreateTabId(); // need to change all Info objects to work like this
             Name = "import";
 
-            TabType = TabType.DEFAULT;
+            TabType = TabType.Default;
             ImportId = Global.ALL;
             GroupId = string.Empty;
             Tag = string.Empty;

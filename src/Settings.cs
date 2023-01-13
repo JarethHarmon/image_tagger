@@ -1,5 +1,6 @@
 ﻿using Godot;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.IO;
 
 namespace ImageTagger
@@ -14,8 +15,11 @@ namespace ImageTagger
         public string LastImportedDirectory { get; set; }
 
         public int MaxQueriesToStore { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public Sort CurrentSort { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public Order CurrentOrder { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
         public SortSimilarity CurrentSortSimilarity { get; set; }
         public bool PreferSpeed { get; set; }
         public float MinSimilarity { get; set; }
@@ -62,9 +66,9 @@ namespace ImageTagger
 
             // queries
             MaxQueriesToStore = 10;
-            CurrentSort = Sort.HASH;
-            CurrentOrder = Order.ASCENDING;
-            CurrentSortSimilarity = SortSimilarity.AVERAGED;
+            CurrentSort = Sort.Hash;
+            CurrentOrder = Order.Ascending;
+            CurrentSortSimilarity = SortSimilarity.Averaged;
             PreferSpeed = true; // whether to prefer speed or RAM when counting results
             MinSimilarity = 74.999f;
 

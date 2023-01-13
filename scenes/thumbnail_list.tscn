@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://assets/animated_buffer.tres" type="Texture" id=1]
 [ext_resource path="res://scripts/page_buttons.gd" type="Script" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://themes/shadow_panel_override.tres" type="StyleBox" id=5]
 [ext_resource path="res://scripts/thumbnail_list.gd" type="Script" id=6]
 [ext_resource path="res://scenes/custom_nodes/ScrollableOptionButton.tscn" type="PackedScene" id=7]
+[ext_resource path="res://scripts/color_section.gd" type="Script" id=8]
 
 [node name="thumbnail_list" type="Control"]
 anchor_right = 1.0
@@ -62,7 +63,7 @@ text = "Sort By: "
 margin_right = 61.0
 margin_bottom = 24.0
 text = "Hash"
-items = [ "Hash", null, false, 0, null, "Path", null, false, 1, null, "Name", null, false, 2, null, "Size", null, false, 3, null, "Upload Time", null, false, 4, null, "Creation Time", null, false, 5, null, "Last Write Time", null, false, 6, null, "Last Edit Time", null, false, 7, null, "Dimensions", null, false, 8, null, "Width", null, false, 9, null, "Height", null, false, 10, null, "Tag Count", null, false, 11, null, "Quality", null, false, 12, null, "Appeal", null, false, 13, null, "Art Style", null, false, 14, null, "Red", null, false, 15, null, "Light Red", null, false, 16, null, "Dark Red", null, false, 17, null, "Green", null, false, 18, null, "Light Green", null, false, 19, null, "Dark Green", null, false, 20, null, "Blue", null, false, 21, null, "Light Blue", null, false, 22, null, "Dark Blue", null, false, 23, null, "Yellow", null, false, 24, null, "Light Yellow", null, false, 25, null, "Dark Yellow", null, false, 26, null, "Cyan", null, false, 27, null, "Light Cyan", null, false, 28, null, "Dark Cyan", null, false, 29, null, "Fuchsia", null, false, 30, null, "Light Fuchsia", null, false, 31, null, "Dark Fuchsia", null, false, 32, null, "Light", null, false, 33, null, "Dark", null, false, 34, null, "Alpha", null, false, 35, null, "Random", null, false, 36, null, "Dark Light", null, false, 37, null, "Orange", null, false, 38, null, "Purple", null, false, 39, null, "Lime", null, false, 40, null, "Aquamarine", null, false, 41, null, "Teal", null, false, 42, null, "Hot Pink", null, false, 43, null ]
+items = [ "Hash", null, false, 0, null, "Path", null, false, 1, null, "Name", null, false, 2, null, "Size", null, false, 3, null, "Upload Time", null, false, 4, null, "Creation Time", null, false, 5, null, "Last Write Time", null, false, 6, null, "Last Edit Time", null, false, 7, null, "Dimensions", null, false, 8, null, "Width", null, false, 9, null, "Height", null, false, 10, null, "Tag Count", null, false, 11, null, "Quality", null, false, 12, null, "Appeal", null, false, 13, null, "Art Style", null, false, 14, null, "Color", null, false, 15, null, "Random", null, false, 16, null ]
 selected = 0
 
 [node name="order_by" parent="margin/vbox/sort_buttons" instance=ExtResource( 7 )]
@@ -124,15 +125,62 @@ margin_right = 1910.0
 margin_bottom = 24.0
 text = "  Select All  "
 
-[node name="hsep3" type="HSeparator" parent="margin/vbox"]
+[node name="color_section" type="HBoxContainer" parent="margin/vbox"]
 margin_top = 28.0
 margin_right = 1910.0
-margin_bottom = 32.0
+margin_bottom = 52.0
+rect_min_size = Vector2( 0, 24 )
+script = ExtResource( 8 )
+
+[node name="select_color" parent="margin/vbox/color_section" instance=ExtResource( 7 )]
+margin_right = 53.0
+margin_bottom = 24.0
+text = "Red"
+items = [ "Red", null, false, 0, null, "Green", null, false, 1, null, "Blue", null, false, 2, null, "Yellow", null, false, 3, null, "Cyan", null, false, 4, null, "Fuchsia", null, false, 5, null, "Light", null, false, 6, null, "Dark", null, false, 7, null, "Alpha", null, false, 8, null ]
+selected = 0
+
+[node name="confirm_color" type="Button" parent="margin/vbox/color_section"]
+margin_left = 57.0
+margin_right = 93.0
+margin_bottom = 24.0
+text = "  +  "
+
+[node name="hsplit" type="HSplitContainer" parent="margin/vbox/color_section"]
+margin_left = 97.0
+margin_right = 97.0
+margin_bottom = 24.0
+custom_constants/autohide = 0
+custom_constants/separation = 4
+
+[node name="colors_temp" type="Label" parent="margin/vbox/color_section"]
+margin_left = 101.0
+margin_right = 1846.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 0, 24 )
+size_flags_horizontal = 3
+
+[node name="colors" type="HFlowContainer" parent="margin/vbox/color_section"]
+visible = false
+margin_left = 101.0
+margin_right = 1910.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+
+[node name="clear" type="Button" parent="margin/vbox/color_section"]
+margin_left = 1850.0
+margin_right = 1910.0
+margin_bottom = 24.0
+text = "  Clear  "
+
+[node name="hsep3" type="HSeparator" parent="margin/vbox"]
+margin_top = 56.0
+margin_right = 1910.0
+margin_bottom = 60.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
 [node name="thumbnails" type="ItemList" parent="margin/vbox"]
-margin_top = 36.0
+margin_top = 64.0
 margin_right = 1910.0
 margin_bottom = 1034.0
 size_flags_horizontal = 3
@@ -159,9 +207,9 @@ size_flags_vertical = 3
 
 [node name="pc" type="PanelContainer" parent="margin/vbox/thumbnails/cc"]
 margin_left = 955.0
-margin_top = 499.0
+margin_top = 485.0
 margin_right = 955.0
-margin_bottom = 499.0
+margin_bottom = 485.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -283,11 +331,15 @@ margin_bottom = 24.0
 text = "  Next  "
 
 [connection signal="item_selected" from="margin/vbox/sort_buttons/sort_by" to="margin/vbox/sort_buttons" method="_on_sort_by_item_selected"]
+[connection signal="item_selected" from="margin/vbox/sort_buttons/sort_by" to="margin/vbox/color_section" method="_on_sort_by_item_selected"]
 [connection signal="item_selected" from="margin/vbox/sort_buttons/order_by" to="margin/vbox/sort_buttons" method="_on_order_by_item_selected"]
 [connection signal="item_selected" from="margin/vbox/sort_buttons/similarity" to="margin/vbox/sort_buttons" method="_on_similarity_item_selected"]
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size" to="margin/vbox/thumbnails" method="_on_thumbnail_size_value_changed"]
 [connection signal="value_changed" from="margin/vbox/sort_buttons/thumbnail_size_entry" to="margin/vbox/thumbnails" method="_on_thumbnail_size_entry_value_changed"]
 [connection signal="button_up" from="margin/vbox/sort_buttons/select_all" to="margin/vbox/sort_buttons" method="_on_select_all_button_up"]
+[connection signal="item_selected" from="margin/vbox/color_section/select_color" to="margin/vbox/color_section" method="_on_select_color_item_selected"]
+[connection signal="pressed" from="margin/vbox/color_section/confirm_color" to="margin/vbox/color_section" method="_on_confirm_color_pressed"]
+[connection signal="pressed" from="margin/vbox/color_section/clear" to="margin/vbox/color_section" method="_on_clear_pressed"]
 [connection signal="item_rmb_selected" from="margin/vbox/thumbnails" to="margin/vbox/thumbnails" method="_on_thumbnails_item_rmb_selected"]
 [connection signal="multi_selected" from="margin/vbox/thumbnails" to="margin/vbox/thumbnails" method="_on_thumbnails_multi_selected"]
 [connection signal="pressed" from="margin/vbox/page_buttons/prev_page" to="margin/vbox/page_buttons" method="_on_prev_page_pressed"]
