@@ -52,7 +52,7 @@ func _input(event:InputEvent) -> void:
 	if Input.is_action_just_pressed("refresh"):
 		ThumbnailManager.QueryDatabaseGD(true)
 	
-func search_pressed() -> void: ThumbnailManager.QueryDatabaseGD(false) # force update if search pressed, may change this to be F5 only
+func search_pressed() -> void: ThumbnailManager.QueryDatabaseGD(false)
 func page_changed(new_page:int=1) -> void: ThumbnailManager.UpdatePage(new_page)
 func refresh_page(tab_id:String) -> void: 
 	if tab_id == "": return

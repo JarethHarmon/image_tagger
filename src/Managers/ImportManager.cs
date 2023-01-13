@@ -16,7 +16,7 @@ namespace ImageTagger.Managers
 
         private static readonly object locker = new object();
         private readonly Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
-        private readonly Godot.File file = new Godot.File();
+        private static readonly Godot.File file = new Godot.File();
 
         public override void _Ready()
         {
@@ -216,19 +216,21 @@ namespace ImageTagger.Managers
                 var info = ImportInfoAccess.GetImportInfo(importId);
                 info.Sections.Remove(sectionId);
 
+                // fixes issue with sections not being deleted, should fix desync issue with imports when closing program during import
+                // unfortunately, causes import process to stop for a bit due to the lock
+                DatabaseAccess.UpdateImportInfo(info);
+                DatabaseAccess.DeleteImportSection(sectionId);
+
                 if (info.Sections.Count == 0)
                 {
-                    lock (locker)
+                    if (tempImageInfo.TryGetValue(importId, out var iinfo))
                     {
-                        if (tempImageInfo.TryGetValue(importId, out var iinfo))
+                        if (iinfo.Count > 0)
                         {
-                            if (iinfo.Count > 0)
-                            {
-                                DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
-                            }
+                            DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
                         }
-                        tempImageInfo.Remove(importId);
                     }
+                    tempImageInfo.Remove(importId);
                     CompleteImport(importId);
                 }
             }

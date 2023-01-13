@@ -21,18 +21,21 @@ namespace ImageTagger.Scanner
         private static string currentFolder = string.Empty;
         internal static string GetCurrentFolder() { return currentFolder; }
 
+        private static readonly object locker = new object();
+
         internal static void Cancel()
         {
             cancelling = true;
-            tempPaths.Clear();
+            lock (locker) tempPaths.Clear();
             currentFolder = string.Empty;
         }
 
         internal static int GetImageCount()
         {
             int count = 0;
-            foreach (var section in tempPaths.Values)
-                count += section.Count;
+            lock (locker)
+                foreach (var section in tempPaths.Values)
+                    count += section.Count;
             return count;
         }
 
@@ -50,8 +53,11 @@ namespace ImageTagger.Scanner
                     {
                         string dir = file.Directory.FullName.Replace("\\", "/");
                         currentFolder = dir;
-                        if (tempPaths.ContainsKey(dir)) tempPaths[dir].Add(file.Name);
-                        else tempPaths[dir] = new HashSet<string> { file.Name };
+                        lock (locker)
+                        {
+                            if (tempPaths.ContainsKey(dir)) tempPaths[dir].Add(file.Name);
+                            else tempPaths[dir] = new HashSet<string> { file.Name };
+                        }
                     }
                 }
                 if (cancelling) return 0;
@@ -91,7 +97,8 @@ namespace ImageTagger.Scanner
                     }
                 }
 
-                tempPaths[dir.FullName.Replace("\\", "/")] = paths;
+                lock (locker)
+                    tempPaths[dir.FullName.Replace("\\", "/")] = paths;
                 if (!recursive) return;
 
                 var enumeratedFolders = dir.EnumerateDirectories();
@@ -124,15 +131,18 @@ namespace ImageTagger.Scanner
         internal static string[] GetScannedPaths()
         {
             var list = new List<string>();
-            foreach (string folder in tempPaths.Keys.ToArray())
+            lock (locker)
             {
-                foreach (string file in tempPaths[folder])
+                foreach (string folder in tempPaths.Keys.ToArray())
                 {
-                    list.Add($"{folder}/{file}");
+                    foreach (string file in tempPaths[folder])
+                    {
+                        list.Add($"{folder}/{file}");
+                    }
                 }
+                tempPaths.Clear();
             }
 
-            tempPaths.Clear();
             currentFolder = string.Empty;
             return list.ToArray();
         }
