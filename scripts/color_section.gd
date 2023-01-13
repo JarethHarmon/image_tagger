@@ -59,6 +59,8 @@ func settings_loaded() -> void:
 
 func _switch_sort_buttons(hide:bool) -> void:
 	self.visible = not hide
+	if Global.GetCurrentSort() != Globals.Sort.COLOR: 
+		self.visible = false
 
 func _on_sort_by_item_selected(index:int) -> void:
 	if index == Globals.Sort.COLOR: self.visible = true
