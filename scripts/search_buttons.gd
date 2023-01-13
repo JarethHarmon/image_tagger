@@ -48,7 +48,11 @@ func _on_complex_text_changed(new_text:String) -> void:
 	tags_complex = new_text.split(",", false)
 	ThumbnailManager.SetTagsComplex(tags_all, tags_any, tags_none, tags_complex)
 
-func search_pressed() -> void: ThumbnailManager.QueryDatabaseGD(true) # force update if search pressed, may change this to be F5 only
+func _input(event:InputEvent) -> void:
+	if Input.is_action_just_pressed("refresh"):
+		ThumbnailManager.QueryDatabaseGD(true)
+	
+func search_pressed() -> void: ThumbnailManager.QueryDatabaseGD(false) # force update if search pressed, may change this to be F5 only
 func page_changed(new_page:int=1) -> void: ThumbnailManager.UpdatePage(new_page)
 func refresh_page(tab_id:String) -> void: 
 	if tab_id == "": return
