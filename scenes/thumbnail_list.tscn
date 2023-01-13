@@ -152,19 +152,17 @@ margin_bottom = 24.0
 custom_constants/autohide = 0
 custom_constants/separation = 4
 
-[node name="colors_temp" type="Label" parent="margin/vbox/color_section"]
+[node name="scroll" type="ScrollContainer" parent="margin/vbox/color_section"]
 margin_left = 101.0
 margin_right = 1846.0
 margin_bottom = 24.0
-rect_min_size = Vector2( 0, 24 )
 size_flags_horizontal = 3
 
-[node name="colors" type="HFlowContainer" parent="margin/vbox/color_section"]
-visible = false
-margin_left = 101.0
-margin_right = 1910.0
+[node name="colors" type="HFlowContainer" parent="margin/vbox/color_section/scroll"]
+margin_right = 1745.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="clear" type="Button" parent="margin/vbox/color_section"]
 margin_left = 1850.0

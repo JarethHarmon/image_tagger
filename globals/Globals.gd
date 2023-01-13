@@ -1,5 +1,6 @@
 extends Node
 
+enum Colors { RED, GREEN, BLUE, YELLOW, CYAN, FUCHSIA, LIGHT, DARK, ALPHA }
 enum Error { OK, GENERIC, DATABASE, DICTIONARY, IO, PYTHON }
 enum ImageType { JPEG, PNG, APNG, GIF, WEBP, OTHER=15, ERROR=-1}
 enum TabType { DEFAULT, SIMILARITY }

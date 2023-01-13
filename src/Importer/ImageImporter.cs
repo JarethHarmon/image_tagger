@@ -66,48 +66,22 @@ namespace ImageTagger.Importer
 
         internal struct ColorBuckets
         {
-            public int Red;
-            public int Green;
-            public int Blue;
-            public int Yellow;
-            public int Cyan;
-            public int Fuchsia;
-            public int Light;
-            public int Dark;
-            public int Alpha;
+            public ulong[] Colors;
 
             public ColorBuckets(string _colors)
             {
                 string[] temp = _colors.Split('?');
                 if (temp?.Length == 9)
                 {
-                    int[] colors = new int[9];
+                    Colors = new ulong[9];
                     for (int i = 0; i < temp.Length; i++)
                     {
-                        if (!int.TryParse(temp[i], out colors[i])) colors[i] = 0;
+                        if (!ulong.TryParse(temp[i], out Colors[i])) Colors[i] = 0;
                     }
-
-                    Red = colors[0];
-                    Green = colors[1];
-                    Blue = colors[2];
-                    Yellow = colors[3];
-                    Cyan = colors[4];
-                    Fuchsia = colors[5];
-                    Light = colors[6];
-                    Dark = colors[7];
-                    Alpha = colors[8];
                 }
                 else
                 {
-                    Red = 0;
-                    Green = 0;
-                    Blue = 0;
-                    Yellow = 0;
-                    Cyan = 0;
-                    Fuchsia = 0;
-                    Light = 0;
-                    Dark = 0;
-                    Alpha = 0;
+                    Colors = new ulong[9];
                 }
             }
         }

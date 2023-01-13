@@ -15,15 +15,7 @@ namespace ImageTagger.Core
         public ulong PerceptualHash { get; set; }
 
         public int Bucket { get; set; }
-        public int Red { get; set; }
-        public int Green { get; set; }
-        public int Blue { get; set; }
-        public int Yellow { get; set; }
-        public int Cyan { get; set; }
-        public int Fuchsia { get; set; }
-        public int Light { get; set; }
-        public int Dark { get; set; }
-        public int Alpha { get; set; }
+        public ulong[] Colors { get; set; }
 
         public int Width { get; set; }
         public int Height { get; set; }
@@ -53,6 +45,7 @@ namespace ImageTagger.Core
             Paths = new HashSet<string>();
             Groups = new HashSet<string>();
             Tags = Array.Empty<string>();
+            Colors = Array.Empty<ulong>();
             Ratings = new Dictionary<string, int>();
         }
 

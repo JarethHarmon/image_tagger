@@ -349,15 +349,7 @@ namespace ImageTagger.Managers
                     WaveletHash = phashes.Wavelet,
                     PerceptualHash = phashes.Perceptual,
 
-                    Red = colors.Red,
-                    Green = colors.Green,
-                    Blue = colors.Blue,
-                    Yellow = colors.Yellow,
-                    Cyan = colors.Cyan,
-                    Fuchsia = colors.Fuchsia,
-                    Light = colors.Light,
-                    Dark = colors.Dark,
-                    Alpha = colors.Alpha,
+                    Colors = colors.Colors,
 
                     Width = imageInfoPart.Width,
                     Height = imageInfoPart.Height,

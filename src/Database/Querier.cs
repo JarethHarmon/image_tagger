@@ -381,14 +381,14 @@ namespace ImageTagger.Database
         private static BsonExpression ConstructColorSort(Colors[] colors)
         {
             if (colors.Length == 0) return (BsonExpression)"$.Hash";
-            if (colors.Length == 1) return (BsonExpression)$"$.{colors[0]}";
+            if (colors.Length == 1) return (BsonExpression)$"$.Colors[{(int)colors[0]}]";
 
-            string expr = "$.";
+            string expr = "$.Colors[";
             for (int i = 0; i < colors.Length - 1; i++)
             {
-                expr += $"{colors[i]} * $.";
+                expr += $"{(int)colors[i]}] * $.Colors[";
             }
-            expr += colors[colors.Length - 1];
+            expr += $"{(int)colors[colors.Length - 1]}]";
             return (BsonExpression)expr;
         }
 

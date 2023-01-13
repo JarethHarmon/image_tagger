@@ -111,18 +111,24 @@ namespace ImageTagger.Managers
 
         public void AddColor(int color)
         {
-            var set = new HashSet<Colors>(currentQuery.Colors)
-            {
-                (Colors)color
-            };
-            currentQuery.Colors = set.ToArray();
-            if (currentQuery.Sort == Sort.Color) QueryDatabaseGD();
+            var list = currentQuery.Colors.ToList();
+            list.Add((Colors)color);
+            currentQuery.Colors = list.ToArray();
+            QueryDatabaseGD();
+        }
+
+        public void RemoveColor(int color)
+        {
+            var list = currentQuery.Colors.ToList();
+            list.Remove((Colors)color);
+            currentQuery.Colors = list.ToArray();
+            QueryDatabaseGD();
         }
 
         public void ClearColors()
         {
             currentQuery.Colors = Array.Empty<Colors>();
-            if (currentQuery.Sort == Sort.Color) QueryDatabaseGD();
+            QueryDatabaseGD();
         }
 
         public void UpdateSort(int sort)
