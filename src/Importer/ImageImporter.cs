@@ -2,6 +2,7 @@ using System;
 using ImageMagick;
 using ImageTagger.Database;
 using Python.Runtime;
+using static Godot.HTTPRequest;
 
 namespace ImageTagger.Importer
 {
@@ -47,6 +48,25 @@ namespace ImageTagger.Importer
             public ulong Wavelet;
             public ulong Perceptual;
 
+            public PerceptualHashes(string hashes)
+            {
+                string[] _hashes = hashes.Split('?');
+                if (_hashes.Length != 4)
+                {
+                    Average = 0;
+                    Difference = 0;
+                    Wavelet = 0;
+                    Perceptual = 0;
+                }
+                else
+                {
+                    ulong.TryParse(_hashes[0], out Average);
+                    ulong.TryParse(_hashes[1], out Wavelet);
+                    ulong.TryParse(_hashes[2], out Difference);
+                    ulong.TryParse(_hashes[3], out Perceptual);
+                }
+            }
+
             public PerceptualHashes(ulong average, ulong difference, ulong wavelet, ulong perceptual)
             {
                 Average = average;
@@ -86,30 +106,25 @@ namespace ImageTagger.Importer
             }
         }
 
+        private static (int, PerceptualHashes, ColorBuckets) ProcessImportResult(string result)
+        {
+            string[] sections = result.Split('!');
+            if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
+            int.TryParse(sections[0], out int numFrames);
+            return (numFrames, new PerceptualHashes(sections[1]), new ColorBuckets(sections[2]));
+        }
+
         internal static (int, PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColors(string imagePath, string thumbPath, int thumbSize)
         {
             const string pyScript = "pil_import";
+            string result = string.Empty;
             using (Py.GIL())
             {
                 try
                 {
                     dynamic script = Py.Import(pyScript);
                     dynamic _result = script.save_webp_thumbnail(imagePath, thumbPath, thumbSize);
-                    string result = (string) _result;
-
-                    string[] sections = result.Split('!');
-                    if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
-
-                    int.TryParse(sections[0], out int numFrames);
-
-                    string[] hashes = sections[1].Split('?');
-                    if (hashes.Length != 4) return (0, new PerceptualHashes(), new ColorBuckets());
-                    ulong.TryParse(hashes[0], out ulong average);
-                    ulong.TryParse(hashes[1], out ulong wavelet);
-                    ulong.TryParse(hashes[2], out ulong difference);
-                    ulong.TryParse(hashes[3], out ulong perceptual);
-
-                    return (numFrames, new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[2]));
+                    result = (string)_result;
                 }
                 catch (PythonException pex)
                 {
@@ -122,32 +137,20 @@ namespace ImageTagger.Importer
                     return (0, new PerceptualHashes(), new ColorBuckets());
                 }
             }
+            return ProcessImportResult(result);
         }
 
         internal static (int, PerceptualHashes, ColorBuckets) GetPerceptualHashesAndColors(string imagePath, string thumbPath)
         {
             const string pyScript = "pil_import";
+            string result = string.Empty;
             using (Py.GIL())
             {
                 try
                 {
                     dynamic script = Py.Import(pyScript);
                     dynamic _result = script.initialize(imagePath, thumbPath);
-                    string result = (string)_result;
-
-                    string[] sections = result.Split('!');
-                    if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
-
-                    int.TryParse(sections[0], out int numFrames);
-
-                    string[] hashes = sections[1].Split('?');
-                    if (hashes.Length != 4) return (0, new PerceptualHashes(), new ColorBuckets());
-                    ulong.TryParse(hashes[0], out ulong average);
-                    ulong.TryParse(hashes[1], out ulong wavelet);
-                    ulong.TryParse(hashes[2], out ulong difference);
-                    ulong.TryParse(hashes[3], out ulong perceptual);
-
-                    return (numFrames, new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[2]));
+                    result = (string)_result;
                 }
                 catch (PythonException pex)
                 {
@@ -160,6 +163,7 @@ namespace ImageTagger.Importer
                     return (0, new PerceptualHashes(), new ColorBuckets());
                 }
             }
+            return ProcessImportResult(result);
         }
 
         internal static (int, PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColorsOther(string imagePath, string thumbPath, int thumbSize)
