@@ -2,7 +2,6 @@ using System;
 using ImageMagick;
 using ImageTagger.Database;
 using Python.Runtime;
-using static Godot.HTTPRequest;
 
 namespace ImageTagger.Importer
 {
