@@ -16,6 +16,7 @@ namespace ImageTagger.Core
 
         public int Bucket { get; set; }
         public ulong[] Colors { get; set; }
+        public int NumFrames { get; set; }
 
         public int Width { get; set; }
         public int Height { get; set; }

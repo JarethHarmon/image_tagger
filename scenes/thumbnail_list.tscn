@@ -63,7 +63,7 @@ text = "Sort By: "
 margin_right = 61.0
 margin_bottom = 24.0
 text = "Hash"
-items = [ "Hash", null, false, 0, null, "Path", null, false, 1, null, "Name", null, false, 2, null, "Size", null, false, 3, null, "Upload Time", null, false, 4, null, "Creation Time", null, false, 5, null, "Last Write Time", null, false, 6, null, "Last Edit Time", null, false, 7, null, "Dimensions", null, false, 8, null, "Width", null, false, 9, null, "Height", null, false, 10, null, "Tag Count", null, false, 11, null, "Quality", null, false, 12, null, "Appeal", null, false, 13, null, "Art Style", null, false, 14, null, "Color", null, false, 15, null, "Random", null, false, 16, null ]
+items = [ "Hash", null, false, 0, null, "Path", null, false, 1, null, "Name", null, false, 2, null, "Size", null, false, 3, null, "Upload Time", null, false, 4, null, "Creation Time", null, false, 5, null, "Last Write Time", null, false, 6, null, "Last Edit Time", null, false, 7, null, "Dimensions", null, false, 8, null, "Width", null, false, 9, null, "Height", null, false, 10, null, "Tag Count", null, false, 11, null, "Frame Count", null, false, 12, null, "Quality", null, false, 13, null, "Appeal", null, false, 14, null, "Art Style", null, false, 15, null, "Color", null, false, 16, null, "Random", null, false, 17, null ]
 selected = 0
 
 [node name="order_by" parent="margin/vbox/sort_buttons" instance=ExtResource( 7 )]

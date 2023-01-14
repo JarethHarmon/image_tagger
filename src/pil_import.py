@@ -11,7 +11,8 @@ SIZE = 8
 # note that for any intensive operation that is performed multiple times, I should really do all of those in 
 #   initialize / save_webp_thumbnail and pass them as arguments to the relevant functions
 
-def initialize(sv_path):
+def initialize(im_path, sv_path):
+    num_frames = getattr(Image.open(im_path), "n_frames", 1)
     image = Image.open(sv_path)
     image = ImageOps.exif_transpose(image)
     imageL = image.convert('L')
@@ -22,10 +23,11 @@ def initialize(sv_path):
     per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
     
-    return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
+    return f'{num_frames}!{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def save_webp_thumbnail(im_path, sv_path, sv_size):
     image = Image.open(im_path)
+    num_frames = getattr(image, "n_frames", 1)
     image.thumbnail((sv_size, sv_size))
     image.save(sv_path, 'webp')
     image = ImageOps.exif_transpose(image)
@@ -37,7 +39,7 @@ def save_webp_thumbnail(im_path, sv_path, sv_size):
     per_hash = calc_phash(imageL)
     colors = calc_color_buckets(image)
     
-    return f'{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
+    return f'{num_frames}!{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
 def convert_binary_to_ulong(arr):
     result = ZERO
@@ -144,4 +146,3 @@ def calc_color_buckets(image):
     dark = np.logical_and(v < 25, aa).sum() // divisor
     
     return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{light}?{dark}?{alpha}'
- 

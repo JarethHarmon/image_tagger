@@ -13,7 +13,7 @@ namespace ImageTagger
     public enum Order { Ascending, Descending }
     public enum Sort {
         Hash, Path, Name, Size, UploadTime, CreationTime, LastWriteTime, LastEditTime,
-        Dimensions, Width, Height, TagCount, Quality, Appeal, ArtStyle, Color, Random
+        Dimensions, Width, Height, TagCount, NumFrames, Quality, Appeal, ArtStyle, Color, Random
     }
     public enum Colors { Red, Green, Blue, Yellow, Cyan, Fuchsia, Light, Dark, Alpha };
     public enum SortSimilarity { Averaged=0, Average, Difference, Wavelet, Perceptual }

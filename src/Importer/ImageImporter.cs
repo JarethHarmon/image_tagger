@@ -86,9 +86,9 @@ namespace ImageTagger.Importer
             }
         }
 
-        internal static (PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColors(string imagePath, string thumbPath, int thumbSize)
+        internal static (int, PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColors(string imagePath, string thumbPath, int thumbSize)
         {
-            const string pyScript = "pil_thumbnail_perceptual_hashes";
+            const string pyScript = "pil_import";
             using (Py.GIL())
             {
                 try
@@ -98,67 +98,71 @@ namespace ImageTagger.Importer
                     string result = (string) _result;
 
                     string[] sections = result.Split('!');
-                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
+                    if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
 
-                    string[] hashes = sections[0].Split('?');
-                    if (hashes.Length != 4) return (new PerceptualHashes(), new ColorBuckets());
+                    int.TryParse(sections[0], out int numFrames);
+
+                    string[] hashes = sections[1].Split('?');
+                    if (hashes.Length != 4) return (0, new PerceptualHashes(), new ColorBuckets());
                     ulong.TryParse(hashes[0], out ulong average);
                     ulong.TryParse(hashes[1], out ulong wavelet);
                     ulong.TryParse(hashes[2], out ulong difference);
                     ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[1]));
+                    return (numFrames, new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[2]));
                 }
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return (new PerceptualHashes(), new ColorBuckets());
+                    return (0, new PerceptualHashes(), new ColorBuckets());
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return (new PerceptualHashes(), new ColorBuckets());
+                    return (0, new PerceptualHashes(), new ColorBuckets());
                 }
             }
         }
 
-        internal static (PerceptualHashes, ColorBuckets) GetPerceptualHashesAndColors(string thumbPath)
+        internal static (int, PerceptualHashes, ColorBuckets) GetPerceptualHashesAndColors(string imagePath, string thumbPath)
         {
-            const string pyScript = "pil_thumbnail_perceptual_hashes";
+            const string pyScript = "pil_import";
             using (Py.GIL())
             {
                 try
                 {
                     dynamic script = Py.Import(pyScript);
-                    dynamic _result = script.initialize(thumbPath);
+                    dynamic _result = script.initialize(imagePath, thumbPath);
                     string result = (string)_result;
 
                     string[] sections = result.Split('!');
-                    if (sections.Length != 2) return (new PerceptualHashes(), new ColorBuckets());
+                    if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
 
-                    string[] hashes = sections[0].Split('?');
-                    if (hashes.Length != 4) return (new PerceptualHashes(), new ColorBuckets());
+                    int.TryParse(sections[0], out int numFrames);
+
+                    string[] hashes = sections[1].Split('?');
+                    if (hashes.Length != 4) return (0, new PerceptualHashes(), new ColorBuckets());
                     ulong.TryParse(hashes[0], out ulong average);
                     ulong.TryParse(hashes[1], out ulong wavelet);
                     ulong.TryParse(hashes[2], out ulong difference);
                     ulong.TryParse(hashes[3], out ulong perceptual);
 
-                    return (new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[1]));
+                    return (numFrames, new PerceptualHashes(average, difference, wavelet, perceptual), new ColorBuckets(sections[2]));
                 }
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return (new PerceptualHashes(), new ColorBuckets());
+                    return (0, new PerceptualHashes(), new ColorBuckets());
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return (new PerceptualHashes(), new ColorBuckets());
+                    return (0, new PerceptualHashes(), new ColorBuckets());
                 }
             }
         }
 
-        internal static (PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColorsOther(string imagePath, string thumbPath, int thumbSize)
+        internal static (int, PerceptualHashes, ColorBuckets) SaveThumbnailAndGetPerceptualHashesAndColorsOther(string imagePath, string thumbPath, int thumbSize)
         {
             try
             {
@@ -166,7 +170,7 @@ namespace ImageTagger.Importer
 
                 // to avoid wasting more time on broken images, this should only check relevant images
                 // another option is to use the file extension, but that is obviously less reliable
-                if (image.Format != MagickFormat.Heic) return (new PerceptualHashes(), new ColorBuckets());
+                if (image.Format != MagickFormat.Heic) return (0, new PerceptualHashes(), new ColorBuckets());
 
                 image.Strip();
                 image.Thumbnail(thumbSize, thumbSize);
@@ -174,12 +178,12 @@ namespace ImageTagger.Importer
                 image.Format = MagickFormat.WebP;
                 image.Write(thumbPath);
 
-                return GetPerceptualHashesAndColors(thumbPath);
+                return GetPerceptualHashesAndColors(imagePath, thumbPath);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return (new PerceptualHashes(), new ColorBuckets());
+                return (0, new PerceptualHashes(), new ColorBuckets());
             }
         }
 

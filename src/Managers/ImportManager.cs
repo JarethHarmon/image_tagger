@@ -301,6 +301,7 @@ namespace ImageTagger.Managers
             var phashes = new ImageImporter.PerceptualHashes();
             var colors = new ImageImporter.ColorBuckets();
             var result = ImportStatus.Success;
+            int numFrames = 0;
 
             bool thumbnailExisted = true;
             if (!ImageImporter.FileExists(thumbPath))
@@ -309,11 +310,11 @@ namespace ImageTagger.Managers
                 // will need to check other types that require imageMagick here as well
                 if (System.IO.Path.GetExtension(imagePath).Equals(".heic", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColorsOther(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
+                    (numFrames, phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColorsOther(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
                 }
                 else
                 {
-                    (phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
+                    (numFrames, phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColors(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
                 }
                 if (phashes.Difference == 0 || !ImageImporter.FileExists(thumbPath))
                 {
@@ -333,7 +334,7 @@ namespace ImageTagger.Managers
 
                 if (thumbnailExisted)
                 {
-                    (phashes, colors) = ImageImporter.GetPerceptualHashesAndColors(thumbPath);
+                    (numFrames, phashes, colors) = ImageImporter.GetPerceptualHashesAndColors(imagePath, thumbPath);
                     if (phashes.Difference == 0)
                     {
                         Console.WriteLine("diff hash");
@@ -352,6 +353,7 @@ namespace ImageTagger.Managers
                     PerceptualHash = phashes.Perceptual,
 
                     Colors = colors.Colors,
+                    NumFrames = numFrames,
 
                     Width = imageInfoPart.Width,
                     Height = imageInfoPart.Height,
