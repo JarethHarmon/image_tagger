@@ -15,8 +15,8 @@ namespace ImageTagger.Core
         public ulong PerceptualHash { get; set; }
 
         public int Bucket { get; set; }
-        public ulong[] Colors { get; set; }
         public int NumFrames { get; set; }
+        public ulong[] Colors { get; set; }
 
         public int Width { get; set; }
         public int Height { get; set; }
@@ -28,10 +28,14 @@ namespace ImageTagger.Core
         public long LastEditTime { get; set; }
         public long UploadTime { get; set; }
 
-        public bool IsGroupLeader { get; set; }
         public HashSet<string> Imports { get; set; }
         public HashSet<string> Paths { get; set; }
         public HashSet<string> Groups { get; set; }
+        public bool IsGroupLeader { get; set; }
+
+        public Guid[] Creators { get; set; } // person (people) who made or contributed to the making of an image/group
+        public Guid[] Copyrights { get; set; } // 
+        public Guid[] Subjects { get; set; } // person/place/character/object/idea depicted in the image
         public string[] Tags { get; set; }
 
         public int RatingSum { get; set; }

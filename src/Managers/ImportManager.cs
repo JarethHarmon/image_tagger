@@ -352,6 +352,7 @@ namespace ImageTagger.Managers
                     WaveletHash = phashes.Wavelet,
                     PerceptualHash = phashes.Perceptual,
 
+                    Bucket = Global.CountAllBits(phashes) / 4,
                     Colors = colors.Colors,
                     NumFrames = numFrames,
 

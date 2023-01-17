@@ -2,7 +2,9 @@ using Godot;
 using ImageTagger.Database;
 using ImageTagger.Importer;
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
+using static ImageTagger.Importer.ImageImporter;
 
 namespace ImageTagger
 {
@@ -157,11 +159,30 @@ namespace ImageTagger
             return count;
         }
 
+        internal static int CountAllBits(PerceptualHashes phashes)
+        {
+            int count = CountBits(phashes.Average);
+            count += CountBits(phashes.Difference);
+            count += CountBits(phashes.Perceptual);
+            return count + CountBits(phashes.Wavelet);
+        }
+
         public static float CalcHammingSimilarity(ulong hash1, ulong hash2)
         {
             ulong xor = hash1 ^ hash2;
             int hammingDistance = CountBits(xor);
             return (64 - hammingDistance) * 1.5625f; // 100/64
+        }
+
+        public static string CreateIdName(string name)
+        {
+            var separators = new List<char>();
+            foreach (char c in name)
+                if (!char.IsLetterOrDigit(c))
+                    separators.Add(c);
+            var sections = name.Split(separators.ToArray(), StringSplitOptions.RemoveEmptyEntries);
+            Array.Sort(sections);
+            return string.Join("_", sections);
         }
 
         public static string GetMetadataPath()
