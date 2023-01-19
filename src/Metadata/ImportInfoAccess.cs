@@ -83,7 +83,7 @@ namespace ImageTagger.Metadata
 
         internal static ImportInfo GetImportInfo(string id)
         {
-            if (dictImportInfo?.TryGetValue(id, out var info) ?? false)
+            if (dictImportInfo.TryGetValue(id, out var info))
                 return info;
             return null;
         }
