@@ -167,14 +167,14 @@ namespace ImageTagger
             return count + CountBits(phashes.Wavelet);
         }
 
-        public static float CalcHammingSimilarity(ulong hash1, ulong hash2)
+        internal static float CalcHammingSimilarity(ulong hash1, ulong hash2)
         {
             ulong xor = hash1 ^ hash2;
             int hammingDistance = CountBits(xor);
             return (64 - hammingDistance) * 1.5625f; // 100/64
         }
 
-        public static string CreateIdName(string name)
+        internal static string CreateIdName(string name)
         {
             var separators = new List<char>();
             foreach (char c in name)
