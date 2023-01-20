@@ -1,4 +1,5 @@
 ﻿using ImageTagger.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,7 +7,7 @@ namespace ImageTagger.Core
 {
     public sealed class GroupInfo
     {
-        public string Id { get; set; } // need to check if guid or my ids are smaller and change anything with random IDs accordingly (either way guid is much safer collision-wise)
+        public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; } // not sure if will keep
         public string CoverImage { get; set; } // the SHA256 hash of the leader/cover image for this group
@@ -14,6 +15,18 @@ namespace ImageTagger.Core
         public string[] Groups { get; set; } // subgroups (useful for things like book/chapter/pages)
         public string[] Members { get; set; } //  images in this group (in their user-defined order)
         public string[] Tags { get; set; } // tags assigned to this group as a whole
+
+        public GroupInfo()
+        {
+            Id = Global.CreateGroupId();
+            Name = "default";
+            Description = string.Empty;
+            CoverImage = string.Empty; // I think just check against string.Empty, and use Global.DefaultIcon if they match
+
+            Groups = Array.Empty<string>();
+            Members = Array.Empty<string>();
+            Tags = Array.Empty<string>();
+        }
 
         public void SortAlphabetical(Sort sort=Sort.Name, bool desc=false)
         {

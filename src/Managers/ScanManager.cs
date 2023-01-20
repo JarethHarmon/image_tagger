@@ -50,9 +50,7 @@ namespace ImageTagger.Managers
             string[] paths = ScannerAccess.GetScannedPaths();
             var info = new ImportInfo
             {
-                Id = Global.CreateImportId(),
                 Name = name,
-
                 Total = paths.Length,
                 StartTime = DateTime.UtcNow.Ticks,
                 Finished = false

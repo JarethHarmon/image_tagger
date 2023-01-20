@@ -5,6 +5,7 @@ namespace ImageTagger.Core
     public sealed class Category
     {
         // 4 8bit ints would fit in a single int, but it would need(?) to be a uint which would serialize to an int64 in liteDB
+        // the strings at least likely do not need to be const values; unsure about the int[]
         private const string DEFAULT = "default";
         private readonly int[] GREY = new int[4] { 127, 127, 127, 255 };
 

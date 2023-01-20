@@ -133,10 +133,8 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         public string CreateTab(string name, int type, string importId, string groupId, string tag, string simiHash)
         {
-            string id = Global.CreateTabId();
             var info = new TabInfo
             {
-                Id = id,
                 Name = name,
                 TabType = (TabType)type,
                 ImportId = importId,
@@ -145,7 +143,7 @@ namespace ImageTagger.Managers
                 SimilarityHash = simiHash
             };
             TabInfoAccess.CreateTab(info);
-            return id;
+            return info.Id;
         }
 
         public void DeleteTab(string id)
