@@ -72,7 +72,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 0.262745, 0.905882, 0, 1 )
+color = Color( 0.65098, 0.854902, 0.568627, 1 )
 
 [node name="groups" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 26.0
@@ -136,12 +136,44 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 0, 0.156863, 1, 1 )
+color = Color( 0, 0.741176, 1, 1 )
 
-[node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
+[node name="ratings" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 78.0
 margin_right = 1910.0
 margin_bottom = 100.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/ratings"]
+margin_right = 1910.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "Ratings"
+icon = ExtResource( 1 )
+
+[node name="path_section" type="Control" parent="margin/scroll/vbox/ratings"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 256, 256 )
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/ratings/path_section"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 1, 0.54902, 0.698039, 1 )
+
+[node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
+margin_top = 104.0
+margin_right = 1910.0
+margin_bottom = 126.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -168,4 +200,4 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 1, 0, 0.937255, 1 )
+color = Color( 0.792157, 0.819608, 0.533333, 1 )
