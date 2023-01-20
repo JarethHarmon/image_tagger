@@ -182,8 +182,13 @@ namespace ImageTagger
         {
             var separators = new List<char>();
             foreach (char c in name)
+            {
                 if (!char.IsLetterOrDigit(c))
+                {
                     separators.Add(c);
+                }
+            }
+
             var sections = name.Split(separators.ToArray(), StringSplitOptions.RemoveEmptyEntries);
             Array.Sort(sections);
             return string.Join("_", sections);
