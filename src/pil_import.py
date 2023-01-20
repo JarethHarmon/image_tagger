@@ -123,8 +123,10 @@ def calc_color_buckets(image):
     h = pixels[:,:,0]
     s = pixels[:,:,1]
     v = pixels[:,:,2] 
-
-    sv = np.logical_and(s > 35, v > 35)
+    
+    ss = s >= 10
+    vv = v >= 10
+    sv = np.logical_and(ss, vv)
     
     rr = np.logical_and(np.logical_or(h < 21, h > 234), sv)
     gg = np.logical_and(np.logical_and(h > 63, h < 106), sv)
@@ -145,4 +147,11 @@ def calc_color_buckets(image):
     light = np.logical_and(np.logical_and(v > 75, s < 25), aa).sum() // divisor
     dark = np.logical_and(v < 25, aa).sum() // divisor
     
-    return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{light}?{dark}?{alpha}'
+    nn = np.logical_and(s >= 40, s < 70)
+    dd = np.logical_and(ss, s < 40)
+    
+    vivid = np.logical_and(s >= 70, vv).sum() // divisor
+    neutral = np.logical_and(nn, vv).sum() // divisor
+    dull = np.logical_and(dd, vv).sum() // divisor
+    
+    return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{vivid}?{neutral}?{dull}?{light}?{dark}?{alpha}'
