@@ -386,9 +386,9 @@ namespace ImageTagger.Database
             string expr = "$.Colors[";
             for (int i = 0; i < colors.Length - 1; i++)
             {
-                expr += $"{(int)colors[i]}] * $.Colors[";
+                expr += $"{(int)Math.Max(1, (int)colors[i])}] * $.Colors[";
             }
-            expr += $"{(int)colors[colors.Length - 1]}]";
+            expr += $"{(int)Math.Max(1, (int)colors[colors.Length - 1])}]";
             return (BsonExpression)expr;
         }
 
