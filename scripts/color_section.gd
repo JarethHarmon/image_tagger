@@ -30,6 +30,7 @@ func _on_confirm_color_pressed() -> void:
 	elif curr_color == Globals.Colors.LIGHT: 
 		color = Color.white
 		font = Color.black
+	elif curr_color == Globals.Colors.MEDIUM: color = Color.gray
 	elif curr_color == Globals.Colors.DARK: color = Color.black
 	elif curr_color == Globals.Colors.ALPHA: color = Color.transparent
 	
