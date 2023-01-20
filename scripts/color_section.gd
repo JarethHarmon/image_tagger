@@ -24,6 +24,9 @@ func _on_confirm_color_pressed() -> void:
 	elif curr_color == Globals.Colors.YELLOW: color = Color.yellow
 	elif curr_color == Globals.Colors.CYAN: color = Color.cyan
 	elif curr_color == Globals.Colors.FUCHSIA: color = Color.fuchsia
+	elif curr_color == Globals.Colors.VIVID: color = Color.lime
+	elif curr_color == Globals.Colors.NEUTRAL: color = Color.burlywood
+	elif curr_color == Globals.Colors.DULL: color = Color.lavender
 	elif curr_color == Globals.Colors.LIGHT: 
 		color = Color.white
 		font = Color.black

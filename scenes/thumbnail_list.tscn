@@ -136,7 +136,7 @@ script = ExtResource( 8 )
 margin_right = 53.0
 margin_bottom = 24.0
 text = "Red"
-items = [ "Red", null, false, 0, null, "Green", null, false, 1, null, "Blue", null, false, 2, null, "Yellow", null, false, 3, null, "Cyan", null, false, 4, null, "Fuchsia", null, false, 5, null, "Light", null, false, 6, null, "Dark", null, false, 7, null, "Alpha", null, false, 8, null ]
+items = [ "Red", null, false, 0, null, "Green", null, false, 1, null, "Blue", null, false, 2, null, "Yellow", null, false, 3, null, "Cyan", null, false, 4, null, "Fuchsia", null, false, 5, null, "Vivid", null, false, 6, null, "Neutral", null, false, 7, null, "Dull", null, false, 8, null, "Light", null, false, 9, null, "Dark", null, false, 10, null, "Alpha", null, false, 11, null ]
 selected = 0
 
 [node name="confirm_color" type="Button" parent="margin/vbox/color_section"]

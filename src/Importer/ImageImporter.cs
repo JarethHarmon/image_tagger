@@ -90,9 +90,9 @@ namespace ImageTagger.Importer
             public ColorBuckets(string _colors)
             {
                 string[] temp = _colors.Split('?');
-                if (temp?.Length == 9)
+                if (temp?.Length == 12)
                 {
-                    Colors = new ulong[9];
+                    Colors = new ulong[12];
                     for (int i = 0; i < temp.Length; i++)
                     {
                         if (!ulong.TryParse(temp[i], out Colors[i])) Colors[i] = 0;
@@ -100,7 +100,7 @@ namespace ImageTagger.Importer
                 }
                 else
                 {
-                    Colors = new ulong[9];
+                    Colors = new ulong[12];
                 }
             }
         }

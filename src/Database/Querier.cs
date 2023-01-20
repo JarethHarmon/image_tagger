@@ -378,6 +378,8 @@ namespace ImageTagger.Database
             return _results;
         }
 
+        // can create a + and - color[] and multiply out the positive ones, then subtract the multiplied negative ones
+        // to allow the user to filter out specific colors as well
         private static BsonExpression ConstructColorSort(Colors[] colors)
         {
             if (colors.Length == 0) return (BsonExpression)"$.Hash";
