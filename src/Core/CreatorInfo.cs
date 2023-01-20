@@ -4,7 +4,7 @@ namespace ImageTagger.Core
 {
     public sealed class CreatorInfo
     {
-        public Guid Id { get; set; }                // the auto-generated Id for this creator; if I intend for metadata to be shared then this will need to be generated using other metadata
+        public string Id { get; set; }                // the auto-generated Id for this creator; if I intend for metadata to be shared then this will need to be generated using other metadata
         public string Name { get; set; }            // the name for this creator shown in the program (not necessarily unique, but might be difficult to tell which is which)
 
         // not sure if array/list/hashset is best for these
@@ -19,7 +19,7 @@ namespace ImageTagger.Core
 
         public CreatorInfo()
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = string.Empty;
 
             Names = Array.Empty<string>();
@@ -34,7 +34,7 @@ namespace ImageTagger.Core
 
         public CreatorInfo(string name)
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = name;
 
             Names = new string[1] { name };

@@ -33,10 +33,10 @@ namespace ImageTagger.Core
         public HashSet<string> Groups { get; set; }
         public bool IsGroupLeader { get; set; }
 
-        public Guid[] Creators { get; set; } // person (people) who made or contributed to the making of an image/group
-        public Guid[] Copyrights { get; set; } // 
-        public Guid[] Subjects { get; set; } // person/place/character/object/idea depicted in the image
-        public string[] Tags { get; set; }
+        public HashSet<string> Creators { get; set; } // person (people) who made or contributed to the making of an image/group
+        public HashSet<string> Copyrights { get; set; } // 
+        public HashSet<string> Subjects { get; set; } // person/place/character/object/idea depicted in the image
+        public string[] Tags { get; set; } // needs to be an array; OrderBy(tags.Count) does not work correctly (list/hashset) if the count is 1 (treated as if it was 0)
 
         public int RatingSum { get; set; }
         public float RatingAvg { get; set; }
@@ -49,6 +49,9 @@ namespace ImageTagger.Core
             Imports = new HashSet<string>();
             Paths = new HashSet<string>();
             Groups = new HashSet<string>();
+            Creators = new HashSet<string>();
+            Copyrights = new HashSet<string>();
+            Subjects = new HashSet<string>();
             Tags = Array.Empty<string>();
             Colors = Array.Empty<ulong>();
             Ratings = new Dictionary<string, int>();
@@ -59,6 +62,9 @@ namespace ImageTagger.Core
             Paths.UnionWith(other.Paths);
             Imports.UnionWith(other.Imports);
             Groups.UnionWith(other.Groups);
+            Creators.UnionWith(other.Creators);
+            Copyrights.UnionWith(other.Copyrights);
+            Subjects.UnionWith(other.Subjects);
             Tags = Tags.Union(other.Tags).ToArray();
         }
     }

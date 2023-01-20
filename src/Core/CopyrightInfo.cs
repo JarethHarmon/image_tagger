@@ -4,7 +4,7 @@ namespace ImageTagger.Core
 {
     public sealed class CopyrightInfo
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
 
         public string[] IdNames { get; set; }
@@ -13,7 +13,7 @@ namespace ImageTagger.Core
 
         public CopyrightInfo()
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = string.Empty;
 
             IdNames = Array.Empty<string>();
@@ -23,7 +23,7 @@ namespace ImageTagger.Core
 
         public CopyrightInfo(string name)
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = name;
 
             IdNames = new string[1] { Global.CreateIdName(name) };

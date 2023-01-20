@@ -5,22 +5,22 @@ namespace ImageTagger.Core
     // person/place/character/object/idea
     public sealed class SubjectInfo
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
-        public Guid[] Copyrights { get; set; }  // the copyright(s) associated with this subject (if applicable) (original/photo should be default options)
+        public string[] Copyrights { get; set; }  // the copyright(s) associated with this subject (if applicable) (original/photo should be default options)
 
         public SubjectInfo()
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = string.Empty;
-            Copyrights = Array.Empty<Guid>();
+            Copyrights = Array.Empty<string>();
         }
 
         public SubjectInfo(string name)
         {
-            Id = Guid.NewGuid();
+            Id = Global.GetRandomId(8);
             Name = name;
-            Copyrights = Array.Empty<Guid>();
+            Copyrights = Array.Empty<string>();
         }
     }
 }

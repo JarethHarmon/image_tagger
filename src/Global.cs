@@ -214,7 +214,7 @@ namespace ImageTagger
             DefaultIcon.CreateFromImage(image, 0);
         }
 
-        private static string GetRandomId(int numBytes)
+        public static string GetRandomId(int numBytes)
         {
             byte[] bytes = new byte[numBytes];
             var rng = new RNGCryptoServiceProvider();
@@ -222,9 +222,5 @@ namespace ImageTagger
             rng?.Dispose();
             return BitConverter.ToString(bytes).Replace("-", string.Empty);
         }
-        public static string CreateImportId() { return $"I{GetRandomId(8)}"; }
-        public static string CreateTabId() { return $"T{GetRandomId(8)}"; }
-        public static string CreateGroupId() { return $"G{GetRandomId(8)}"; }
-        public static string CreateSectionId() { return $"S{GetRandomId(8)}"; }
     }
 }
