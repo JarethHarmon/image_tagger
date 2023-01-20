@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=2]
+[gd_scene load_steps=27 format=2]
 
 [ext_resource path="res://themes/dark_sharp (arial).tres" type="Theme" id=1]
 [ext_resource path="res://scripts/main.gd" type="Script" id=2]
@@ -23,6 +23,7 @@
 [ext_resource path="res://scripts/left_vsplit.gd" type="Script" id=21]
 [ext_resource path="res://scripts/right_vsplit.gd" type="Script" id=22]
 [ext_resource path="res://scripts/metadata_hsplit.gd" type="Script" id=23]
+[ext_resource path="res://scenes/metadata.tscn" type="PackedScene" id=24]
 
 [sub_resource type="Gradient" id=1]
 interpolation_mode = 2
@@ -346,6 +347,9 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="metadata" parent="." instance=ExtResource( 24 )]
+visible = false
 
 [connection signal="dragged" from="margin/vbox/hsplit" to="margin/vbox/hsplit" method="_on_hsplit_dragged"]
 [connection signal="dragged" from="margin/vbox/hsplit/left/vsplit" to="margin/vbox/hsplit/left/vsplit" method="_on_vsplit_dragged"]

@@ -34,8 +34,8 @@ namespace ImageTagger.Core
         public bool IsGroupLeader { get; set; }
 
         public HashSet<string> Creators { get; set; } // person (people) who made or contributed to the making of an image/group
-        public HashSet<string> Copyrights { get; set; } // 
-        public HashSet<string> Subjects { get; set; } // person/place/character/object/idea depicted in the image
+        public HashSet<string> Copyrights { get; set; } // ex: Disney/"Company Name"/Spongebob Squarepants/etc
+        public HashSet<string> Subjects { get; set; } // people/places/characters/objects/ideas depicted in the image
         public string[] Tags { get; set; } // needs to be an array; OrderBy(tags.Count) does not work correctly (list/hashset) if the count is 1 (treated as if it was 0)
 
         public int RatingSum { get; set; }
