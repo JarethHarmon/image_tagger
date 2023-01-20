@@ -195,6 +195,7 @@ normal_parent = NodePath("..")
 fullscreen_parent = NodePath("../../../../../../fullscreen")
 
 [node name="hsplit" type="HSplitContainer" parent="margin/vbox/hsplit/right/vsplit"]
+visible = false
 margin_top = 645.0
 margin_right = 1151.0
 margin_bottom = 982.0
@@ -238,6 +239,13 @@ size_flags_vertical = 3
 
 [node name="rating_list" parent="margin/vbox/hsplit/right/vsplit/hsplit" instance=ExtResource( 16 )]
 visible = false
+
+[node name="metadata" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 24 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 645.0
+margin_right = 1151.0
+margin_bottom = 982.0
 
 [node name="recent_tags" type="Control" parent="margin/vbox/hsplit/right"]
 visible = false
@@ -347,9 +355,6 @@ anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-
-[node name="metadata" parent="." instance=ExtResource( 24 )]
-visible = false
 
 [connection signal="dragged" from="margin/vbox/hsplit" to="margin/vbox/hsplit" method="_on_hsplit_dragged"]
 [connection signal="dragged" from="margin/vbox/hsplit/left/vsplit" to="margin/vbox/hsplit/left/vsplit" method="_on_vsplit_dragged"]
