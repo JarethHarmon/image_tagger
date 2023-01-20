@@ -385,12 +385,12 @@ namespace ImageTagger.Database
             if (colors.Length == 0) return (BsonExpression)"$.Hash";
             if (colors.Length == 1) return (BsonExpression)$"$.Colors[{(int)colors[0]}]";
 
-            string expr = "$.Colors[";
+            string expr = "($.Colors[";
             for (int i = 0; i < colors.Length - 1; i++)
             {
-                expr += $"{(int)Math.Max(1, (int)colors[i])}] * $.Colors[";
+                expr += $"{(int)colors[i]}] + $.Colors[";
             }
-            expr += $"{(int)Math.Max(1, (int)colors[colors.Length - 1])}]";
+            expr += $"{(int)colors[colors.Length - 1]}]) / (16 / {colors.Length})";
             return (BsonExpression)expr;
         }
 

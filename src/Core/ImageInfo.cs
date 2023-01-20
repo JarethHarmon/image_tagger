@@ -16,7 +16,7 @@ namespace ImageTagger.Core
 
         public int Bucket { get; set; }
         public int NumFrames { get; set; }
-        public ulong[] Colors { get; set; }
+        public int[] Colors { get; set; }
 
         public int Width { get; set; }
         public int Height { get; set; }
@@ -53,7 +53,7 @@ namespace ImageTagger.Core
             Copyrights = new HashSet<string>();
             Subjects = new HashSet<string>();
             Tags = Array.Empty<string>();
-            Colors = Array.Empty<ulong>();
+            Colors = Array.Empty<int>();
             Ratings = new Dictionary<string, int>();
         }
 

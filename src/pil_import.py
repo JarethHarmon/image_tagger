@@ -114,7 +114,7 @@ def calc_phash_simple(imageL):
 
 def calc_color_buckets(image):
     a = np.asarray(image.convert('RGBA'))[:,:,3]
-    divisor = int((image.width * image.height) / 256)
+    divisor = min(image.width, image.height)
     alpha = (a < 255).sum() // divisor
     aa = (a > 16)
 
