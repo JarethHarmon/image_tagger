@@ -153,19 +153,4 @@ def calc_color_buckets(image):
     neutral = np.logical_and(aa, np.logical_and(s <= 67, s >= 33)).sum() // divisor
     dull = saa.sum() // divisor
 
-    #light = np.logical_and(np.logical_and(v > 75, s < 25), aa).sum() // divisor
-    #dark = np.logical_and(v < 25, aa).sum() // divisor
-    
-    #nn = np.logical_and(s >= 40, s < 70)
-    #dd = np.logical_and(ss, s < 40)
-    
-    #vivid = np.logical_and(s >= 70, vv).sum() // divisor
-    #neutral = np.logical_and(nn, vv).sum() // divisor
-    #dull = np.logical_and(dd, vv).sum() // divisor
     return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{vivid}?{neutral}?{dull}?{light}?{medium}?{dark}?{alpha}'
-
-#image = Image.open('W:/images/16176b646fd9c33f3444b6850ea67d3a.jpg')
-#image.thumbnail((256, 256))
-#image = ImageOps.exif_transpose(image)
-#image.save('W:/test_1.png', 'png')
-#print(calc_color_buckets(image))
