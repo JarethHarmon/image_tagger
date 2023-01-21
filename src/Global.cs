@@ -4,7 +4,6 @@ using ImageTagger.Importer;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using static ImageTagger.Importer.ImageImporter;
 
 namespace ImageTagger
 {
@@ -163,7 +162,7 @@ namespace ImageTagger
             return count;
         }
 
-        internal static int CountAllBits(PerceptualHashes phashes)
+        internal static int CountAllBits(ImageImporter.PerceptualHashes phashes)
         {
             int count = CountBits(phashes.Average);
             count += CountBits(phashes.Difference);

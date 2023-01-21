@@ -385,13 +385,58 @@ namespace ImageTagger.Database
             if (colors.Length == 0) return (BsonExpression)"$.Hash";
             if (colors.Length == 1) return (BsonExpression)$"$.Colors[{(int)colors[0]}]";
 
-            string expr = "($.Colors[";
-            for (int i = 0; i < colors.Length - 1; i++)
+            var hue = new List<int>();
+            var sat = new List<int>();
+            var val = new List<int>();
+            var exprs = new List<string>();
+
+            foreach (int color in colors.Select(c => (int)c))
             {
-                expr += $"{(int)colors[i]}] + $.Colors[";
+                if (color <= (int)Colors.Fuchsia) hue.Add(color);
+                else if (color <= (int)Colors.Dull) sat.Add(color);
+                else val.Add(color);
             }
-            expr += $"{(int)colors[colors.Length - 1]}]) / (16 / {colors.Length})";
-            return (BsonExpression)expr;
+
+            if (val.Count == 1) exprs.Add($"$.Colors[{val[0]}]");
+            else if (val.Count > 1)
+            {
+                string expr = "((MAX([1, $.Colors[";
+                for (int i = 0; i < val.Count-1; i++)
+                {
+                    if (i % 2 == 1) expr += $"{val[i]}]]) / 256) * (MAX([1, $.Colors[";
+                    else expr += $"{val[i]}]]) * MAX([1, $.Colors[";
+                }
+                expr += $"{val[val.Count-1]}]])) / 256)";
+                exprs.Add(expr);
+            }
+
+            if (sat.Count == 1) exprs.Add($"$.Colors[{sat[0]}]");
+            else if (sat.Count > 1)
+            {
+                string expr = "((MAX([1, $.Colors[";
+                for (int i = 0; i < sat.Count-1; i++)
+                {
+                    if (i % 2 == 1) expr += $"{sat[i]}]]) / 256) * (MAX([1, $.Colors[";
+                    else expr += $"{sat[i]}]]) * MAX([1, $.Colors[";
+                }
+                expr += $"{sat[sat.Count-1]}]])) / 256)";
+                exprs.Add(expr);
+            }
+
+            if (hue.Count == 1) exprs.Add($"$.Colors[{hue[0]}]");
+            else if (hue.Count > 1)
+            {
+                string expr = "((MAX([1, $.Colors[";
+                for (int i = 0; i < hue.Count - 1; i++)
+                {
+                    if (i % 2 == 1) expr += $"{hue[i]}]]) / 256) * (MAX([1, $.Colors[";
+                    else expr += $"{hue[i]}]]) * MAX([1, $.Colors[";
+                }
+                expr += $"{hue[hue.Count - 1]}]])) / 256)";
+                exprs.Add(expr);
+            }
+
+            return (BsonExpression)string.Join(" * ", exprs);
         }
 
         private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)

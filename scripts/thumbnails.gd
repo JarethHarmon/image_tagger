@@ -79,12 +79,14 @@ func select_items() -> void:
 	var image_hash:String = current_hashes[last_index]
 	MetadataManager.LoadCurrentImageInfo(image_hash)
 	var paths:Array = MetadataManager.GetCurrentPaths()
-	var imports:Array = MetadataManager.GetCurrentImports()
+#	var imports:Array = MetadataManager.GetCurrentImports()
 	
-	Signals.emit_signal("load_image_tags", image_hash, selected_items)
-	Signals.emit_signal("create_path_buttons", image_hash, paths)
-	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
+	Signals.emit_signal("load_metadata", image_hash)
+#	Signals.emit_signal("load_image_tags", image_hash, selected_items)
+#	Signals.emit_signal("create_path_buttons", image_hash, paths)
+#	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
 	
+	# need to do this in a better place (does not make sense for thumbnail list to do this)
 	if not paths.empty():
 		var f:File = File.new()
 		var found:bool = false

@@ -8,6 +8,12 @@ func _ready() -> void:
 func create_path_buttons(sha256:String, paths:Array) -> void:
 	for child in path_list.get_children():
 		child.queue_free()
+		
+	var hsep:HSeparator = HSeparator.new()
+	hsep.size_flags_horizontal = SIZE_EXPAND_FILL
+	hsep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	path_list.add_child(hsep)
+	
 	for path in paths:
 		var b:Button = Button.new()
 		b.text = path
@@ -20,6 +26,10 @@ func create_path_buttons(sha256:String, paths:Array) -> void:
 		b.add_stylebox_override("normal", sbf)
 		
 		path_list.add_child(b)
+		hsep = HSeparator.new()
+		hsep.size_flags_horizontal = SIZE_EXPAND_FILL
+		hsep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		path_list.add_child(hsep)
 
 func button_pressed(path:String) -> void:
 	if Globals.ctrl_pressed and Globals.shift_pressed: OS.set_clipboard(path.get_file())

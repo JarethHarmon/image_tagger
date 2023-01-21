@@ -50,6 +50,24 @@ namespace ImageTagger.Managers
             return ImageInfoAccess.GetCurrentImageInfo()?.Imports.ToArray() ?? Array.Empty<string>();
         }
 
+        public int[] GetCurrentColors()
+        {
+            return ImageInfoAccess.GetCurrentImageInfo()?.Colors ?? new int[13];
+        }
+
+        public string[] GetCurrentPerceptualHashes()
+        {
+            var imageInfo = ImageInfoAccess.GetCurrentImageInfo();
+            if (imageInfo is null) return new string[4];
+            return new string[4]
+            {
+                imageInfo.AverageHash.ToString(),
+                imageInfo.DifferenceHash.ToString(),
+                imageInfo.PerceptualHash.ToString(),
+                imageInfo.WaveletHash.ToString()
+            };
+        }
+
         public string GetCurrentHash()
         {
             return ImageInfoAccess.GetCurrentHash();

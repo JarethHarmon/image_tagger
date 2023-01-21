@@ -4,8 +4,6 @@ onready var options:OptionButton = $select_color
 onready var colors:HFlowContainer = $scroll/colors
 
 var curr_color:int
-#var num_colors:int = 0
-#var max_colors:int = 8
 
 func _ready() -> void:
 	Signals.connect("settings_loaded", self, "_settings_loaded")
@@ -13,10 +11,7 @@ func _ready() -> void:
 
 func _on_select_color_item_selected(index:int) -> void: curr_color = index
 
-func _on_confirm_color_pressed() -> void:
-	#if num_colors == max_colors: return
-	#num_colors += 1
-	
+func _on_confirm_color_pressed() -> void:	
 	var color:Color = Color.red
 	var font:Color = Color.white
 	if curr_color == Globals.Colors.GREEN: color = Color.green
@@ -47,13 +42,11 @@ func _on_confirm_color_pressed() -> void:
 func button_pressed(color:int, button:Button) -> void:
 	ThumbnailManager.RemoveColor(color)
 	button.queue_free()
-	#num_colors -= 1
 
 func _on_clear_pressed() -> void:
 	ThumbnailManager.ClearColors()
 	for child in colors.get_children():
 		child.queue_free()
-	#num_colors = 0
 
 func _settings_loaded() -> void:
 	call_deferred("settings_loaded")

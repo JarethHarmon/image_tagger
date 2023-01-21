@@ -20,7 +20,7 @@ def initialize(im_path, sv_path):
     wav_hash = calc_wavelet_hash(imageL)
     dif_hash = calc_dhash(imageL)
     per_hash = calc_phash(imageL)
-    colors = calc_color_buckets(image)
+    colors = calc_color_buckets(image, imageL)
     
     return f'{num_frames}!{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
@@ -36,7 +36,7 @@ def save_webp_thumbnail(im_path, sv_path, sv_size):
     wav_hash = calc_wavelet_hash(imageL)
     dif_hash = calc_dhash(imageL)
     per_hash = calc_phash(imageL)
-    colors = calc_color_buckets(image)
+    colors = calc_color_buckets(image, imageL)
     
     return f'{num_frames}!{avg_hash}?{wav_hash}?{dif_hash}?{per_hash}!{colors}'
 
@@ -112,7 +112,7 @@ def calc_phash_simple(imageL):
     flat = diff.flatten()
     return convert_binary_to_ulong(flat)
 
-def calc_color_buckets(image):
+def calc_color_buckets(image, imageL):
     a = np.asarray(image.convert('RGBA'))[:,:,3]
     divisor = min(image.width, image.height)
     alpha = (a < 255).sum() // divisor
@@ -143,14 +143,13 @@ def calc_color_buckets(image):
     cyan = cc.sum() // divisor
     fuchsia  = ff.sum() // divisor
 
-    saa = np.logical_and(aa, s < 33)
-    
-    light = np.logical_and(saa, v > 67).sum() // divisor
-    medium = np.logical_and(aa, np.logical_and(v <= 67, v >= 33)).sum() // divisor
-    dark = np.logical_and(aa, v < 33).sum() // divisor
+    vv = np.asarray(imageL.convert('HSV'))[:,:,2]
+    light = np.logical_and(aa, vv > 67).sum() // divisor
+    medium = np.logical_and(aa, np.logical_and(vv <= 67, vv >= 33)).sum() // divisor
+    dark = np.logical_and(aa, vv < 33).sum() // divisor
     
     vivid = np.logical_and(aa, s > 67).sum() // divisor
     neutral = np.logical_and(aa, np.logical_and(s <= 67, s >= 33)).sum() // divisor
-    dull = saa.sum() // divisor
+    dull = np.logical_and(aa, s < 33).sum() // divisor
 
     return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{vivid}?{neutral}?{dull}?{light}?{medium}?{dark}?{alpha}'
