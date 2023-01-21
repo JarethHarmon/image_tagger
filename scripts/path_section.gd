@@ -3,9 +3,12 @@ extends Control
 onready var path_list:VBoxContainer = $paths
 
 func _ready() -> void:
-	Signals.connect("create_path_buttons", self, "create_path_buttons")
+	Signals.connect("load_metadata", self, "create_path_buttons")
 
-func create_path_buttons(sha256:String, paths:Array) -> void:
+func create_path_buttons(image_hash:String) -> void:
+	if MetadataManager.IncorrectImage(image_hash): return
+	var paths:Array = MetadataManager.GetCurrentPaths()
+	
 	for child in path_list.get_children():
 		child.queue_free()
 		
