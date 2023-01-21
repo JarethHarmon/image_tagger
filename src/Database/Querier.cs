@@ -447,12 +447,11 @@ namespace ImageTagger.Database
             if (info.QueryType == TabType.Default)
             {
                 int order = (info.Order == Order.Ascending) ? 1 : -1;
-                //info.Colors = new Colors[3] { Colors.Light, Colors.Green, Colors.Dark };
                 switch (info.Sort)
                 {
                     case Sort.Path: query = query.OrderBy(x => x.Paths.FirstOrDefault(), order); break;
                     case Sort.Dimensions: query = query.OrderBy(x => x.Width * x.Height, order); break;
-                    case Sort.TagCount: query = query.OrderBy(x => x.Tags.Length, order); break;
+                    case Sort.TagCount: query = query.OrderBy("COUNT($.Tags)", order); break; // could be slower; have not tested at scale yet
                     case Sort.Quality: query = query.OrderBy(x => x.Ratings["Quality"], order); break;
                     case Sort.Appeal: query = query.OrderBy(x => x.Ratings["Appeal"], order); break;
                     case Sort.ArtStyle: query = query.OrderBy(x => x.Ratings["Art"], order); break;

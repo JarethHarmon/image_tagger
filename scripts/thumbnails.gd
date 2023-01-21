@@ -82,7 +82,7 @@ func select_items() -> void:
 #	var imports:Array = MetadataManager.GetCurrentImports()
 	
 	Signals.emit_signal("load_metadata", image_hash)
-#	Signals.emit_signal("load_image_tags", image_hash, selected_items)
+	Signals.emit_signal("load_image_tags", image_hash, selected_items)
 #	Signals.emit_signal("create_path_buttons", image_hash, paths)
 #	if imports != null: Signals.emit_signal("create_import_buttons", image_hash, imports)
 	

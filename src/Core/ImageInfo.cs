@@ -36,7 +36,7 @@ namespace ImageTagger.Core
         public HashSet<string> Creators { get; set; } // person (people) who made or contributed to the making of an image/group
         public HashSet<string> Copyrights { get; set; } // ex: Disney/"Company Name"/Spongebob Squarepants/etc
         public HashSet<string> Subjects { get; set; } // people/places/characters/objects/ideas depicted in the image
-        public string[] Tags { get; set; } // needs to be an array; OrderBy(tags.Count) does not work correctly (list/hashset) if the count is 1 (treated as if it was 0)
+        public HashSet<string> Tags { get; set; } // descriptive tags
 
         public int RatingSum { get; set; }
         public float RatingAvg { get; set; }
@@ -52,7 +52,7 @@ namespace ImageTagger.Core
             Creators = new HashSet<string>();
             Copyrights = new HashSet<string>();
             Subjects = new HashSet<string>();
-            Tags = Array.Empty<string>();
+            Tags = new HashSet<string>();
             Colors = Array.Empty<int>();
             Ratings = new Dictionary<string, int>();
         }
@@ -65,7 +65,7 @@ namespace ImageTagger.Core
             Creators.UnionWith(other.Creators);
             Copyrights.UnionWith(other.Copyrights);
             Subjects.UnionWith(other.Subjects);
-            Tags = Tags.Union(other.Tags).ToArray();
+            Tags.UnionWith(other.Tags);
         }
     }
 }

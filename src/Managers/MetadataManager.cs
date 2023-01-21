@@ -42,7 +42,7 @@ namespace ImageTagger.Managers
 
         public string[] GetCurrentTags()
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Tags ?? Array.Empty<string>();
+            return ImageInfoAccess.GetCurrentImageInfo()?.Tags.ToArray() ?? Array.Empty<string>();
         }
 
         public string[] GetCurrentImports()
