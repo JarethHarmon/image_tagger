@@ -35,9 +35,9 @@ func create_path_buttons(image_hash:String) -> void:
 		path_list.add_child(hsep)
 
 func button_pressed(path:String) -> void:
-	if Globals.ctrl_pressed and Globals.shift_pressed: OS.set_clipboard(path.get_file())
-	elif Globals.ctrl_pressed: pass
-	elif Globals.shift_pressed: OS.set_clipboard(path)
+	if Input.is_action_pressed("ctrl") and Input.is_action_pressed("shift"): OS.set_clipboard(path.get_file())
+	elif Input.is_action_pressed("ctrl"): pass # open in new tab
+	elif Input.is_action_pressed("shift"): OS.set_clipboard(path)
 	else: OS.set_clipboard(path.get_base_dir())
 
 	# click: copy folder path

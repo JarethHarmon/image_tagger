@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://assets/dropdown-right.png" type="Texture" id=1]
 [ext_resource path="res://scenes/custom_nodes/Dropdown.gd" type="Script" id=2]
 [ext_resource path="res://scripts/path_section.gd" type="Script" id=3]
 [ext_resource path="res://scripts/other_section.gd" type="Script" id=4]
+[ext_resource path="res://scenes/custom_nodes/TagEdit.gd" type="Script" id=5]
 
 [node name="metadata" type="Control"]
 anchor_right = 1.0
@@ -55,26 +56,222 @@ script = ExtResource( 2 )
 margin_right = 1910.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "Tags"
+text = "  Tags"
 icon = ExtResource( 1 )
+align = 0
 
-[node name="tag_section" type="Control" parent="margin/scroll/vbox/tags"]
+[node name="tag_section" type="MarginContainer" parent="margin/scroll/vbox/tags"]
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 282.0
+margin_bottom = 136.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 40
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1870.0
+margin_bottom = 105.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="creators" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
+margin_right = 1830.0
+margin_bottom = 22.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/creators"]
+margin_right = 1830.0
+margin_bottom = 22.0
+hint_tooltip = "The people who contributed to the creation of this image."
+size_flags_horizontal = 3
+text = "  Creators"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="creator_section" type="Control" parent="margin/scroll/vbox/tags/tag_section/vbox/creators"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
 rect_min_size = Vector2( 256, 256 )
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ColorRect" type="ColorRect" parent="margin/scroll/vbox/tags/tag_section"]
+[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/tags/tag_section/vbox/creators/creator_section"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 0.65098, 0.854902, 0.568627, 1 )
+color = Color( 0.682353, 0.368627, 0.588235, 1 )
+
+[node name="copyrights" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
+margin_top = 26.0
+margin_right = 1830.0
+margin_bottom = 48.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/copyrights"]
+margin_right = 1830.0
+margin_bottom = 22.0
+hint_tooltip = "The source material/legal owners of this image or the subjects it depicts."
+size_flags_horizontal = 3
+text = "  Copyrights"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="copyright_section" type="Control" parent="margin/scroll/vbox/tags/tag_section/vbox/copyrights"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 256, 256 )
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/tags/tag_section/vbox/copyrights/copyright_section"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 0.364706, 0.380392, 0.8, 1 )
+
+[node name="subjects" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
+margin_top = 52.0
+margin_right = 1830.0
+margin_bottom = 74.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/subjects"]
+margin_right = 1830.0
+margin_bottom = 22.0
+hint_tooltip = "The people/characters/places/objects/ideas depicted in this image."
+size_flags_horizontal = 3
+text = "  Subjects"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="subject_section" type="Control" parent="margin/scroll/vbox/tags/tag_section/vbox/subjects"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 256, 256 )
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/tags/tag_section/vbox/subjects/subject_section"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color( 0.45098, 0.729412, 0.494118, 1 )
+
+[node name="descriptive" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
+margin_top = 78.0
+margin_right = 1830.0
+margin_bottom = 100.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive"]
+margin_right = 1830.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "  Tags"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="descriptive_section" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive"]
+visible = false
+margin_top = 26.0
+margin_right = 1830.0
+margin_bottom = 64.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1825.0
+margin_bottom = 43.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
+margin_right = 1750.0
+margin_bottom = 24.0
+mouse_filter = 2
+size_flags_horizontal = 3
+
+[node name="delimiter" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
+margin_right = 58.0
+margin_bottom = 24.0
+text = ","
+align = 1
+script = ExtResource( 5 )
+
+[node name="tag_entry" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
+margin_left = 62.0
+margin_right = 1693.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+placeholder_text = "Type delimiter-separated descriptive tags here..."
+script = ExtResource( 5 )
+
+[node name="add_button" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
+margin_left = 1697.0
+margin_right = 1750.0
+margin_bottom = 24.0
+text = "  Add  "
+
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
+margin_top = 28.0
+margin_right = 1750.0
+margin_bottom = 28.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+
+[node name="scroll" type="ScrollContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1745.0
+margin_bottom = 5.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/scroll"]
+margin_right = 1705.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="groups" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 26.0
@@ -87,8 +284,9 @@ script = ExtResource( 2 )
 margin_right = 1910.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "Groups"
+text = "  Groups"
 icon = ExtResource( 1 )
+align = 0
 
 [node name="group_section" type="Control" parent="margin/scroll/vbox/groups"]
 visible = false
@@ -119,8 +317,9 @@ script = ExtResource( 2 )
 margin_right = 1910.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "Paths"
+text = "  Paths"
 icon = ExtResource( 1 )
+align = 0
 
 [node name="path_section" type="MarginContainer" parent="margin/scroll/vbox/paths"]
 visible = false
@@ -130,26 +329,20 @@ margin_bottom = 40.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/margin_right = 20
+custom_constants/margin_right = 40
 custom_constants/margin_top = 5
-custom_constants/margin_left = 20
+custom_constants/margin_left = 40
 custom_constants/margin_bottom = 5
 script = ExtResource( 3 )
 
 [node name="paths" type="VBoxContainer" parent="margin/scroll/vbox/paths/path_section"]
-margin_left = 20.0
+margin_left = 40.0
 margin_top = 5.0
-margin_right = 1890.0
+margin_right = 1870.0
 margin_bottom = 9.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-
-[node name="hsep1" type="HSeparator" parent="margin/scroll/vbox/paths/path_section/paths"]
-margin_right = 1870.0
-margin_bottom = 4.0
-mouse_filter = 2
-size_flags_horizontal = 3
 
 [node name="ratings" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 78.0
@@ -162,8 +355,9 @@ script = ExtResource( 2 )
 margin_right = 1910.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "Ratings"
+text = "  Ratings"
 icon = ExtResource( 1 )
+align = 0
 
 [node name="path_section" type="Control" parent="margin/scroll/vbox/ratings"]
 visible = false
@@ -194,8 +388,9 @@ script = ExtResource( 2 )
 margin_right = 1910.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "Other"
+text = "  Other"
 icon = ExtResource( 1 )
+align = 0
 
 [node name="other_section" type="MarginContainer" parent="margin/scroll/vbox/other"]
 visible = false
@@ -205,16 +400,16 @@ margin_bottom = 298.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/margin_right = 20
+custom_constants/margin_right = 40
 custom_constants/margin_top = 5
-custom_constants/margin_left = 20
+custom_constants/margin_left = 40
 custom_constants/margin_bottom = 5
 script = ExtResource( 4 )
 
 [node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/other/other_section"]
-margin_left = 20.0
+margin_left = 40.0
 margin_top = 5.0
-margin_right = 1890.0
+margin_right = 1870.0
 margin_bottom = 267.0
 mouse_filter = 2
 size_flags_horizontal = 3

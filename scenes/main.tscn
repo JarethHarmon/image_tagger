@@ -195,6 +195,7 @@ normal_parent = NodePath("..")
 fullscreen_parent = NodePath("../../../../../../fullscreen")
 
 [node name="hsplit" type="HSplitContainer" parent="margin/vbox/hsplit/right/vsplit"]
+visible = false
 margin_top = 645.0
 margin_right = 1151.0
 margin_bottom = 982.0
@@ -240,7 +241,6 @@ size_flags_vertical = 3
 visible = false
 
 [node name="metadata" parent="margin/vbox/hsplit/right/vsplit" instance=ExtResource( 24 )]
-visible = false
 anchor_right = 0.0
 anchor_bottom = 0.0
 margin_top = 645.0

@@ -1,4 +1,5 @@
 extends OptionButton
+class_name ScrollableOptionButton
 
 func _on_ScrollableOptionButton_gui_input(event:InputEvent) -> void:
 	if event is InputEventMouseButton:
