@@ -71,6 +71,13 @@ namespace ImageTagger
         public static void SetMaxAnimatedImagesToStore(int num) { Settings.MaxAnimatedImagesToStore = num; }
         public static int GetMaxAnimatedImagesToStore() { return Settings.MaxAnimatedImagesToStore; }
 
+        public static void SetUseDelimiter(bool value) { Settings.UseDelimiter = value; }
+        public static bool GetUseDelimiter() { return Settings.UseDelimiter; }
+        public static void SetUseColoredText(bool value) { Settings.UseColoredText = value; }
+        public static bool GetUseColoredText() { return Settings.UseColoredText; }
+        public static void SetUseSeparateFontColor(bool value) { Settings.UseSeparateFontColor = value; }
+        public static bool GetUseSeparateFontColor() { return Settings.UseSeparateFontColor; }
+
         public static void SetUseFullscreen(bool value) { Settings.UseFullScreen = value; }
         public static bool GetUseFullscreen() { return Settings.UseFullScreen; }
         public static void SetUseSmoothPixel(bool value) { Settings.UseSmoothPixel = value; }

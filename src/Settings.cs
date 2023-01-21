@@ -38,6 +38,10 @@ namespace ImageTagger
         public int MaxLargeImagesToStore { get; set; }
         public int MaxAnimatedImagesToStore { get; set; }
 
+        public bool UseDelimiter { get; set; }
+        public bool UseColoredText { get; set; }
+        public bool UseSeparateFontColor { get; set; }
+
         public bool UseFullScreen { get; set; }
         public bool UseSmoothPixel { get; set; }
         public bool UseImageFilter { get; set; }
@@ -90,6 +94,11 @@ namespace ImageTagger
             MaxImagesToStore = 10;
             MaxLargeImagesToStore = 0;
             MaxAnimatedImagesToStore = 0;
+
+            // tagging
+            UseDelimiter = true;
+            UseColoredText = true;
+            UseSeparateFontColor = true;
 
             // shaders
             UseFullScreen = false;
