@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://assets/dropdown-right.png" type="Texture" id=1]
 [ext_resource path="res://scenes/custom_nodes/Dropdown.gd" type="Script" id=2]
@@ -8,6 +8,11 @@
 [ext_resource path="res://scripts/descriptive_section.gd" type="Script" id=6]
 [ext_resource path="res://scripts/metadata.gd" type="Script" id=7]
 [ext_resource path="res://scripts/metadata-expand.gd" type="Script" id=8]
+[ext_resource path="res://scenes/rating_appeal.tscn" type="PackedScene" id=9]
+[ext_resource path="res://scenes/rating_quality.tscn" type="PackedScene" id=10]
+[ext_resource path="res://scenes/rating_art.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scripts/rating_section.gd" type="Script" id=12]
+[ext_resource path="res://scripts/import_section.gd" type="Script" id=13]
 
 [node name="metadata" type="Control"]
 anchor_right = 1.0
@@ -357,23 +362,94 @@ text = "  Groups"
 icon = ExtResource( 1 )
 align = 0
 
-[node name="group_section" type="Control" parent="margin/scroll/vbox/groups"]
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/groups"]
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 26.0
-rect_min_size = Vector2( 256, 256 )
+margin_bottom = 84.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1905.0
+margin_bottom = 53.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ColorRect4" type="ColorRect" parent="margin/scroll/vbox/groups/group_section"]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="imports" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin/vbox"]
+margin_right = 1865.0
+margin_bottom = 22.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/groups/margin/vbox/imports"]
+margin_right = 1865.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "  Imports  "
+icon = ExtResource( 1 )
+align = 0
+
+[node name="import_section" type="MarginContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports"]
+visible = false
+margin_top = 26.0
+margin_right = 1865.0
+margin_bottom = 36.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 1, 0.654902, 0, 1 )
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+script = ExtResource( 13 )
+
+[node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports/import_section"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1860.0
+margin_bottom = 5.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/vseparation = 5
+custom_constants/hseparation = 5
+
+[node name="groups" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin/vbox"]
+margin_top = 26.0
+margin_right = 1865.0
+margin_bottom = 48.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/groups/margin/vbox/groups"]
+margin_right = 1865.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "  Groups"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="group_section" type="MarginContainer" parent="margin/scroll/vbox/groups/margin/vbox/groups"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
 
 [node name="paths" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 52.0
@@ -428,23 +504,87 @@ text = "  Ratings"
 icon = ExtResource( 1 )
 align = 0
 
-[node name="path_section" type="Control" parent="margin/scroll/vbox/ratings"]
+[node name="rating_section" type="MarginContainer" parent="margin/scroll/vbox/ratings"]
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 26.0
-rect_min_size = Vector2( 256, 256 )
+margin_bottom = 81.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 40
+custom_constants/margin_bottom = 5
+script = ExtResource( 12 )
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/ratings/rating_section"]
+margin_left = 40.0
+margin_top = 5.0
+margin_right = 1905.0
+margin_bottom = 50.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/ratings/path_section"]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/ratings/rating_section/vbox"]
+margin_right = 1865.0
+margin_bottom = 45.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 1, 0.54902, 0.698039, 1 )
+
+[node name="space1" type="Control" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox"]
+margin_right = 257.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_quality" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox" instance=ExtResource( 10 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 261.0
+margin_right = 532.0
+margin_bottom = 45.0
+
+[node name="space2" type="Control" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox"]
+margin_left = 536.0
+margin_right = 793.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_appeal" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox" instance=ExtResource( 9 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 797.0
+margin_right = 1068.0
+margin_bottom = 45.0
+
+[node name="space3" type="Control" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox"]
+margin_left = 1072.0
+margin_right = 1329.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_art" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox" instance=ExtResource( 11 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 1333.0
+margin_right = 1604.0
+margin_bottom = 45.0
+
+[node name="space4" type="Control" parent="margin/scroll/vbox/ratings/rating_section/vbox/hbox"]
+margin_left = 1608.0
+margin_right = 1865.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 104.0

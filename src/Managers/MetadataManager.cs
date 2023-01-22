@@ -13,8 +13,9 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         public bool IncorrectImage(string hash)
         {
+            if (string.IsNullOrWhiteSpace(hash)) return true;
             string _hash = ImageInfoAccess.GetCurrentHash();
-            if (_hash.Equals(string.Empty)) return true;
+            if (string.IsNullOrWhiteSpace(_hash)) return true;
             return !hash.Equals(_hash, StringComparison.InvariantCultureIgnoreCase);
         }
 

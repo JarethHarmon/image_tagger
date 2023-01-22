@@ -19,12 +19,13 @@ func create_path_buttons(image_hash:String) -> void:
 	
 	for path in paths:
 		var b:Button = Button.new()
-		b.text = path
+		b.text = "  " + path + "  "
 		b.connect("pressed", self, "button_pressed", [path])
 		b.size_flags_horizontal = SIZE_EXPAND_FILL
+		b.align = Button.ALIGN_LEFT
 		
-		var color:Color = Globals.make_color()
-		var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1.5)
+		var color:Color = Global.GetRandomGodotPastelColor()
+		var sbf:StyleBoxFlat = Globals.make_stylebox(color, 1)
 		b.add_color_override("font_color", Color.black) # need to make font thicker
 		b.add_stylebox_override("normal", sbf)
 		
