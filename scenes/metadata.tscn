@@ -622,7 +622,7 @@ size_flags_vertical = 3
 [node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 104.0
 margin_right = 1910.0
-margin_bottom = 410.0
+margin_bottom = 126.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -635,6 +635,7 @@ icon = ExtResource( 1 )
 align = 0
 
 [node name="other_section" type="MarginContainer" parent="margin/scroll/vbox/other"]
+visible = false
 margin_top = 26.0
 margin_right = 1910.0
 margin_bottom = 306.0
