@@ -51,7 +51,7 @@ size_flags_vertical = 3
 
 [node name="tags" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_right = 1910.0
-margin_bottom = 22.0
+margin_bottom = 318.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -64,10 +64,9 @@ icon = ExtResource( 1 )
 align = 0
 
 [node name="tag_section" type="MarginContainer" parent="margin/scroll/vbox/tags"]
-visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 136.0
+margin_bottom = 318.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -80,7 +79,7 @@ custom_constants/margin_bottom = 5
 margin_left = 40.0
 margin_top = 5.0
 margin_right = 1870.0
-margin_bottom = 105.0
+margin_bottom = 287.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -189,7 +188,7 @@ color = Color( 0.45098, 0.729412, 0.494118, 1 )
 [node name="descriptive" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
 margin_top = 78.0
 margin_right = 1830.0
-margin_bottom = 100.0
+margin_bottom = 282.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -202,10 +201,9 @@ icon = ExtResource( 1 )
 align = 0
 
 [node name="descriptive_section" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive"]
-visible = false
 margin_top = 26.0
 margin_right = 1830.0
-margin_bottom = 214.0
+margin_bottom = 204.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -219,118 +217,122 @@ script = ExtResource( 6 )
 margin_left = 40.0
 margin_top = 5.0
 margin_right = 1825.0
-margin_bottom = 183.0
+margin_bottom = 173.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
+[node name="hbox1" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
 margin_right = 1785.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="delimiter" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
+[node name="delimiter" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1"]
 margin_right = 58.0
 margin_bottom = 24.0
 text = ","
 align = 1
 script = ExtResource( 5 )
 
-[node name="tag_entry" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
+[node name="tag_entry" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1"]
 margin_left = 62.0
-margin_right = 1728.0
+margin_right = 1680.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
 placeholder_text = "Type delimiter-separated descriptive tags here..."
 script = ExtResource( 5 )
 
-[node name="add_button" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox"]
-margin_left = 1732.0
+[node name="add_button" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1"]
+margin_left = 1684.0
 margin_right = 1785.0
 margin_bottom = 24.0
-text = "  Add  "
+text = "  Create New  "
 
-[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
+[node name="hbox2" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
 margin_top = 28.0
 margin_right = 1785.0
-margin_bottom = 178.0
+margin_bottom = 168.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="scroll" type="ScrollContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2"]
+margin_right = 1617.0
+margin_bottom = 140.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll"]
+margin_right = 1617.0
+margin_bottom = 140.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll/panel"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1610.0
+margin_bottom = 133.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
 custom_constants/margin_top = 5
+custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin"]
+[node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll/panel/margin"]
+margin_left = 5.0
 margin_top = 5.0
+margin_right = 1598.0
+margin_bottom = 121.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="buttons" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2"]
+margin_left = 1621.0
 margin_right = 1785.0
-margin_bottom = 145.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="scroll" type="ScrollContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox"]
-margin_right = 1572.0
-margin_bottom = 140.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/scroll"]
-margin_right = 1572.0
-margin_bottom = 140.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/scroll/panel"]
-margin_right = 1572.0
-margin_bottom = 140.0
-mouse_filter = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="buttons" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox"]
-margin_left = 1576.0
-margin_right = 1740.0
 margin_bottom = 140.0
 mouse_filter = 2
 size_flags_vertical = 3
 
-[node name="select" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="select" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_right = 164.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 text = "  Select All  "
 
-[node name="copy" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="copy" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_top = 24.0
 margin_right = 164.0
 margin_bottom = 44.0
 size_flags_horizontal = 3
 text = "  Copy Selected  "
 
-[node name="paste" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="paste" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_top = 48.0
 margin_right = 164.0
 margin_bottom = 68.0
 size_flags_horizontal = 3
 text = "  Paste From Clipboard  "
 
-[node name="invert" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="invert" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_top = 72.0
 margin_right = 164.0
 margin_bottom = 92.0
 size_flags_horizontal = 3
 text = "  Invert Selection"
 
-[node name="remove" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="remove" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_top = 96.0
 margin_right = 164.0
 margin_bottom = 116.0
 size_flags_horizontal = 3
 text = "  Remove Selected  "
 
-[node name="remove_all" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons"]
+[node name="remove_all" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons"]
 margin_top = 120.0
 margin_right = 164.0
 margin_bottom = 140.0
@@ -338,9 +340,9 @@ size_flags_horizontal = 3
 text = "  Remove All  "
 
 [node name="groups" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 26.0
+margin_top = 322.0
 margin_right = 1910.0
-margin_bottom = 48.0
+margin_bottom = 344.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -371,9 +373,9 @@ size_flags_vertical = 3
 color = Color( 1, 0.654902, 0, 1 )
 
 [node name="paths" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 52.0
+margin_top = 348.0
 margin_right = 1910.0
-margin_bottom = 74.0
+margin_bottom = 370.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -409,9 +411,9 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="ratings" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 78.0
+margin_top = 374.0
 margin_right = 1910.0
-margin_bottom = 100.0
+margin_bottom = 396.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -442,9 +444,9 @@ size_flags_vertical = 3
 color = Color( 1, 0.54902, 0.698039, 1 )
 
 [node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 104.0
+margin_top = 400.0
 margin_right = 1910.0
-margin_bottom = 126.0
+margin_bottom = 422.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -1033,11 +1035,12 @@ margin_right = 1830.0
 margin_bottom = 262.0
 mouse_filter = 2
 
-[connection signal="text_changed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox/delimiter" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_delimiter_text_changed"]
-[connection signal="text_entered" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox/tag_entry" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_tag_entry_text_entered"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/select" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_select_pressed"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/copy" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_copy_pressed"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/paste" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_paste_pressed"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/invert" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_invert_pressed"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/remove" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_remove_pressed"]
-[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/margin/hbox/buttons/remove_all" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_remove_all_pressed"]
+[connection signal="text_changed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1/delimiter" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_delimiter_text_changed"]
+[connection signal="text_entered" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1/tag_entry" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_tag_entry_text_entered"]
+[connection signal="gui_input" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll/panel" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_panel_gui_input"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/select" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_select_pressed"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/copy" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_copy_pressed"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/paste" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_paste_pressed"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/invert" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_invert_pressed"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/remove" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_remove_pressed"]
+[connection signal="pressed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/buttons/remove_all" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_remove_all_pressed"]

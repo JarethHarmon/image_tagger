@@ -2,10 +2,10 @@ extends MarginContainer
 
 # I might merge the individual tag sections into a single tag_section.gd script
 
-onready var delimiter_entry:TagEdit = $vbox/hbox/delimiter
-onready var tag_entry:TagEdit = $vbox/hbox/tag_entry
-onready var tag_flow:HFlowContainer = $vbox/margin/hbox/scroll/panel/flow
-onready var scroll:ScrollContainer = $vbox/margin/hbox/scroll
+onready var delimiter_entry:TagEdit = $vbox/hbox1/delimiter
+onready var tag_entry:TagEdit = $vbox/hbox1/tag_entry
+onready var tag_flow:HFlowContainer = $vbox/hbox2/scroll/panel/margin/flow
+onready var scroll:ScrollContainer = $vbox/hbox2/scroll
 
 var selected_tags:Dictionary = {}
 var selected_thumbnails:Dictionary = {}
@@ -230,3 +230,9 @@ func _on_remove_all_pressed():
 		hashes.push_back(selected_thumbnails[idx])
 	MetadataManager.RemoveTags(hashes, tags)
 
+func _on_panel_gui_input(event:InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if Input.is_action_pressed("ctrl"): return
+		if Input.is_action_pressed("shift"): return
+		if event.button_index == BUTTON_LEFT:
+			deselect_all()
