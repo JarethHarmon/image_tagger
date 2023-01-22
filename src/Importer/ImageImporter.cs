@@ -85,22 +85,22 @@ namespace ImageTagger.Importer
 
         internal struct ColorBuckets
         {
-            public ulong[] Colors;
+            public int[] Colors;
 
             public ColorBuckets(string _colors)
             {
                 string[] temp = _colors.Split('?');
-                if (temp?.Length == 9)
+                if (temp?.Length == 13)
                 {
-                    Colors = new ulong[9];
+                    Colors = new int[13];
                     for (int i = 0; i < temp.Length; i++)
                     {
-                        if (!ulong.TryParse(temp[i], out Colors[i])) Colors[i] = 0;
+                        if (!int.TryParse(temp[i], out Colors[i])) Colors[i] = 0;
                     }
                 }
                 else
                 {
-                    Colors = new ulong[9];
+                    Colors = new int[13];
                 }
             }
         }

@@ -84,11 +84,11 @@ namespace ImageTagger.Metadata
             var _hashes = new HashSet<string>(hashes);
 
             if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
-                currentImageInfo.Tags = currentImageInfo.Tags.Union(tags).ToArray();
+                currentImageInfo.Tags.UnionWith(tags);
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)
-                info.Tags = info.Tags.Union(tags).ToArray();
+                info.Tags.UnionWith(tags);
 
             DatabaseAccess.UpdateImageInfo(infos);
         }
@@ -99,11 +99,11 @@ namespace ImageTagger.Metadata
             var _hashes = new HashSet<string>(hashes);
 
             if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
-                currentImageInfo.Tags = currentImageInfo.Tags.Except(tags).ToArray();
+                currentImageInfo.Tags.ExceptWith(tags);
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)
-                info.Tags = info.Tags.Except(tags).ToArray();
+                info.Tags.ExceptWith(tags);
 
             DatabaseAccess.UpdateImageInfo(infos);
         }

@@ -7,4 +7,6 @@ func _gui_input(event:InputEvent) -> void:
 			if self.text == "":
 				self.release_focus()
 		else: get_tree().set_input_as_handled() # prevents hotkeys typed into a lineedit from propagating to other nodes
-		# note that the F_ keys (like F8) are in _input() so they will be called regardless of whether they have already been "handled"
+		# ie this prevents hotkeys like 'T' from being called while typing into a lineedit
+		# note that the F_ keys (like F8) are handled globally in _input() so they will be called regardless of whether they have already been "handled"
+		#	the important part being that they are handled in _input() instead of _unhandled_input()

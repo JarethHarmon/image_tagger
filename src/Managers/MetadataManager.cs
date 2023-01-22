@@ -42,12 +42,30 @@ namespace ImageTagger.Managers
 
         public string[] GetCurrentTags()
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Tags ?? Array.Empty<string>();
+            return ImageInfoAccess.GetCurrentImageInfo()?.Tags.ToArray() ?? Array.Empty<string>();
         }
 
         public string[] GetCurrentImports()
         {
             return ImageInfoAccess.GetCurrentImageInfo()?.Imports.ToArray() ?? Array.Empty<string>();
+        }
+
+        public int[] GetCurrentColors()
+        {
+            return ImageInfoAccess.GetCurrentImageInfo()?.Colors ?? new int[13];
+        }
+
+        public string[] GetCurrentPerceptualHashes()
+        {
+            var imageInfo = ImageInfoAccess.GetCurrentImageInfo();
+            if (imageInfo is null) return new string[4];
+            return new string[4]
+            {
+                imageInfo.AverageHash.ToString(),
+                imageInfo.DifferenceHash.ToString(),
+                imageInfo.PerceptualHash.ToString(),
+                imageInfo.WaveletHash.ToString()
+            };
         }
 
         public string GetCurrentHash()
@@ -133,10 +151,8 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         public string CreateTab(string name, int type, string importId, string groupId, string tag, string simiHash)
         {
-            string id = Global.CreateTabId();
             var info = new TabInfo
             {
-                Id = id,
                 Name = name,
                 TabType = (TabType)type,
                 ImportId = importId,
@@ -145,7 +161,7 @@ namespace ImageTagger.Managers
                 SimilarityHash = simiHash
             };
             TabInfoAccess.CreateTab(info);
-            return id;
+            return info.Id;
         }
 
         public void DeleteTab(string id)

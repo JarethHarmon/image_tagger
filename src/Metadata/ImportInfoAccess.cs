@@ -42,15 +42,13 @@ namespace ImageTagger.Metadata
                 string[] _paths = new string[Global.PROGRESS_SECTION_SIZE];
                 Array.Copy(paths, i * Global.PROGRESS_SECTION_SIZE, _paths, 0, Global.PROGRESS_SECTION_SIZE);
 
-                var id = Global.CreateSectionId();
                 var section = new ImportSection
                 {
-                    Id = id,
                     Paths = _paths
                 };
 
                 list.Add(section);
-                info.Sections.Add(id);
+                info.Sections.Add(section.Id);
 
                 // periodically batch insert to prevent storing an entire second copy of the array in memory
                 if (i % Global.PROGRESS_SECTION_SIZE == 0)
@@ -64,14 +62,12 @@ namespace ImageTagger.Metadata
                 string[] _paths = new string[lastSectionSize]; // << this was causing null paths
                 Array.Copy(paths, info.Total - lastSectionSize, _paths, 0, lastSectionSize);
 
-                var id = Global.CreateSectionId();
                 var section = new ImportSection
                 {
-                    Id = id,
                     Paths = _paths
                 };
                 list.Add(section);
-                info.Sections.Add(id);
+                info.Sections.Add(section.Id);
             }
 
             if (list.Count > 0)
@@ -83,7 +79,7 @@ namespace ImageTagger.Metadata
 
         internal static ImportInfo GetImportInfo(string id)
         {
-            if (dictImportInfo?.TryGetValue(id, out var info) ?? false)
+            if (dictImportInfo.TryGetValue(id, out var info))
                 return info;
             return null;
         }

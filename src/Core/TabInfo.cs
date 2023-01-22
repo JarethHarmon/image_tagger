@@ -13,7 +13,7 @@
 
         public TabInfo()
         {
-            //Id = Global.CreateTabId(); // need to change all Info objects to work like this
+            Id = Global.GetRandomId(8);
             Name = "import";
 
             TabType = TabType.Default;

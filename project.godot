@@ -9,12 +9,18 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "OptionButton",
+"class": "ScrollableOptionButton",
+"language": "GDScript",
+"path": "res://scenes/custom_nodes/ScrollableOptionButton.gd"
+}, {
 "base": "LineEdit",
 "class": "TagEdit",
 "language": "GDScript",
 "path": "res://scenes/custom_nodes/TagEdit.gd"
 } ]
 _global_script_class_icons={
+"ScrollableOptionButton": "",
 "TagEdit": ""
 }
 
@@ -117,11 +123,13 @@ hide_ui={
 ctrl={
 "deadzone": 0.5,
 "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":0,"physical_scancode":16777238,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777238,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
  ]
 }
 shift={
 "deadzone": 0.5,
 "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":0,"physical_scancode":16777237,"unicode":0,"echo":false,"script":null)
+, Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777237,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
  ]
 }
 arrow_up={

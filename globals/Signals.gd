@@ -10,6 +10,9 @@ signal search_pressed(tags_all, tags_any, tags_none, tags_complex, new_query)
 signal image_import_finished(tab_id)
 signal check_tab_history
 
+signal set_metadata_section_expand(section)
+signal make_descriptive_tags_visible
+signal load_metadata(image_hash)
 signal load_full_image(image_hash, path, found)
 signal load_image_tags(image_hash, selected_items)
 signal create_path_buttons(image_hash, paths)

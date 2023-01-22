@@ -15,8 +15,8 @@ namespace ImageTagger.Core
         public ulong PerceptualHash { get; set; }
 
         public int Bucket { get; set; }
-        public ulong[] Colors { get; set; }
         public int NumFrames { get; set; }
+        public int[] Colors { get; set; }
 
         public int Width { get; set; }
         public int Height { get; set; }
@@ -28,11 +28,15 @@ namespace ImageTagger.Core
         public long LastEditTime { get; set; }
         public long UploadTime { get; set; }
 
-        public bool IsGroupLeader { get; set; }
         public HashSet<string> Imports { get; set; }
         public HashSet<string> Paths { get; set; }
         public HashSet<string> Groups { get; set; }
-        public string[] Tags { get; set; }
+        public bool IsGroupLeader { get; set; }
+
+        public HashSet<string> Creators { get; set; } // person (people) who made or contributed to the making of an image/group
+        public HashSet<string> Copyrights { get; set; } // ex: Disney/"Company Name"/Spongebob Squarepants/etc
+        public HashSet<string> Subjects { get; set; } // people/places/characters/objects/ideas depicted in the image
+        public HashSet<string> Tags { get; set; } // descriptive tags
 
         public int RatingSum { get; set; }
         public float RatingAvg { get; set; }
@@ -45,8 +49,11 @@ namespace ImageTagger.Core
             Imports = new HashSet<string>();
             Paths = new HashSet<string>();
             Groups = new HashSet<string>();
-            Tags = Array.Empty<string>();
-            Colors = Array.Empty<ulong>();
+            Creators = new HashSet<string>();
+            Copyrights = new HashSet<string>();
+            Subjects = new HashSet<string>();
+            Tags = new HashSet<string>();
+            Colors = Array.Empty<int>();
             Ratings = new Dictionary<string, int>();
         }
 
@@ -55,7 +62,10 @@ namespace ImageTagger.Core
             Paths.UnionWith(other.Paths);
             Imports.UnionWith(other.Imports);
             Groups.UnionWith(other.Groups);
-            Tags = Tags.Union(other.Tags).ToArray();
+            Creators.UnionWith(other.Creators);
+            Copyrights.UnionWith(other.Copyrights);
+            Subjects.UnionWith(other.Subjects);
+            Tags.UnionWith(other.Tags);
         }
     }
 }
