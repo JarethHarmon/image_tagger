@@ -2,7 +2,7 @@ extends MarginContainer
 
 enum file_context_menu { ImportImages, }
 enum view_context_menu { FullScreen, ShowThumbnailTooltips, FileButtons=5, TabButtons, 
-						 SearchButtons, ThumbnailList, PreviewSection, TabList, TagList }
+						 SearchButtons, ThumbnailList, PreviewSection, MetadataSection }
 
 onready var import_panel:PopupPanel = $ppanel_import
 onready var darkened_background:ColorRect = $background/bg_darken
@@ -89,12 +89,8 @@ func _unhandled_input(event:InputEvent) -> void:
 			Signals.emit_signal("toggle_preview_section", checked)
 			
 		elif event.scancode == KEY_6 and event.pressed:
-			var checked:bool = get_set_view_context_checked(view_context_menu.TabList)
-			Signals.emit_signal("toggle_tablist_section", checked)
-			
-		elif event.scancode == KEY_7 and event.pressed: 
-			var checked:bool = get_set_view_context_checked(view_context_menu.TagList)
-			Signals.emit_signal("toggle_tag_section", checked)
+			var checked:bool = get_set_view_context_checked(view_context_menu.MetadataSection)
+			Signals.emit_signal("toggle_metadata_section", checked)
 
 func _on_pmenu_view_context_index_pressed(index:int) -> void:
 	if index == view_context_menu.FullScreen:
@@ -127,10 +123,9 @@ func _on_pmenu_view_context_index_pressed(index:int) -> void:
 		var checked:bool = get_set_view_context_checked(index)
 		Signals.emit_signal("toggle_preview_section", checked)
 		
-	elif index == view_context_menu.TagList:
+	elif index == view_context_menu.MetadataSection:
 		var checked:bool = get_set_view_context_checked(index)
-		Signals.emit_signal("toggle_tag_section", checked)
-	
+		Signals.emit_signal("toggle_metadata_section", checked)
 
 func get_set_view_context_checked(index:int) -> bool:
 	var checked:bool = view_context.is_item_checked(index)

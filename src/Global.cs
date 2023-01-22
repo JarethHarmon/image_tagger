@@ -97,8 +97,6 @@ namespace ImageTagger
         public static int GetOffsetMainH() { return Settings.OffsetMainH; }
         public static void SetOffsetThumbnailsV(int num) { Settings.OffsetThumbnailsV = num; }
         public static int GetOffsetThumbnailsV() { return Settings.OffsetThumbnailsV; }
-        public static void SetOffsetMetadataH(int num) { Settings.OffsetMetadataH = num; }
-        public static int GetOffsetMetadataH() { return Settings.OffsetMetadataH; }
         public static void SetOffsetMetadataV(int offset) { Settings.OffsetMetadataV = offset; }
         public static int GetOffsetMetadataV() { return Settings.OffsetMetadataV; }
 
