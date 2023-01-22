@@ -97,8 +97,6 @@ namespace ImageTagger
         public static int GetOffsetMainH() { return Settings.OffsetMainH; }
         public static void SetOffsetThumbnailsV(int num) { Settings.OffsetThumbnailsV = num; }
         public static int GetOffsetThumbnailsV() { return Settings.OffsetThumbnailsV; }
-        public static void SetOffsetMetadataH(int num) { Settings.OffsetMetadataH = num; }
-        public static int GetOffsetMetadataH() { return Settings.OffsetMetadataH; }
         public static void SetOffsetMetadataV(int offset) { Settings.OffsetMetadataV = offset; }
         public static int GetOffsetMetadataV() { return Settings.OffsetMetadataV; }
 
@@ -215,6 +213,12 @@ namespace ImageTagger
         }
 
         // need to look into moving setup stuff into the constructor (unsure how that will interact with Godot)
+
+        public static Color GetRandomGodotPastelColor()
+        {
+            var color = Core.Color.GetRandomPastelColor();
+            return new Color((float)color.R / 255, (float)color.G / 255, (float)color.B / 255);
+        }
 
         public static void CreateDefaultIcon()
         {

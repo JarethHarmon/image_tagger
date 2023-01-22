@@ -45,8 +45,7 @@ signal toggle_tab_section(visible)
 signal toggle_search_section(visible)
 signal toggle_thumbnail_section(visible)
 signal toggle_preview_section(visible)
-signal toggle_tablist_section(visible)
-signal toggle_tag_section(visible)
+signal toggle_metadata_section(visible)
 
 signal image_count_changed(total)
 

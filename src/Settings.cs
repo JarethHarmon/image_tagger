@@ -52,7 +52,6 @@ namespace ImageTagger
         public int OffsetPopupH { get; set; }
         public int OffsetMainH { get; set; }
         public int OffsetThumbnailsV { get; set; }
-        public int OffsetMetadataH { get; set; }
         public int OffsetMetadataV { get; set; }
         public bool UseColoredTagBackgrounds { get; set; }
         public bool UseRoundedTagButtons { get; set; }
@@ -112,7 +111,6 @@ namespace ImageTagger
             OffsetPopupH = 100;
             OffsetMainH = -200;
             OffsetThumbnailsV = -360;
-            OffsetMetadataH = -250;
             OffsetMetadataV = 150;
             UseColoredTagBackgrounds = true;
             UseRoundedTagButtons = true;

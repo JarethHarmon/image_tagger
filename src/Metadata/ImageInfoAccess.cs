@@ -59,7 +59,7 @@ namespace ImageTagger.Metadata
                 info.RatingAvg = info.RatingSum / info.Ratings.Count;
             }
 
-            if (_hashes.Contains(currentImageInfo.Hash))
+            if (_hashes.Contains(currentImageInfo?.Hash))
             {
                 currentImageInfo.Ratings[rating] = value;
                 currentImageInfo.RatingSum = currentImageInfo.Ratings.Values.Sum();

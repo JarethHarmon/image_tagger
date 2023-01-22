@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://assets/dropdown-right.png" type="Texture" id=1]
 [ext_resource path="res://scenes/custom_nodes/Dropdown.gd" type="Script" id=2]
@@ -8,6 +8,11 @@
 [ext_resource path="res://scripts/descriptive_section.gd" type="Script" id=6]
 [ext_resource path="res://scripts/metadata.gd" type="Script" id=7]
 [ext_resource path="res://scripts/metadata-expand.gd" type="Script" id=8]
+[ext_resource path="res://scenes/rating_appeal.tscn" type="PackedScene" id=9]
+[ext_resource path="res://scenes/rating_quality.tscn" type="PackedScene" id=10]
+[ext_resource path="res://scenes/rating_art.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scripts/rating_section.gd" type="Script" id=12]
+[ext_resource path="res://scripts/import_section.gd" type="Script" id=13]
 
 [node name="metadata" type="Control"]
 anchor_right = 1.0
@@ -73,13 +78,11 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/margin_right = 40
-custom_constants/margin_top = 5
 custom_constants/margin_left = 40
 custom_constants/margin_bottom = 5
 
 [node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section"]
 margin_left = 40.0
-margin_top = 5.0
 margin_right = 1870.0
 margin_bottom = 105.0
 mouse_filter = 2
@@ -198,7 +201,7 @@ script = ExtResource( 2 )
 margin_right = 1830.0
 margin_bottom = 22.0
 size_flags_horizontal = 3
-text = "  Tags"
+text = "  Descriptive  "
 icon = ExtResource( 1 )
 align = 0
 
@@ -210,17 +213,11 @@ margin_bottom = 204.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/margin_right = 5
-custom_constants/margin_top = 5
-custom_constants/margin_left = 5
-custom_constants/margin_bottom = 5
 script = ExtResource( 6 )
 
 [node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section"]
-margin_left = 5.0
-margin_top = 5.0
-margin_right = 1825.0
-margin_bottom = 173.0
+margin_right = 1830.0
+margin_bottom = 178.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -357,23 +354,101 @@ text = "  Groups"
 icon = ExtResource( 1 )
 align = 0
 
-[node name="group_section" type="Control" parent="margin/scroll/vbox/groups"]
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/groups"]
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 26.0
-rect_min_size = Vector2( 256, 256 )
+margin_bottom = 84.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 40
+custom_constants/margin_left = 40
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin"]
+margin_left = 40.0
+margin_right = 1870.0
+margin_bottom = 58.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ColorRect4" type="ColorRect" parent="margin/scroll/vbox/groups/group_section"]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="imports" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin/vbox"]
+margin_right = 1865.0
+margin_bottom = 22.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/groups/margin/vbox/imports"]
+margin_right = 1865.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "  Imports  "
+icon = ExtResource( 1 )
+align = 0
+
+[node name="import_section" type="MarginContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports"]
+visible = false
+margin_top = 26.0
+margin_right = 1865.0
+margin_bottom = 36.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 1, 0.654902, 0, 1 )
+script = ExtResource( 13 )
+
+[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports/import_section"]
+margin_right = 1865.0
+margin_bottom = 14.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports/import_section/panel"]
+margin_right = 40.0
+margin_bottom = 40.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 20
+custom_constants/margin_top = 5
+custom_constants/margin_left = 20
+custom_constants/margin_bottom = 5
+
+[node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports/import_section/panel/margin"]
+margin_left = 20.0
+margin_top = 5.0
+margin_right = 20.0
+margin_bottom = 35.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/vseparation = 5
+custom_constants/hseparation = 20
+
+[node name="groups" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin/vbox"]
+margin_top = 26.0
+margin_right = 1865.0
+margin_bottom = 48.0
+mouse_filter = 2
+script = ExtResource( 2 )
+
+[node name="dropdown" type="Button" parent="margin/scroll/vbox/groups/margin/vbox/groups"]
+margin_right = 1865.0
+margin_bottom = 22.0
+size_flags_horizontal = 3
+text = "  Groups"
+icon = ExtResource( 1 )
+align = 0
+
+[node name="group_section" type="MarginContainer" parent="margin/scroll/vbox/groups/margin/vbox/groups"]
+visible = false
+margin_top = 26.0
+margin_right = 1910.0
+margin_bottom = 26.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="paths" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 52.0
@@ -399,16 +474,33 @@ mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/margin_right = 40
-custom_constants/margin_top = 5
 custom_constants/margin_left = 40
-custom_constants/margin_bottom = 5
 script = ExtResource( 3 )
 
-[node name="paths" type="VBoxContainer" parent="margin/scroll/vbox/paths/path_section"]
+[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/paths/path_section"]
 margin_left = 40.0
-margin_top = 5.0
 margin_right = 1870.0
-margin_bottom = 5.0
+margin_bottom = 14.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/paths/path_section/panel"]
+margin_right = 40.0
+margin_bottom = 40.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="paths" type="VBoxContainer" parent="margin/scroll/vbox/paths/path_section/panel/margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 35.0
+margin_bottom = 35.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -428,23 +520,104 @@ text = "  Ratings"
 icon = ExtResource( 1 )
 align = 0
 
-[node name="path_section" type="Control" parent="margin/scroll/vbox/ratings"]
+[node name="rating_section" type="MarginContainer" parent="margin/scroll/vbox/ratings"]
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 26.0
-rect_min_size = Vector2( 256, 256 )
+margin_bottom = 81.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 40
+custom_constants/margin_left = 40
+script = ExtResource( 12 )
+
+[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/ratings/rating_section"]
+margin_left = 40.0
+margin_right = 1870.0
+margin_bottom = 55.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ColorRect3" type="ColorRect" parent="margin/scroll/vbox/ratings/path_section"]
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/ratings/rating_section/panel"]
+margin_right = 40.0
+margin_bottom = 40.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-color = Color( 1, 0.54902, 0.698039, 1 )
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/ratings/rating_section/panel/margin"]
+margin_left = 5.0
+margin_top = 5.0
+margin_right = 842.0
+margin_bottom = 50.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox"]
+margin_right = 1865.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="space1" type="Control" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox"]
+margin_right = 257.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_quality" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox" instance=ExtResource( 10 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 261.0
+margin_right = 532.0
+margin_bottom = 45.0
+
+[node name="space2" type="Control" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox"]
+margin_left = 536.0
+margin_right = 793.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_appeal" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox" instance=ExtResource( 9 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 797.0
+margin_right = 1068.0
+margin_bottom = 45.0
+
+[node name="space3" type="Control" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox"]
+margin_left = 1072.0
+margin_right = 1329.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="rating_art" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox" instance=ExtResource( 11 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 1333.0
+margin_right = 1604.0
+margin_bottom = 45.0
+
+[node name="space4" type="Control" parent="margin/scroll/vbox/ratings/rating_section/panel/margin/vbox/hbox"]
+margin_left = 1608.0
+margin_right = 1865.0
+margin_bottom = 45.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_top = 104.0
@@ -465,578 +638,585 @@ align = 0
 visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 298.0
+margin_bottom = 306.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/margin_right = 40
-custom_constants/margin_top = 5
 custom_constants/margin_left = 40
-custom_constants/margin_bottom = 5
 script = ExtResource( 4 )
 
-[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/other/other_section"]
+[node name="panel" type="PanelContainer" parent="margin/scroll/vbox/other/other_section"]
 margin_left = 40.0
-margin_top = 5.0
 margin_right = 1870.0
-margin_bottom = 267.0
+margin_bottom = 280.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="hsep1" type="HSeparator" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_right = 1830.0
-margin_bottom = 4.0
-mouse_filter = 2
-
-[node name="hash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 8.0
-margin_right = 1830.0
-margin_bottom = 42.0
-mouse_filter = 2
-
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hash"]
+[node name="margin" type="MarginContainer" parent="margin/scroll/vbox/other/other_section/panel"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 1823.0
+margin_bottom = 273.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 1806.0
+margin_bottom = 256.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="hash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_right = 1796.0
+margin_bottom = 34.0
+mouse_filter = 2
+
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hash"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 1789.0
 margin_bottom = 27.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hash/hbox"]
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hash/hbox"]
 margin_top = 3.0
-margin_right = 120.0
+margin_right = 160.0
 margin_bottom = 17.0
-rect_min_size = Vector2( 120, 0 )
+rect_min_size = Vector2( 160, 0 )
 text = "SHA256: "
 align = 2
 
-[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/vbox/hash/hbox"]
-margin_left = 124.0
-margin_right = 1816.0
+[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hash/hbox"]
+margin_left = 164.0
+margin_right = 1782.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 align = 0
 
-[node name="hbox1" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 46.0
-margin_right = 1830.0
-margin_bottom = 80.0
+[node name="hbox1" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 38.0
+margin_right = 1796.0
+margin_bottom = 72.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="ahash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox1"]
-margin_right = 913.0
+[node name="ahash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1"]
+margin_right = 896.0
 margin_bottom = 34.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/ahash"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/ahash"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 906.0
+margin_right = 889.0
 margin_bottom = 27.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/ahash/hbox"]
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/ahash/hbox"]
 margin_top = 3.0
-margin_right = 120.0
+margin_right = 160.0
 margin_bottom = 17.0
-rect_min_size = Vector2( 120, 0 )
+rect_min_size = Vector2( 160, 0 )
 text = "Average Hash: "
 align = 2
 
-[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/ahash/hbox"]
-margin_left = 124.0
-margin_right = 899.0
+[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/ahash/hbox"]
+margin_left = 164.0
+margin_right = 882.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 align = 0
 
-[node name="dhash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox1"]
-margin_left = 917.0
-margin_right = 1830.0
+[node name="dhash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1"]
+margin_left = 900.0
+margin_right = 1796.0
 margin_bottom = 34.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/dhash"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/dhash"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 906.0
+margin_right = 889.0
 margin_bottom = 27.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/dhash/hbox"]
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/dhash/hbox"]
 margin_top = 3.0
-margin_right = 120.0
+margin_right = 160.0
 margin_bottom = 17.0
-rect_min_size = Vector2( 120, 0 )
+rect_min_size = Vector2( 160, 0 )
 text = "Difference Hash: "
 align = 2
 
-[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/vbox/hbox1/dhash/hbox"]
-margin_left = 124.0
-margin_right = 899.0
+[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox1/dhash/hbox"]
+margin_left = 164.0
+margin_right = 882.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 align = 0
 
-[node name="hbox2" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 84.0
-margin_right = 1830.0
-margin_bottom = 118.0
+[node name="hbox2" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 76.0
+margin_right = 1796.0
+margin_bottom = 110.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="phash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox2"]
-margin_right = 913.0
+[node name="phash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2"]
+margin_right = 896.0
 margin_bottom = 34.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/phash"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/phash"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 906.0
+margin_right = 889.0
 margin_bottom = 27.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/phash/hbox"]
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/phash/hbox"]
 margin_top = 3.0
-margin_right = 120.0
+margin_right = 160.0
 margin_bottom = 17.0
-rect_min_size = Vector2( 120, 0 )
+rect_min_size = Vector2( 160, 0 )
 text = "Perceptual Hash: "
 align = 2
 
-[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/phash/hbox"]
-margin_left = 124.0
-margin_right = 899.0
+[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/phash/hbox"]
+margin_left = 164.0
+margin_right = 882.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 align = 0
 
-[node name="whash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox2"]
-margin_left = 917.0
-margin_right = 1830.0
+[node name="whash" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2"]
+margin_left = 900.0
+margin_right = 1796.0
 margin_bottom = 34.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/whash"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/whash"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 906.0
+margin_right = 889.0
 margin_bottom = 27.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/whash/hbox"]
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/whash/hbox"]
 margin_top = 3.0
-margin_right = 120.0
+margin_right = 160.0
 margin_bottom = 17.0
-rect_min_size = Vector2( 120, 0 )
+rect_min_size = Vector2( 160, 0 )
 text = "Wavelet Hash: "
 align = 2
 
-[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/vbox/hbox2/whash/hbox"]
-margin_left = 124.0
-margin_right = 899.0
+[node name="contents" type="Button" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox2/whash/hbox"]
+margin_left = 164.0
+margin_right = 882.0
 margin_bottom = 20.0
 size_flags_horizontal = 3
 align = 0
 
-[node name="hsep2" type="HSeparator" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 122.0
-margin_right = 1830.0
-margin_bottom = 126.0
+[node name="hsep2" type="HSeparator" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 114.0
+margin_right = 1796.0
+margin_bottom = 118.0
 mouse_filter = 2
 
-[node name="hbox3" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 130.0
-margin_right = 1830.0
-margin_bottom = 158.0
+[node name="hbox3" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 122.0
+margin_right = 1796.0
+margin_bottom = 150.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="red" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3"]
-margin_right = 607.0
+[node name="red" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3"]
+margin_right = 596.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/red"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/red"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/red/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/red/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Red: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/red/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/red/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="green" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3"]
-margin_left = 611.0
-margin_right = 1218.0
+[node name="green" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3"]
+margin_left = 600.0
+margin_right = 1196.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/green"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/green"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/green/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/green/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Green: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/green/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/green/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="blue" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3"]
-margin_left = 1222.0
-margin_right = 1830.0
+[node name="blue" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3"]
+margin_left = 1200.0
+margin_right = 1796.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/blue"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/blue"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 601.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/blue/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/blue/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Blue: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox3/blue/hbox"]
-margin_left = 76.0
-margin_right = 594.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox3/blue/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="hbox4" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 162.0
-margin_right = 1830.0
-margin_bottom = 190.0
+[node name="hbox4" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 154.0
+margin_right = 1796.0
+margin_bottom = 182.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="yellow" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4"]
-margin_right = 607.0
+[node name="yellow" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4"]
+margin_right = 596.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/yellow"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/yellow"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/yellow/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/yellow/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Yellow: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/yellow/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/yellow/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="cyan" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4"]
-margin_left = 611.0
-margin_right = 1218.0
+[node name="cyan" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4"]
+margin_left = 600.0
+margin_right = 1196.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/cyan"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/cyan"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/cyan/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/cyan/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Cyan: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/cyan/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/cyan/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="fuchsia" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4"]
-margin_left = 1222.0
-margin_right = 1830.0
+[node name="fuchsia" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4"]
+margin_left = 1200.0
+margin_right = 1796.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/fuchsia"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/fuchsia"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 601.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/fuchsia/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/fuchsia/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Fuchsia: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox4/fuchsia/hbox"]
-margin_left = 76.0
-margin_right = 594.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox4/fuchsia/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="hbox5" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 194.0
-margin_right = 1830.0
-margin_bottom = 222.0
+[node name="hbox5" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 186.0
+margin_right = 1796.0
+margin_bottom = 214.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="vivid" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5"]
-margin_right = 607.0
+[node name="vivid" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5"]
+margin_right = 596.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/vivid"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/vivid"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/vivid/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/vivid/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Vivid: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/vivid/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/vivid/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="neutral" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5"]
-margin_left = 611.0
-margin_right = 1218.0
+[node name="neutral" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5"]
+margin_left = 600.0
+margin_right = 1196.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/neutral"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/neutral"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 600.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/neutral/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/neutral/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Neutral: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/neutral/hbox"]
-margin_left = 76.0
-margin_right = 593.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/neutral/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="dull" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5"]
-margin_left = 1222.0
-margin_right = 1830.0
+[node name="dull" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5"]
+margin_left = 1200.0
+margin_right = 1796.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/dull"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/dull"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 601.0
+margin_right = 589.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/dull/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/dull/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Dull: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox5/dull/hbox"]
-margin_left = 76.0
-margin_right = 594.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox5/dull/hbox"]
+margin_left = 100.0
+margin_right = 582.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="hbox6" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 226.0
-margin_right = 1830.0
-margin_bottom = 254.0
+[node name="hbox6" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox"]
+margin_top = 218.0
+margin_right = 1796.0
+margin_bottom = 246.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="light" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6"]
-margin_right = 454.0
+[node name="light" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6"]
+margin_right = 446.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/light"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/light"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 447.0
+margin_right = 439.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/light/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/light/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Light: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/light/hbox"]
-margin_left = 76.0
-margin_right = 440.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/light/hbox"]
+margin_left = 100.0
+margin_right = 432.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="medium" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6"]
-margin_left = 458.0
-margin_right = 913.0
+[node name="medium" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6"]
+margin_left = 450.0
+margin_right = 896.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/medium"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/medium"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 448.0
+margin_right = 439.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/medium/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/medium/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Medium: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/medium/hbox"]
-margin_left = 76.0
-margin_right = 441.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/medium/hbox"]
+margin_left = 100.0
+margin_right = 432.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="dark" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6"]
-margin_left = 917.0
-margin_right = 1371.0
+[node name="dark" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6"]
+margin_left = 900.0
+margin_right = 1346.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/dark"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/dark"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 447.0
+margin_right = 439.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/dark/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/dark/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Dark: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/dark/hbox"]
-margin_left = 76.0
-margin_right = 440.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/dark/hbox"]
+margin_left = 100.0
+margin_right = 432.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
 
-[node name="alpha" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6"]
-margin_left = 1375.0
-margin_right = 1830.0
+[node name="alpha" type="PanelContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6"]
+margin_left = 1350.0
+margin_right = 1796.0
 margin_bottom = 28.0
 mouse_filter = 2
 size_flags_horizontal = 3
 
-[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/alpha"]
+[node name="hbox" type="HBoxContainer" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/alpha"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 448.0
+margin_right = 439.0
 margin_bottom = 21.0
 mouse_filter = 2
 
-[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/alpha/hbox"]
-margin_right = 72.0
+[node name="name" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/alpha/hbox"]
+margin_right = 96.0
 margin_bottom = 14.0
-rect_min_size = Vector2( 72, 0 )
+rect_min_size = Vector2( 96, 0 )
 text = "Alpha: "
 align = 2
 
-[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/vbox/hbox6/alpha/hbox"]
-margin_left = 76.0
-margin_right = 441.0
+[node name="contents" type="Label" parent="margin/scroll/vbox/other/other_section/panel/margin/vbox/hbox6/alpha/hbox"]
+margin_left = 100.0
+margin_right = 432.0
 margin_bottom = 14.0
 size_flags_horizontal = 3
-
-[node name="hsep3" type="HSeparator" parent="margin/scroll/vbox/other/other_section/vbox"]
-margin_top = 258.0
-margin_right = 1830.0
-margin_bottom = 262.0
-mouse_filter = 2
 
 [node name="metadata-expand" type="MarginContainer" parent="."]
 anchor_right = 1.0

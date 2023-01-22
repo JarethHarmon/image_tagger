@@ -6,6 +6,13 @@ onready var descriptive_section:VBoxContainer = $margin/scroll/vbox/tags/tag_sec
 
 func _ready() -> void:
 	Signals.connect("make_descriptive_tags_visible", self, "make_descriptive_tags_visible")
+	Signals.connect("toggle_metadata_section", self, "toggle_visibility")
+
+# this should really be made generic and moved into a custom node
+func toggle_visibility(_visible:bool) -> void:
+	self.visible = _visible
+	Globals.toggle_parent_visibility_from_children(self)
+	Globals.toggle_parent_visibility_from_children(self.get_parent())
 
 func make_descriptive_tags_visible() -> void:
 	scroll.get_v_scrollbar().value = 0
