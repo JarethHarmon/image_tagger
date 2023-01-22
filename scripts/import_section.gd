@@ -1,6 +1,6 @@
 extends MarginContainer
 
-onready var import_list:HFlowContainer = $flow
+onready var import_list:HFlowContainer = $panel/margin/flow
 
 func _ready() -> void:
 	Signals.connect("load_metadata", self, "create_import_buttons")
