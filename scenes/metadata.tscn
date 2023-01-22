@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://assets/dropdown-right.png" type="Texture" id=1]
 [ext_resource path="res://scenes/custom_nodes/Dropdown.gd" type="Script" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://scenes/custom_nodes/TagEdit.gd" type="Script" id=5]
 [ext_resource path="res://scripts/descriptive_section.gd" type="Script" id=6]
 [ext_resource path="res://scripts/metadata.gd" type="Script" id=7]
+[ext_resource path="res://scripts/metadata-expand.gd" type="Script" id=8]
 
 [node name="metadata" type="Control"]
 anchor_right = 1.0
@@ -211,12 +212,12 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/margin_right = 5
 custom_constants/margin_top = 5
-custom_constants/margin_left = 40
+custom_constants/margin_left = 5
 custom_constants/margin_bottom = 5
 script = ExtResource( 6 )
 
 [node name="vbox" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section"]
-margin_left = 40.0
+margin_left = 5.0
 margin_top = 5.0
 margin_right = 1825.0
 margin_bottom = 173.0
@@ -225,7 +226,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="hbox1" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
-margin_right = 1785.0
+margin_right = 1820.0
 margin_bottom = 24.0
 mouse_filter = 2
 size_flags_horizontal = 3
@@ -239,34 +240,34 @@ script = ExtResource( 5 )
 
 [node name="tag_entry" type="LineEdit" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1"]
 margin_left = 62.0
-margin_right = 1680.0
+margin_right = 1715.0
 margin_bottom = 24.0
 size_flags_horizontal = 3
 placeholder_text = "Type delimiter-separated descriptive tags here..."
 script = ExtResource( 5 )
 
 [node name="add_button" type="Button" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1"]
-margin_left = 1684.0
-margin_right = 1785.0
+margin_left = 1719.0
+margin_right = 1820.0
 margin_bottom = 24.0
 text = "  Create New  "
 
 [node name="hbox2" type="HBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox"]
 margin_top = 28.0
-margin_right = 1785.0
+margin_right = 1820.0
 margin_bottom = 168.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="scroll" type="ScrollContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2"]
-margin_right = 1617.0
+margin_right = 1652.0
 margin_bottom = 140.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="panel" type="PanelContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll"]
-margin_right = 1617.0
+margin_right = 1652.0
 margin_bottom = 140.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -274,7 +275,7 @@ size_flags_vertical = 3
 [node name="margin" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll/panel"]
 margin_left = 7.0
 margin_top = 7.0
-margin_right = 1610.0
+margin_right = 1645.0
 margin_bottom = 133.0
 mouse_filter = 2
 size_flags_horizontal = 3
@@ -287,15 +288,15 @@ custom_constants/margin_bottom = 5
 [node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2/scroll/panel/margin"]
 margin_left = 5.0
 margin_top = 5.0
-margin_right = 1598.0
+margin_right = 1633.0
 margin_bottom = 121.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="buttons" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox2"]
-margin_left = 1621.0
-margin_right = 1785.0
+margin_left = 1656.0
+margin_right = 1820.0
 margin_bottom = 140.0
 mouse_filter = 2
 size_flags_vertical = 3
@@ -1036,6 +1037,18 @@ margin_top = 258.0
 margin_right = 1830.0
 margin_bottom = 262.0
 mouse_filter = 2
+
+[node name="metadata-expand" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/margin_right = 5
+custom_constants/margin_top = 5
+custom_constants/margin_left = 5
+custom_constants/margin_bottom = 5
+script = ExtResource( 8 )
 
 [connection signal="text_changed" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1/delimiter" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_delimiter_text_changed"]
 [connection signal="text_entered" from="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section/vbox/hbox1/tag_entry" to="margin/scroll/vbox/tags/tag_section/vbox/descriptive/descriptive_section" method="_on_tag_entry_text_entered"]

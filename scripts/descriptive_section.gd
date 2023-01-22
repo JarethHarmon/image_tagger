@@ -6,6 +6,7 @@ onready var delimiter_entry:TagEdit = $vbox/hbox1/delimiter
 onready var tag_entry:TagEdit = $vbox/hbox1/tag_entry
 onready var tag_flow:HFlowContainer = $vbox/hbox2/scroll/panel/margin/flow
 onready var scroll:ScrollContainer = $vbox/hbox2/scroll
+onready var original_parent:Control = get_parent()
 
 var selected_tags:Dictionary = {}
 var selected_thumbnails:Dictionary = {}
@@ -13,6 +14,22 @@ var current_tags:Dictionary = {}
 var tags_array:Array = []
 var delimiter:String = ","
 var last_clicked_index:int = -1
+var expanded:bool = false
+
+# will need to add a check for whether this tag section is the one that has focus
+# will also need to determine if visibility is relevant (ie should it make the node visible, or should it ignore the key press if it is not visible)
+func _input(event:InputEvent) -> void:
+	if event is InputEventKey:
+		if event.scancode == KEY_F10:
+			if not event.pressed: return
+			if expanded: 
+				expanded = false
+				Signals.emit_signal("set_metadata_section_expand", null)
+				original_parent.add_child(self)
+			else:
+				expanded = true
+				original_parent.remove_child(self)
+				Signals.emit_signal("set_metadata_section_expand", self)
 
 func _unhandled_input(event:InputEvent) -> void:
 	if event is InputEventKey:

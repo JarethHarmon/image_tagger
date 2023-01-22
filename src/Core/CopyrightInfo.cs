@@ -10,9 +10,10 @@ namespace ImageTagger.Core
         public Color Color { get; set; }
 
         public string[] IdNames { get; set; }
+        public string[] Parents { get; set; } // for example; Nintendo:Super Mario Bros., Legend of Zelda, etc
         public string[] Names { get; set; }
         public string[] Subjects { get; set; } // a list of subjects associated with this copyright (ie 'Super Mario Bros.' >> 'Mario', 'Peach', 'Luigi', etc)
-        // ^ might not keep this
+        // ^ might not keep this; only reason to keep this is to avoid querying all Subjects to see which copyrights they are assigned to
 
         public CopyrightInfo()
         {

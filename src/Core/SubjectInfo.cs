@@ -10,6 +10,7 @@ namespace ImageTagger.Core
         public string Description { get; set; }
         public Color Color { get; set; }
 
+        public string[] Parents { get; set; } // for example; animal:cat,dog,bear,etc
         public string[] Names { get; set; }
         public string[] IdNames { get; set; }
         public string[] Copyrights { get; set; }  // the copyright(s) associated with this subject (if applicable) (original/photo could be default options)
