@@ -410,21 +410,21 @@ margin_bottom = 40.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_constants/margin_right = 5
+custom_constants/margin_right = 20
 custom_constants/margin_top = 5
-custom_constants/margin_left = 5
+custom_constants/margin_left = 20
 custom_constants/margin_bottom = 5
 
 [node name="flow" type="HFlowContainer" parent="margin/scroll/vbox/groups/margin/vbox/imports/import_section/panel/margin"]
-margin_left = 5.0
+margin_left = 20.0
 margin_top = 5.0
-margin_right = 35.0
+margin_right = 20.0
 margin_bottom = 35.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 custom_constants/vseparation = 5
-custom_constants/hseparation = 5
+custom_constants/hseparation = 20
 
 [node name="groups" type="VBoxContainer" parent="margin/scroll/vbox/groups/margin/vbox"]
 margin_top = 26.0
