@@ -51,7 +51,7 @@ size_flags_vertical = 3
 
 [node name="tags" type="VBoxContainer" parent="margin/scroll/vbox"]
 margin_right = 1910.0
-margin_bottom = 318.0
+margin_bottom = 22.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -64,9 +64,10 @@ icon = ExtResource( 1 )
 align = 0
 
 [node name="tag_section" type="MarginContainer" parent="margin/scroll/vbox/tags"]
+visible = false
 margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 318.0
+margin_bottom = 136.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -79,7 +80,7 @@ custom_constants/margin_bottom = 5
 margin_left = 40.0
 margin_top = 5.0
 margin_right = 1870.0
-margin_bottom = 287.0
+margin_bottom = 105.0
 mouse_filter = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -188,7 +189,7 @@ color = Color( 0.45098, 0.729412, 0.494118, 1 )
 [node name="descriptive" type="VBoxContainer" parent="margin/scroll/vbox/tags/tag_section/vbox"]
 margin_top = 78.0
 margin_right = 1830.0
-margin_bottom = 282.0
+margin_bottom = 100.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -201,6 +202,7 @@ icon = ExtResource( 1 )
 align = 0
 
 [node name="descriptive_section" type="MarginContainer" parent="margin/scroll/vbox/tags/tag_section/vbox/descriptive"]
+visible = false
 margin_top = 26.0
 margin_right = 1830.0
 margin_bottom = 204.0
@@ -340,9 +342,9 @@ size_flags_horizontal = 3
 text = "  Remove All  "
 
 [node name="groups" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 322.0
+margin_top = 26.0
 margin_right = 1910.0
-margin_bottom = 344.0
+margin_bottom = 48.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -373,9 +375,9 @@ size_flags_vertical = 3
 color = Color( 1, 0.654902, 0, 1 )
 
 [node name="paths" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 348.0
+margin_top = 52.0
 margin_right = 1910.0
-margin_bottom = 370.0
+margin_bottom = 74.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -411,9 +413,9 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="ratings" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 374.0
+margin_top = 78.0
 margin_right = 1910.0
-margin_bottom = 396.0
+margin_bottom = 100.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
@@ -444,9 +446,9 @@ size_flags_vertical = 3
 color = Color( 1, 0.54902, 0.698039, 1 )
 
 [node name="other" type="VBoxContainer" parent="margin/scroll/vbox"]
-margin_top = 400.0
+margin_top = 104.0
 margin_right = 1910.0
-margin_bottom = 422.0
+margin_bottom = 126.0
 mouse_filter = 2
 script = ExtResource( 2 )
 
