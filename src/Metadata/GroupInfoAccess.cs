@@ -8,6 +8,12 @@ namespace ImageTagger.Metadata
     {
         private readonly static Dictionary<string, GroupInfo> dictGroupInfo = new Dictionary<string, GroupInfo>();
 
+        internal static void CreateDictionary(IEnumerable<GroupInfo> groups)
+        {
+            foreach (var group in groups)
+                dictGroupInfo[group.Id] = group;
+        }
+
         internal static GroupInfo GetGroupInfo(string id)
         {
             if (dictGroupInfo.TryGetValue(id, out var info))
@@ -19,6 +25,11 @@ namespace ImageTagger.Metadata
         {
             // there is probably a better way to do this
             return dictGroupInfo.Values.Where(x => ids.Contains(x.Id)).ToArray();
+        }
+
+        internal static void SetGroupInfo(string id, GroupInfo info)
+        {
+            dictGroupInfo[id] = info;
         }
     }
 }

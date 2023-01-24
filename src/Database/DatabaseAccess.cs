@@ -8,11 +8,12 @@ namespace ImageTagger.Database
 {
     internal sealed class DatabaseAccess
     {
-        private static LiteDatabase dbImageInfo, dbImportInfo;
+        private static LiteDatabase dbImageInfo, dbImportInfo, dbGroupInfo;
         private static ILiteCollection<ImageInfo> colImageInfo;
         private static ILiteCollection<ImportInfo> colImportInfo;
         private static ILiteCollection<ImportSection> colImportSection;
         private static ILiteCollection<TabInfo> colTabInfo;
+        private static ILiteCollection<GroupInfo> colGroupInfo;
 
         internal static Error Create()
         {
@@ -22,15 +23,19 @@ namespace ImageTagger.Database
                 BsonMapper.Global.Entity<ImageInfo>().Id(x => x.Hash); // still need to test if int id is better; last test was inconclusive
                 dbImageInfo = new LiteDatabase(metadataPath + "image_info.db");
                 dbImportInfo = new LiteDatabase(metadataPath + "import_info.db");
+                dbGroupInfo = new LiteDatabase(metadataPath + "group_info.db");
 
                 colImageInfo = dbImageInfo.GetCollection<ImageInfo>("images");
                 colImportInfo = dbImportInfo.GetCollection<ImportInfo>("imports");
                 colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
+                colGroupInfo = dbGroupInfo.GetCollection<GroupInfo>("groups");
 
                 colImageInfo.EnsureIndex(x => x.Imports);
                 colImageInfo.EnsureIndex(x => x.Tags);
                 colImageInfo.EnsureIndex(x => x.Colors);
+                colImportInfo.EnsureIndex(x => x.Name);
+                colGroupInfo.EnsureIndex(x => x.Name);
 
                 return Error.OK;
             }
@@ -46,12 +51,16 @@ namespace ImageTagger.Database
             if (colImageInfo is null) return Error.Database;
             if (colImportInfo is null) return Error.Database;
             if (colTabInfo is null) return Error.Database;
+            if (colGroupInfo is null) return Error.Database;
 
             var imports = colImportInfo.FindAll();
             ImportInfoAccess.CreateDictionary(imports);
 
             var tabs = colTabInfo.FindAll();
             TabInfoAccess.CreateDictionary(tabs);
+
+            var groups = colGroupInfo.FindAll();
+            GroupInfoAccess.CreateDictionary(groups);
 
             return Error.OK;
         }
@@ -60,6 +69,7 @@ namespace ImageTagger.Database
         {
             dbImageInfo?.Dispose();
             dbImportInfo?.Dispose();
+            dbGroupInfo?.Dispose();
         }
 
         /* ===================================================================================
@@ -162,6 +172,34 @@ namespace ImageTagger.Database
         internal static void DeleteTabInfo(string id)
         {
             colTabInfo?.Delete(id);
+        }
+
+        /* ===================================================================================
+                                              GroupInfo 
+        =================================================================================== */
+        internal static ILiteQueryable<GroupInfo> GetGroupInfoQuery()
+        {
+            return colGroupInfo?.Query();
+        }
+
+        internal static void InsertGroupInfo(GroupInfo groupInfo)
+        {
+            colGroupInfo?.Insert(groupInfo);
+        }
+
+        internal static void InsertGroupInfo(IEnumerable<GroupInfo> groups)
+        {
+            colGroupInfo?.Insert(groups);
+        }
+
+        internal static void UpdateGroupInfo(GroupInfo groupInfo)
+        {
+            colGroupInfo?.Update(groupInfo);
+        }
+
+        internal static void UpdateGroupInfo(IEnumerable<GroupInfo> groups)
+        {
+            colGroupInfo?.Update(groups);
         }
     }
 }

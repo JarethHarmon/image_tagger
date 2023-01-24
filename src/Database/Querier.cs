@@ -41,7 +41,7 @@ namespace ImageTagger.Database
         private readonly static Queue<string> pageHistoryQueue = new Queue<string>();
         public static string CurrentId { get; set; }
 
-        private static BsonExpression CreateCondition(string[] tags, ExpressionType type)
+        private static BsonExpression CreateTagCondition(string[] tags, ExpressionType type)
         {
             // NONE
             if (type == ExpressionType.None)
@@ -118,6 +118,32 @@ namespace ImageTagger.Database
             queryHistoryQueue.Enqueue(info.Id);
             // return true if query was newly added (and therefore needs to be filtered)
             return true;
+        }
+
+        private static void AddBaseFilters(QueryInfo info)
+        {
+            string[] ImportIds = Array.Empty<string>(), GroupIds = Array.Empty<string>(); // these should be defined on QueryInfo, in place of ImportId/GroupId
+            var query = info.Query;
+
+            if (ImportIds.Length == 1) query = query.Where(x => x.Imports.Contains(ImportIds[0]));
+            else if (ImportIds.Length > 1)
+            {
+                var list = new List<BsonExpression>();
+                foreach (string id in ImportIds)
+                    list.Add(Query.Contains("$.Imports[*] ANY", id));
+                query = query.Where(Query.Or(list.ToArray()));
+            }
+
+            if (GroupIds.Length == 1) query = query.Where(x => x.Groups.Contains(GroupIds[0]));
+            else if (GroupIds.Length > 1)
+            {
+                var list = new List<BsonExpression>();
+                foreach (string id in GroupIds)
+                    list.Add(Query.Contains("$.Groups[*] ANY", id));
+                query = query.Where(Query.Or(list.ToArray()));
+            }
+
+            info.Query = query;
         }
 
         private static void AddNumericalFilters(QueryInfo info)
@@ -243,11 +269,11 @@ namespace ImageTagger.Database
 
                     var list = new List<BsonExpression>();
                     if (condition[ExpressionType.All].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.All].ToArray(), ExpressionType.All));
+                        list.Add(CreateTagCondition(condition[ExpressionType.All].ToArray(), ExpressionType.All));
                     if (condition[ExpressionType.Any].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.Any].ToArray(), ExpressionType.Any));
+                        list.Add(CreateTagCondition(condition[ExpressionType.Any].ToArray(), ExpressionType.Any));
                     if (condition[ExpressionType.None].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.None].ToArray(), ExpressionType.None));
+                        list.Add(CreateTagCondition(condition[ExpressionType.None].ToArray(), ExpressionType.None));
 
                     if (list.Count == 0) continue;
                     else if (list.Count == 1) conditions.Add(list[0]);

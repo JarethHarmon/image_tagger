@@ -198,5 +198,10 @@ namespace ImageTagger.Managers
             var info = TabInfoAccess.GetTabInfo(id);
             return info?.SimilarityHash ?? string.Empty;
         }
+
+        /*=========================================================================================
+                                                  GroupInfo
+        =========================================================================================*/
+
     }
 }
