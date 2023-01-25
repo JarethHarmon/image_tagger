@@ -40,6 +40,9 @@ namespace ImageTagger.Importer
         /*=========================================================================================
 									         Hashing & Thumbnails
         =========================================================================================*/
+        internal static readonly PerceptualHashes EmptyPerceptualHashes = new PerceptualHashes();
+        internal static readonly ColorBuckets EmptyColorBuckets = new ColorBuckets();
+
         internal struct PerceptualHashes
         {
             public ulong Average;
@@ -77,9 +80,9 @@ namespace ImageTagger.Importer
 
         internal static PerceptualHashes GetPerceptualHashes(string hash)
         {
-            if (hash?.Equals(string.Empty) ?? true) return new PerceptualHashes();
+            if (hash?.Equals(string.Empty) ?? true) return EmptyPerceptualHashes;
             var info = DatabaseAccess.FindImageInfo(hash);
-            if (info is null) return new PerceptualHashes();
+            if (info is null) return EmptyPerceptualHashes;
             return new PerceptualHashes(info.AverageHash, info.DifferenceHash, info.WaveletHash, info.PerceptualHash);
         }
 
@@ -108,7 +111,7 @@ namespace ImageTagger.Importer
         private static (int, PerceptualHashes, ColorBuckets) ProcessImportResult(string result)
         {
             string[] sections = result.Split('!');
-            if (sections.Length != 3) return (0, new PerceptualHashes(), new ColorBuckets());
+            if (sections.Length != 3) return (0, EmptyPerceptualHashes, EmptyColorBuckets);
             int.TryParse(sections[0], out int numFrames);
             return (numFrames, new PerceptualHashes(sections[1]), new ColorBuckets(sections[2]));
         }
@@ -128,12 +131,12 @@ namespace ImageTagger.Importer
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return (0, new PerceptualHashes(), new ColorBuckets());
+                    return (0, EmptyPerceptualHashes, EmptyColorBuckets);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return (0, new PerceptualHashes(), new ColorBuckets());
+                    return (0, EmptyPerceptualHashes, EmptyColorBuckets);
                 }
             }
             return ProcessImportResult(result);
@@ -154,12 +157,12 @@ namespace ImageTagger.Importer
                 catch (PythonException pex)
                 {
                     Console.WriteLine(pex);
-                    return (0, new PerceptualHashes(), new ColorBuckets());
+                    return (0, EmptyPerceptualHashes, EmptyColorBuckets);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    return (0, new PerceptualHashes(), new ColorBuckets());
+                    return (0, EmptyPerceptualHashes, EmptyColorBuckets);
                 }
             }
             return ProcessImportResult(result);
@@ -173,7 +176,7 @@ namespace ImageTagger.Importer
 
                 // to avoid wasting more time on broken images, this should only check relevant images
                 // another option is to use the file extension, but that is obviously less reliable
-                if (image.Format != MagickFormat.Heic) return (0, new PerceptualHashes(), new ColorBuckets());
+                if (image.Format != MagickFormat.Heic) return (0, EmptyPerceptualHashes, EmptyColorBuckets);
 
                 image.Strip();
                 image.Thumbnail(thumbSize, thumbSize);
@@ -186,7 +189,7 @@ namespace ImageTagger.Importer
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return (0, new PerceptualHashes(), new ColorBuckets());
+                return (0, EmptyPerceptualHashes, EmptyColorBuckets);
             }
         }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using LiteDB;
@@ -8,7 +7,7 @@ using ImageTagger.Core;
 
 namespace ImageTagger.Database
 {
-    internal sealed class SimilarityQueryResult
+    public sealed class SimilarityQueryResult
     {
         public string Hash { get; set; }
         public ulong Difference { get; set; }
@@ -18,66 +17,71 @@ namespace ImageTagger.Database
         public float Similarity { get; set; }
     }
 
-    internal sealed class QueryInfo
+    public sealed class QueryInfo
     {
-        internal string Id { get; set; }
-        internal string ImportId { get; set; }
-        internal string GroupId { get; set; }
+        public string Id { get; set; }
 
-        internal string[] TagsAll { get; set; }
-        internal string[] TagsAny { get; set; }
-        internal string[] TagsNone { get; set; }
-        internal List<Dictionary<ExpressionType, HashSet<string>>> TagsComplex { get; set; }
+        public Filters Groups { get; set; }
+        public Filters Creators { get; set; }
+        public Filters Copyrights { get; set; }
+        public Filters Subjects { get; set; }
+        public Filters Descriptive { get; set; }
+        public Filters Folders { get; set; }
 
-        internal TabType QueryType { get; set; }
-        internal Sort Sort { get; set; }
-        internal Order Order { get; set; }
-        internal SortSimilarity SortSimilarity { get; set; }
-        internal bool Filtered { get; set; }
-        internal Colors[] Colors { get; set; }
+        public TabType QueryType { get; set; }
+        public Sort Sort { get; set; }
+        public Order Order { get; set; }
+        public SortSimilarity SortSimilarity { get; set; }
+        public bool Filtered { get; set; }
+        public Colors[] Colors { get; set; }
 
-        internal string SimilarityHash { get; set; }
-        internal ulong AverageHash { get; set; }
-        internal ulong DifferenceHash { get; set; }
-        internal ulong WaveletHash { get; set; }
-        internal ulong PerceptualHash { get; set; }
-        internal float MinSimilarity { get; set; }
-        internal int BucketPrecision { get; set; }
+        public string SimilarityHash { get; set; }
+        public ulong AverageHash { get; set; }
+        public ulong DifferenceHash { get; set; }
+        public ulong WaveletHash { get; set; }
+        public ulong PerceptualHash { get; set; }
+        public float MinSimilarity { get; set; }
+        public int BucketPrecision { get; set; }
 
-        internal int MinWidth { get; set; }
-        internal int MaxWidth { get; set; }
-        internal int MinHeight { get; set; }
-        internal int MaxHeight { get; set; }
-        internal long MinSize { get; set; }
-        internal long MaxSize { get; set; }
+        public int MinWidth { get; set; }
+        public int MaxWidth { get; set; }
+        public int MinHeight { get; set; }
+        public int MaxHeight { get; set; }
+        public long MinSize { get; set; }
+        public long MaxSize { get; set; }
 
-        internal long MinCreationTime { get; set; }
-        internal long MaxCreationTime { get; set; }
-        internal long MinUploadTime { get; set; }
-        internal long MaxUploadTime { get; set; }
-        internal long MinLastWriteTime { get; set; }
-        internal long MaxLastWriteTime { get; set; }
-        internal long MinLastEditTime { get; set; }
-        internal long MaxLastEditTime { get; set; }
+        public long MinCreationTime { get; set; }
+        public long MaxCreationTime { get; set; }
+        public long MinUploadTime { get; set; }
+        public long MaxUploadTime { get; set; }
+        public long MinLastWriteTime { get; set; }
+        public long MaxLastWriteTime { get; set; }
+        public long MinLastEditTime { get; set; }
+        public long MaxLastEditTime { get; set; }
 
-        internal int MinTagCount { get; set; }
-        internal int MaxTagCount { get; set; }
-        internal int MinRatingSum { get; set; }
-        internal int MaxRatingSum { get; set; }
-        internal float MinRatingAvg { get; set; }
-        internal float MaxRatingAvg { get; set; }
+        public int MinTagCount { get; set; }
+        public int MaxTagCount { get; set; }
+        public int MinRatingSum { get; set; }
+        public int MaxRatingSum { get; set; }
+        public float MinRatingAvg { get; set; }
+        public float MaxRatingAvg { get; set; }
 
-        internal int Success { get; set; }
-        internal ILiteQueryable<ImageInfo> Query { get; set; }
-        internal ILiteQueryableResult<string> Results { get; set; }
-        internal IEnumerable<string> ResultsRandom { get; set; }
-        internal int LastQueriedCount { get; set; }
+        public int Success { get; set; }
+        public ILiteQueryable<ImageInfo> Query { get; set; }
+        public ILiteQueryableResult<string> Results { get; set; }
+        public IEnumerable<string> ResultsRandom { get; set; }
+        public int LastQueriedCount { get; set; }
 
-        internal QueryInfo()
+        public QueryInfo()
         {
             Id = string.Empty;
-            ImportId = Global.ALL;
-            GroupId = string.Empty;
+
+            Folders = new Filters();
+            Groups = new Filters();
+            Creators = new Filters();
+            Copyrights = new Filters();
+            Subjects = new Filters();
+            Descriptive = new Filters();
 
             QueryType = TabType.Default;
             Sort = Sort.Hash;
@@ -87,10 +91,6 @@ namespace ImageTagger.Database
 
             MinSimilarity = Global.Settings.MinSimilarity;
             BucketPrecision = 3;
-
-            TagsAll = Array.Empty<string>();
-            TagsAny = Array.Empty<string>();
-            TagsNone = Array.Empty<string>();
             Colors = Array.Empty<Colors>();
 
             MinWidth = -1;
@@ -144,25 +144,24 @@ namespace ImageTagger.Database
             return CalcHashFromArray(_colors);
         }
 
-        private string CalcHashFromCondition(Dictionary<ExpressionType, HashSet<string>> condition)
+        private string CalcHashFromCondition(Dictionary<ExpressionType, string[]> condition)
         {
             string[] arr = new string[]
             {
                 // really would like Span<T>, but Godot uses net472
-                CalcHashFromArray(condition[ExpressionType.All].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.Any].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.None].ToArray()),
+                CalcHashFromArray(condition[ExpressionType.All]),
+                CalcHashFromArray(condition[ExpressionType.Any]),
+                CalcHashFromArray(condition[ExpressionType.None]),
             };
             return CalcHashFromString(string.Join("?", arr)); // to ensure they stay in correct relative order (instead of CalcHashFromArray() which calls Sort())
         }
 
-        private string CalcHashFromComplexTags()
+        private string CalcHashFromComplexTags(Filters filter)
         {
-            if (TagsComplex is null) return string.Empty;
-            if (TagsComplex.Count == 0) return string.Empty;
+            if (filter.Complex.Length == 0) return string.Empty;
             var list = new List<string>();
 
-            foreach (var condition in TagsComplex)
+            foreach (var condition in filter.Complex)
                 list.Add(CalcHashFromCondition(condition));
 
             // could also call CalcHashFromArray(list.ToArray())
@@ -170,10 +169,17 @@ namespace ImageTagger.Database
             return CalcHashFromString(string.Concat(list));
         }
 
-        internal string CalcId()
+        private string CalcHashFromFilter(Filters filter)
         {
-            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}",
-                ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
+            string temp = $"{CalcHashFromArray(filter.All)}?{CalcHashFromArray(filter.Any)}?{CalcHashFromArray(filter.None)}?";
+            temp += CalcHashFromComplexTags(filter);
+            return CalcHashFromString(temp);
+        }
+
+        public string CalcId()
+        {
+            Id = CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}",
+                CalcHashFromFilter(Folders), CalcHashFromFilter(Groups), CalcHashFromFilter(Creators), CalcHashFromFilter(Copyrights), CalcHashFromFilter(Subjects), CalcHashFromFilter(Descriptive),
                 QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash,
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success, CalcHashFromArray(Colors),
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
@@ -181,19 +187,19 @@ namespace ImageTagger.Database
             return Id;
         }
 
-        internal QueryInfo Clone()
+        public QueryInfo Clone()
         {
             QueryInfo queryInfo = this;
             return new QueryInfo
             {
                 Id = queryInfo.Id,
-                ImportId = queryInfo.ImportId,
-                GroupId = queryInfo.GroupId,
 
-                TagsAll = queryInfo.TagsAll,
-                TagsAny = queryInfo.TagsAny,
-                TagsNone = queryInfo.TagsNone,
-                TagsComplex = queryInfo.TagsComplex,
+                Folders = queryInfo.Folders,
+                Groups = queryInfo.Groups,
+                Creators = queryInfo.Creators,
+                Copyrights = queryInfo.Copyrights,
+                Subjects = queryInfo.Subjects,
+                Descriptive = queryInfo.Descriptive,
 
                 QueryType = queryInfo.QueryType,
                 Sort = queryInfo.Sort,

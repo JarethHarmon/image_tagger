@@ -40,13 +40,6 @@ namespace ImageTagger.Metadata
             return query?.ToArray() ?? Array.Empty<ImageInfo>();
         }
 
-        internal static string[] GetImportIds(string hash)
-        {
-            var info = GetImageInfo(hash);
-            if (info?.Imports.Count == 0) return Array.Empty<string>();
-            return info.Imports.ToArray();
-        }
-
         internal static void AddRating(string[] hashes, string rating, int value)
         {
             var _hashes = new HashSet<string>(hashes);
@@ -84,11 +77,11 @@ namespace ImageTagger.Metadata
             var _hashes = new HashSet<string>(hashes);
 
             if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
-                currentImageInfo.Tags.UnionWith(tags);
+                currentImageInfo.Descriptive.UnionWith(tags);
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)
-                info.Tags.UnionWith(tags);
+                info.Descriptive.UnionWith(tags);
 
             DatabaseAccess.UpdateImageInfo(infos);
         }
@@ -99,11 +92,11 @@ namespace ImageTagger.Metadata
             var _hashes = new HashSet<string>(hashes);
 
             if (currentImageInfo != null && _hashes.Contains(currentImageInfo.Hash))
-                currentImageInfo.Tags.ExceptWith(tags);
+                currentImageInfo.Descriptive.ExceptWith(tags);
 
             var infos = GetImageInfo(_hashes);
             foreach (var info in infos)
-                info.Tags.ExceptWith(tags);
+                info.Descriptive.ExceptWith(tags);
 
             DatabaseAccess.UpdateImageInfo(infos);
         }

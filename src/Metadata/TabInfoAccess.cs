@@ -57,13 +57,5 @@ namespace ImageTagger.Metadata
         {
             return dictTabInfo.Keys.ToArray();
         }
-
-        internal static string[] GetTabIds(string importId)
-        {
-            if (importId.Equals(string.Empty)) return Array.Empty<string>();
-            var query = DatabaseAccess.GetTabInfoQuery();
-            query = query.Where(x => x.ImportId.Equals(importId));
-            return query.Select(x => x.Id).ToArray();
-        }
     }
 }

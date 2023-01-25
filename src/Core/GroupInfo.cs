@@ -50,16 +50,17 @@ namespace ImageTagger.Core
             var imageInfos = ImageInfoAccess.GetImageInfo(members);
             var groupInfos = GroupInfoAccess.GetGroupInfo(groups);
 
+            //int order = (desc) ? -1 : 1;
             if (desc)
             {
-                if (sort == Sort.Name) Members = imageInfos.OrderByDescending(x => x.Name).Select(x => x.Hash).ToArray();
-                else if (sort == Sort.Path) Members = imageInfos.OrderByDescending(x => x.Paths.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                if (sort == Sort.Name) Members = imageInfos.OrderByDescending(x => x.Paths.FirstOrDefault().Value.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                else if (sort == Sort.Path) Members = imageInfos.OrderByDescending(x => x.Paths.FirstOrDefault().Key).Select(x => x.Hash).ToArray();
                 Groups = groupInfos.OrderByDescending(x => x.Name).Select(x => x.Id).ToArray();
             }
             else
             {
-                if (sort == Sort.Name) Members = imageInfos.OrderBy(x => x.Name).Select(x => x.Hash).ToArray();
-                else if (sort == Sort.Path) Members = imageInfos.OrderBy(x => x.Paths.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                if (sort == Sort.Name) Members = imageInfos.OrderBy(x => x.Paths.FirstOrDefault().Value.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                else if (sort == Sort.Path) Members = imageInfos.OrderBy(x => x.Paths.FirstOrDefault().Key).Select(x => x.Hash).ToArray();
                 Groups = groupInfos.OrderBy(x => x.Name).Select(x => x.Id).ToArray();
             }
         }
@@ -88,14 +89,22 @@ namespace ImageTagger.Core
 
             if (desc)
             {
-                if (sort == Sort.Name) Members = imageInfos.OrderByNatural(x => x.Name, desc:true).Select(x => x.Hash).ToArray();
-                else if (sort == Sort.Path) Members = imageInfos.OrderByNatural(x => x.Paths.FirstOrDefault(), desc:true).Select(x => x.Hash).ToArray();
+                if (sort == Sort.Name) Members = imageInfos.OrderByNatural(x => x.Paths.FirstOrDefault().Value.FirstOrDefault(), desc:true).Select(x => x.Hash).ToArray();
+                else if (sort == Sort.Path) Members = imageInfos.OrderByNatural(x =>
+                {
+                    var path = x.Paths.FirstOrDefault();
+                    return $"{path.Key}/{path.Value.FirstOrDefault()}";
+                }, desc:true).Select(x => x.Hash).ToArray();
                 Groups = groupInfos.OrderByNatural(x => x.Name, desc:true).Select(x => x.Id).ToArray();
             }
             else
             {
-                if (sort == Sort.Name) Members = imageInfos.OrderByNatural(x => x.Name).Select(x => x.Hash).ToArray();
-                else if (sort == Sort.Path) Members = imageInfos.OrderByNatural(x => x.Paths.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                if (sort == Sort.Name) Members = imageInfos.OrderByNatural(x => x.Paths.FirstOrDefault().Value.FirstOrDefault()).Select(x => x.Hash).ToArray();
+                else if (sort == Sort.Path) Members = imageInfos.OrderByNatural(x =>
+                {
+                    var path = x.Paths.FirstOrDefault();
+                    return $"{path.Key}/{path.Value.FirstOrDefault()}";
+                }).Select(x => x.Hash).ToArray();
                 Groups = groupInfos.OrderByNatural(x => x.Name).Select(x => x.Id).ToArray();
             }
         }

@@ -10,7 +10,7 @@ namespace ImageTagger.Managers
 {
     public sealed class ImportManager : Node
     {
-        private const int BULK_IMPORT_SIZE = 100;
+        //private const int BULK_IMPORT_SIZE = 100;
         public Node signals, globals;
         public MetadataManager mdm;
 
@@ -178,7 +178,7 @@ namespace ImageTagger.Managers
                 }
 
                 tempImageInfo[importId][info.Hash] = info;
-
+                /*
                 if (tempImageInfo[importId].Count >= BULK_IMPORT_SIZE)
                 {
                     var infos = new ImportInfo[2]
@@ -189,7 +189,7 @@ namespace ImageTagger.Managers
                     DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
                     DatabaseAccess.UpdateImportInfo(infos);
                     tempImageInfo[importId].Clear();
-                }
+                }*/
             }
         }
 
@@ -213,6 +213,7 @@ namespace ImageTagger.Managers
         {
             lock (locker)
             {
+                // add null check
                 var info = ImportInfoAccess.GetImportInfo(importId);
                 info.Sections.Remove(sectionId);
 
@@ -248,8 +249,7 @@ namespace ImageTagger.Managers
             infos[0].FinishTime = DateTime.UtcNow.Ticks;
 
             DatabaseAccess.UpdateImportInfo(infos);
-            string[] tabs = TabInfoAccess.GetTabIds(importId);
-            signals.Call("emit_signal", "finish_import_buttons", tabs);
+            //signals.Call("emit_signal", "finish_import_buttons", tabs);
         }
 
         public void ImportImages(string importId, string sectionId)
@@ -261,7 +261,6 @@ namespace ImageTagger.Managers
                 return;
             }
 
-            string[] tabs = TabInfoAccess.GetTabIds(importId);
             string[] paths = DatabaseAccess.FindImportSectionPaths(sectionId);
             if (paths.Length == 0) return;
 
@@ -276,7 +275,7 @@ namespace ImageTagger.Managers
                 {
                     ImportStatus result = ImportImage(importId, path);
                     UpdateImportCount(importId, result);
-                    signals.Call("emit_signal", "increment_import_buttons", tabs);
+                    //signals.Call("emit_signal", "increment_import_buttons", tabs);
                     if (result == ImportStatus.Success)
                     {
                         signals.Call("emit_signal", "increment_all_button");
@@ -345,8 +344,6 @@ namespace ImageTagger.Managers
                 imageInfo = new ImageInfo
                 {
                     Hash = hash,
-                    Name = fileInfo.Name,
-
                     AverageHash = phashes.Average,
                     DifferenceHash = phashes.Difference,
                     WaveletHash = phashes.Wavelet,
@@ -366,22 +363,14 @@ namespace ImageTagger.Managers
                     LastEditTime = DateTime.UtcNow.Ticks,
                     UploadTime = DateTime.UtcNow.Ticks,
 
-                    Imports = new HashSet<string> { importId },
-                    Paths = new HashSet<string> { imagePath }
+                    Paths = new Dictionary<string, HashSet<string>> { { imagePath.GetBaseDir(), new HashSet<string> { imagePath.GetFile() } } }
                 };
             }
             else
             {
-                imageInfo.Paths.Add(imagePath);
-                if (imageInfo.Imports.Contains(importId))
-                {
-                    result = ImportStatus.Ignored;
-                }
-                else
-                {
-                    imageInfo.Imports.Add(importId);
-                    result = ImportStatus.Duplicate;
-                }
+                string folder = imagePath.GetBaseDir(), file = imagePath.GetFile();
+                if (imageInfo.Paths.ContainsKey(folder)) imageInfo.Paths[folder].Add(file);
+                else imageInfo.Paths[folder] = new HashSet<string> { file };
             }
 
             StoreTempImageInfo(importId, imageInfo);

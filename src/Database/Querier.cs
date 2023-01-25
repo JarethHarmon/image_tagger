@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LiteDB;
+using ImageTagger.Core;
 
 namespace ImageTagger.Database
 {
@@ -40,27 +41,6 @@ namespace ImageTagger.Database
         private readonly static Dictionary<string, Page> pageHistory = new Dictionary<string, Page>();
         private readonly static Queue<string> pageHistoryQueue = new Queue<string>();
         public static string CurrentId { get; set; }
-
-        private static BsonExpression CreateTagCondition(string[] tags, ExpressionType type)
-        {
-            // NONE
-            if (type == ExpressionType.None)
-                return (BsonExpression)$"($.Tags[*] ANY IN {BsonMapper.Global.Serialize(tags)}) != true";
-
-            // one ALL or ANY
-            if (tags.Length == 1)
-                return Query.Contains("$.Tags[*] ANY", tags[0]);
-
-            // multiple ALL or ANY
-            var list = new List<BsonExpression>();
-            foreach (string tag in tags)
-                list.Add(Query.Contains("$.Tags[*] ANY", tag));
-
-            // return And (ALL) or Or (ANY)
-            if (type == ExpressionType.All)
-                return Query.And(list.ToArray());
-            return Query.Or(list.ToArray());
-        }
 
         // numerical condition functions
 
@@ -120,170 +100,113 @@ namespace ImageTagger.Database
             return true;
         }
 
-        private static void AddBaseFilters(QueryInfo info)
-        {
-            string[] ImportIds = Array.Empty<string>(), GroupIds = Array.Empty<string>(); // these should be defined on QueryInfo, in place of ImportId/GroupId
-            var query = info.Query;
-
-            if (ImportIds.Length == 1) query = query.Where(x => x.Imports.Contains(ImportIds[0]));
-            else if (ImportIds.Length > 1)
-            {
-                var list = new List<BsonExpression>();
-                foreach (string id in ImportIds)
-                    list.Add(Query.Contains("$.Imports[*] ANY", id));
-                query = query.Where(Query.Or(list.ToArray()));
-            }
-
-            if (GroupIds.Length == 1) query = query.Where(x => x.Groups.Contains(GroupIds[0]));
-            else if (GroupIds.Length > 1)
-            {
-                var list = new List<BsonExpression>();
-                foreach (string id in GroupIds)
-                    list.Add(Query.Contains("$.Groups[*] ANY", id));
-                query = query.Where(Query.Or(list.ToArray()));
-            }
-
-            info.Query = query;
-        }
-
-        private static void AddNumericalFilters(QueryInfo info)
-        {
-            // need to implement a UI for changing these, in the meantime pointless
-            var query = info.Query;
-
-            // not sure if these are best to have as first filter or not
-            if (!info.ImportId.Equals(Global.ALL)) query = query.Where(x => x.Imports.Contains(info.ImportId));
-            if (!info.GroupId.Equals(string.Empty)) query = query.Where(x => x.Groups.Contains(info.GroupId));
-
-            //AddImageTypeFilter(info, new ImageType[2] { ImageType.APNG, ImageType.GIF });
-
-            // apply filters
-            // these will also need to set info.Filtered if any are active (ideally this will be done automatically when they change)
-
-            info.Query = query;
-        }
-
-        internal static TagConditions ConvertStringToComplexTags(string[] all, string[] any, string[] none, string[] complex)
-        {
-            HashSet<string> All = new HashSet<string>(all), Any = new HashSet<string>(any), None = new HashSet<string>(none),
-                _All = new HashSet<string>(all), _None = new HashSet<string>(none);
-            var conditions = new List<Dictionary<ExpressionType, HashSet<string>>>();
-
-            // convert global all/any/none into a condition
-            if (all.Length > 0 || any.Length > 0 || none.Length > 0)
-            {
-                var condition = new Dictionary<ExpressionType, HashSet<string>>
-                {
-                    { ExpressionType.All, new HashSet<string>(all) },
-                    { ExpressionType.Any, new HashSet<string>(any) },
-                    { ExpressionType.None, new HashSet<string>(none) }
-                };
-                conditions.Add(condition);
-            }
-
-            // iterate over each string representation condition in complexTags
-            foreach (string condition in complex)
-            {
-                string[] sections = condition.Split(new string[1] { "%" }, StringSplitOptions.None);
-                if (sections.Length < 3) continue;
-
-                string[] _all = sections[0].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                string[] _any = sections[1].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                string[] _none = sections[2].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
-
-                var dict = new Dictionary<ExpressionType, HashSet<string>>
-                {
-                    { ExpressionType.All, new HashSet<string>(_all) },
-                    { ExpressionType.Any, new HashSet<string>(_any) },
-                    { ExpressionType.None, new HashSet<string>(_none) },
-                };
-                conditions.Add(dict);
-
-                // any not needed since there is no need to iterate a Unioned any to check if it is present in every condition
-                _All.UnionWith(_all);
-                _None.UnionWith(_none);
-            }
-
-            // find tags that should be added to global ALL/ANY
-            foreach (string tag in _All)
-            {
-                bool presentInEveryCondition = true;
-                foreach (var condition in conditions)
-                {
-                    if (!condition[ExpressionType.All].Contains(tag))
-                    {
-                        presentInEveryCondition = false;
-                        Any.Add(tag);
-                        break; // skip to next tag
-                    }
-                }
-                if (presentInEveryCondition) All.Add(tag);
-            }
-
-            // find tags that should be added to global ANY
-            foreach (var condition in conditions)
-            {
-                Any.UnionWith(condition[ExpressionType.Any]);
-            }
-
-            // find tags that should be added to global NONE
-            foreach (string tag in _None)
-            {
-                bool presentInEveryCondition = true;
-                foreach (var condition in conditions)
-                {
-                    if (!condition[ExpressionType.None].Contains(tag))
-                    {
-                        presentInEveryCondition = false;
-                        break;
-                    }
-                }
-                if (presentInEveryCondition) None.Add(tag);
-            }
-
-            return new TagConditions
-            {
-                All = All.ToArray(),
-                Any = Any.ToArray(),
-                None = None.ToArray(),
-                Complex = conditions
-            };
-        }
-
-        private static void AddTagFilters(QueryInfo info)
+        private static void AddNumericalFilter(QueryInfo info, string property, int min, int max)
         {
             var query = info.Query;
             if (query is null) return;
-            if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0) return;
+            if (min < 0 && max < 0) return;
             info.Filtered = true;
 
-            if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
-            if (info.TagsAny?.Length > 0) query = query.Where("$.Tags ANY IN @0", BsonMapper.Global.Serialize(info.TagsAny));
-            if (info.TagsNone?.Length > 0) query = query.Where("($.Tags[*] ANY IN @0) != true", BsonMapper.Global.Serialize(info.TagsNone));
-            if (info.TagsComplex?.Count > 0)
+            // have already confirmed that at least one of min/max is > 0
+            if (min < 0) query = query.Where((BsonExpression)$"$.{property} <= {max}"); // only max
+            else if (max < 0) query = query.Where((BsonExpression)$"$.{property} >= {min}"); // only min
+            else if (min < max) query = query.Where(Query.And($"$.{property} >= {min}", $"$.{property} <= {max}")); // min < max, both > 0
+            else query = query.Where(Query.Or($"$.{property} <= {max}", $"$.{property} >= {min}")); // max < min, both > 0; inverse of above ie if max=3, min=7 then range is 0-3 OR 7+
+
+            info.Query = query;
+        }
+
+        private static void AddNumericalFilter(QueryInfo info, string property, long min, long max)
+        {
+            var query = info.Query;
+            if (query is null) return;
+            if (min < 0 && max < 0) return;
+            info.Filtered = true;
+
+            // have already confirmed that at least one of min/max is > 0
+            if (min < 0) query = query.Where((BsonExpression)$"$.{property} <= {max}"); // only max
+            else if (max < 0) query = query.Where((BsonExpression)$"$.{property} >= {min}"); // only min
+            else if (min < max) query = query.Where(Query.And($"$.{property} >= {min}", $"$.{property} <= {max}")); // min < max, both > 0
+            else query = query.Where(Query.Or($"$.{property} <= {max}", $"$.{property} >= {min}")); // max < min, both > 0; inverse of above ie if max=3, min=7 then range is 0-3 OR 7+
+
+            info.Query = query;
+        }
+
+        private static void AddNumericalFilter(QueryInfo info, string property, float min, float max)
+        {
+            var query = info.Query;
+            if (query is null) return;
+            if (min < 0 && max < 0) return;
+            info.Filtered = true;
+
+            // have already confirmed that at least one of min/max is > 0
+            if (min < 0) query = query.Where((BsonExpression)$"$.{property} <= {max}"); // only max
+            else if (max < 0) query = query.Where((BsonExpression)$"$.{property} >= {min}"); // only min
+            else if (min < max) query = query.Where(Query.And($"$.{property} >= {min}", $"$.{property} <= {max}")); // min < max, both > 0
+            else query = query.Where(Query.Or($"$.{property} <= {max}", $"$.{property} >= {min}")); // max < min, both > 0; inverse of above ie if max=3, min=7 then range is 0-3 OR 7+
+
+            info.Query = query;
+        }
+
+        private static void AddCountFilter(QueryInfo info, string property, int min, int max)
+        {
+            var query = info.Query;
+            if (query is null) return;
+            if (min < 0 && max < 0) return;
+            info.Filtered = true;
+
+            // have already confirmed that at least one of min/max is > 0
+            if (min < 0) query = query.Where((BsonExpression)$"COUNT($.{property}) <= {max}"); // only max
+            else if (max < 0) query = query.Where((BsonExpression)$"COUNT($.{property}) >= {min}"); // only min
+            else if (min < max) query = query.Where(Query.And($"COUNT($.{property}) >= {min}", $"COUNT($.{property}) <= {max}")); // min < max, both > 0
+            else query = query.Where(Query.Or($"COUNT($.{property}) <= {max}", $"COUNT($.{property}) >= {min}")); // max < min, both > 0; inverse of above ie if max=3, min=7 then range is 0-3 OR 7+
+
+            info.Query = query;
+        }
+
+        private static void AddStringFilter(QueryInfo info, string property, Filters filter)
+        {
+            var query = info.Query;
+            if (query is null) return;
+            if (filter.Empty()) return;
+            info.Filtered = true;
+
+            var conditions = new List<BsonExpression>();
+            if (filter.All.Length > 0) query = query.Where(Filters.CreateCondition(property, filter.All, ExpressionType.All));
+            if (filter.Any.Length > 0) query = query.Where(Filters.CreateCondition(property, filter.Any, ExpressionType.Any));
+            if (filter.None.Length > 0) query = query.Where(Filters.CreateCondition(property, filter.None, ExpressionType.None));
+            if (filter.Complex.Length > 0)
             {
-                var conditions = new List<BsonExpression>();
-                foreach (var condition in info.TagsComplex)
-                {
-                    if (condition[ExpressionType.All].Count == 0 && condition[ExpressionType.Any].Count == 0 && condition[ExpressionType.None].Count == 0) continue;
-
-                    var list = new List<BsonExpression>();
-                    if (condition[ExpressionType.All].Count > 0)
-                        list.Add(CreateTagCondition(condition[ExpressionType.All].ToArray(), ExpressionType.All));
-                    if (condition[ExpressionType.Any].Count > 0)
-                        list.Add(CreateTagCondition(condition[ExpressionType.Any].ToArray(), ExpressionType.Any));
-                    if (condition[ExpressionType.None].Count > 0)
-                        list.Add(CreateTagCondition(condition[ExpressionType.None].ToArray(), ExpressionType.None));
-
-                    if (list.Count == 0) continue;
-                    else if (list.Count == 1) conditions.Add(list[0]);
-                    else conditions.Add(Query.And(list.ToArray()));
-                }
-                if (conditions.Count == 1)
-                    query = query.Where(conditions[0]);
-                else if (conditions.Count > 1)
-                    query = query.Where(Query.Or(conditions.ToArray()));
+                var condition = filter.ConstructComplexCondition(property);
+                if (condition != null) query = query.Where(condition);
             }
+
+            info.Query = query;
+        }
+
+        private static void AddFilters(QueryInfo info)
+        {
+            var query = info.Query;
+            if (query is null) return;
+
+            AddStringFilter(info, "Folders", info.Folders);
+            AddStringFilter(info, "Groups", info.Groups);
+            AddStringFilter(info, "Creators", info.Creators);
+            AddStringFilter(info, "Copyrights", info.Copyrights);
+            AddStringFilter(info, "Subjects", info.Subjects);
+            AddStringFilter(info, "Descriptive", info.Descriptive);
+
+            AddNumericalFilter(info, "Width", info.MinWidth, info.MaxWidth);
+            AddNumericalFilter(info, "Height", info.MinHeight, info.MaxHeight);
+            AddNumericalFilter(info, "Size", info.MinSize, info.MaxSize);
+            AddNumericalFilter(info, "CreationTime", info.MinCreationTime, info.MaxCreationTime);
+            AddNumericalFilter(info, "UploadTime", info.MinUploadTime, info.MaxUploadTime);
+            AddNumericalFilter(info, "LastWriteTime", info.MinLastWriteTime, info.MaxLastWriteTime);
+            AddNumericalFilter(info, "LastEditTime", info.MinLastEditTime, info.MaxLastEditTime);
+            AddNumericalFilter(info, "RatingSum", info.MinRatingSum, info.MaxRatingSum);
+            AddNumericalFilter(info, "RatingAvg", info.MinRatingAvg, info.MaxRatingAvg);
+
+            AddCountFilter(info, "Descriptive", info.MinTagCount, info.MaxTagCount);
 
             info.Query = query;
         }
@@ -515,8 +438,7 @@ namespace ImageTagger.Database
             if (ManageQuery(ref info) || forceUpdate)
             {
                 info.Query = DatabaseAccess.GetImageInfoQuery();
-                AddNumericalFilters(info);
-                AddTagFilters(info);
+                AddFilters(info);
                 OrderSortQuery(info, modOffset, modLimit, pageId);
                 queryHistory[info.Id] = info;
             }

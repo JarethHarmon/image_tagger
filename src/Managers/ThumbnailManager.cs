@@ -1,4 +1,5 @@
 ﻿using Godot;
+using ImageTagger.Core;
 using ImageTagger.Database;
 using ImageTagger.Importer;
 using ImageTagger.Metadata;
@@ -67,46 +68,31 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         public void SetTagsAll(string[] tagsAll)
         {
-            currentQuery.TagsAll = tagsAll;
+            currentQuery.Descriptive.All = tagsAll;
         }
 
         public void SetTagsAny(string[] tagsAny)
         {
-            currentQuery.TagsAny = tagsAny;
+            currentQuery.Descriptive.Any = tagsAny;
         }
 
         public void SetTagsNone(string[] tagsNone)
         {
-            currentQuery.TagsNone = tagsNone;
+            currentQuery.Descriptive.None = tagsNone;
         }
 
         public void SetTagsComplex(string[] tagsAll, string[] tagsAny, string[] tagsNone, string[] tagsComplex)
         {
-            var conditions = Querier.ConvertStringToComplexTags(tagsAll, tagsAny, tagsNone, tagsComplex);
-            currentQuery.TagsAll = conditions.All;
-            currentQuery.TagsAny = conditions.Any;
-            currentQuery.TagsNone = conditions.None;
-            currentQuery.TagsComplex = conditions.Complex;
+            currentQuery.Descriptive.All = tagsAll;
+            currentQuery.Descriptive.Any = tagsAny;
+            currentQuery.Descriptive.None = tagsNone;
+            currentQuery.Descriptive.ConstructComplexArray(tagsComplex);
         }
 
-        public void SetImportId(string tabId)
+        // need to add methods for other Filters objects as well (including renaming the tag ones above)
+        public void SetFolders(string[] folders)
         {
-            var tabInfo = TabInfoAccess.GetTabInfo(tabId);
-            currentQuery.ImportId = tabInfo.ImportId ?? Global.ALL;
-
-            if (tabInfo.TabType == TabType.Similarity)
-            {
-                currentQuery.ImportId = Global.ALL;
-                var hashes = ImageImporter.GetPerceptualHashes(tabInfo.SimilarityHash);
-                currentQuery.AverageHash = hashes.Average;
-                currentQuery.DifferenceHash = hashes.Difference;
-                currentQuery.PerceptualHash = hashes.Perceptual;
-                currentQuery.WaveletHash = hashes.Wavelet;
-            }
-
-            var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);
-            currentQuery.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
-            currentQuery.QueryType = tabInfo.TabType;
+            
         }
 
         public void AddColor(int color)
@@ -181,8 +167,6 @@ namespace ImageTagger.Managers
             var info = currentQuery.Clone();
             info.LastQueriedCount = -1;
             info.Filtered = false;
-            var iinfo = ImportInfoAccess.GetImportInfo(info.ImportId);
-            info.Success = (iinfo.Id.Equals(Global.ALL)) ? iinfo?.Success ?? 0 : (iinfo?.Success + iinfo?.Duplicate) ?? 0;
             string queryId = info.CalcId();
 
             string pageId = $"{queryId}?{offset}?{Global.Settings.MaxImagesPerPage}";
@@ -319,15 +303,15 @@ namespace ImageTagger.Managers
 
                 var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
                 if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-                if (tabInfo.TabType == TabType.Similarity)
+                if (tabInfo.Info.QueryType == TabType.Similarity)
                 {
                     switch (Global.Settings.CurrentSortSimilarity)
                     {
-                        case SortSimilarity.Average: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Difference: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Wavelet: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Perceptual: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Average: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.Info.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Difference: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.Info.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Wavelet: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.Info.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Perceptual: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.Info.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.Info.SimilarityHash, x.Hash).ToString("0.00")); break;
                     }
                 }
                 return true;

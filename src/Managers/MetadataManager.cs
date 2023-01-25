@@ -2,6 +2,7 @@
 using ImageTagger.Core;
 using ImageTagger.Metadata;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ImageTagger.Managers
@@ -38,17 +39,25 @@ namespace ImageTagger.Managers
 
         public string[] GetCurrentPaths()
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Paths.ToArray() ?? Array.Empty<string>();
+            var paths = ImageInfoAccess.GetCurrentImageInfo().Paths;
+            if (paths is null) return Array.Empty<string>();
+
+            var list = new List<string>();
+            foreach (var path in paths)
+            {
+                string folder = path.Key;
+                foreach (string file in path.Value)
+                {
+                    list.Add(folder.PlusFile(file));
+                }
+            }
+
+            return list.ToArray();
         }
 
         public string[] GetCurrentTags()
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Tags.ToArray() ?? Array.Empty<string>();
-        }
-
-        public string[] GetCurrentImports()
-        {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Imports.ToArray() ?? Array.Empty<string>();
+            return ImageInfoAccess.GetCurrentImageInfo()?.Descriptive.ToArray() ?? Array.Empty<string>();
         }
 
         public int[] GetCurrentColors()
@@ -76,7 +85,7 @@ namespace ImageTagger.Managers
 
         public string GetCurrentName()
         {
-            return ImageInfoAccess.GetCurrentImageInfo()?.Name ?? string.Empty;
+            return ImageInfoAccess.GetCurrentImageInfo()?.Paths.FirstOrDefault().Value.FirstOrDefault() ?? string.Empty;
         }
 
         public int GetCurrentFormat()
@@ -152,14 +161,16 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         public string CreateTab(string name, int type, string importId, string groupId, string tag, string simiHash)
         {
+            // need to rewrite this; not sure what its going to look like yet
             var info = new TabInfo
             {
                 Name = name,
-                TabType = (TabType)type,
-                ImportId = importId,
-                GroupId = groupId,
-                Tag = tag,
-                SimilarityHash = simiHash
+                Info = new Database.QueryInfo()
+                {
+                    Groups = new Filters(groupId),
+                    Descriptive = new Filters(tag),
+                    SimilarityHash = simiHash
+                }
             };
             TabInfoAccess.CreateTab(info);
             return info.Id;
@@ -184,19 +195,13 @@ namespace ImageTagger.Managers
         public int GetTabType(string id)
         {
             var info = TabInfoAccess.GetTabInfo(id);
-            return (int)(info?.TabType ?? TabType.Default);
-        }
-
-        public string GetTabImportId(string id)
-        {
-            var info = TabInfoAccess.GetTabInfo(id);
-            return info?.ImportId ?? Global.ALL;
+            return (int)(info?.Info.QueryType ?? TabType.Default);
         }
 
         public string GetTabSimilarityHash(string id)
         {
             var info = TabInfoAccess.GetTabInfo(id);
-            return info?.SimilarityHash ?? string.Empty;
+            return info?.Info.SimilarityHash ?? string.Empty;
         }
 
         /*=========================================================================================

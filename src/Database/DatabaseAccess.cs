@@ -31,8 +31,8 @@ namespace ImageTagger.Database
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
                 colGroupInfo = dbGroupInfo.GetCollection<GroupInfo>("groups");
 
-                colImageInfo.EnsureIndex(x => x.Imports);
-                colImageInfo.EnsureIndex(x => x.Tags);
+                colImageInfo.EnsureIndex(x => x.Paths);
+                colImageInfo.EnsureIndex(x => x.Descriptive);
                 colImageInfo.EnsureIndex(x => x.Colors);
                 colImportInfo.EnsureIndex(x => x.Name);
                 colGroupInfo.EnsureIndex(x => x.Name);
