@@ -12,7 +12,7 @@ namespace ImageTagger.Database
         public string[] All;
         public string[] Any;
         public string[] None;
-        public List<Dictionary<ExpressionType, HashSet<string>>> Complex;
+        public Dictionary<ExpressionType, string[]>[] Complex;
     }
 
     internal sealed class Page
@@ -140,40 +140,40 @@ namespace ImageTagger.Database
         internal static TagConditions ConvertStringToComplexTags(string[] all, string[] any, string[] none, string[] complex)
         {
             HashSet<string> All = new HashSet<string>(all), Any = new HashSet<string>(any), None = new HashSet<string>(none),
-                _All = new HashSet<string>(all), _None = new HashSet<string>(none);
-            var conditions = new List<Dictionary<ExpressionType, HashSet<string>>>();
+                _All = new HashSet<string>(), _None = new HashSet<string>();
+            var conditions = new List<Dictionary<ExpressionType, string[]>>();
 
             // convert global all/any/none into a condition
             if (all.Length > 0 || any.Length > 0 || none.Length > 0)
             {
-                var condition = new Dictionary<ExpressionType, HashSet<string>>
+                var condition = new Dictionary<ExpressionType, string[]>
                 {
-                    { ExpressionType.All, new HashSet<string>(all) },
-                    { ExpressionType.Any, new HashSet<string>(any) },
-                    { ExpressionType.None, new HashSet<string>(none) }
+                    { ExpressionType.All, all },
+                    { ExpressionType.Any, any },
+                    { ExpressionType.None, none }
                 };
                 conditions.Add(condition);
             }
 
             // iterate over each string representation condition in complexTags
-            foreach (string condition in complex)
+            foreach (string conditionStr in complex)
             {
-                string[] sections = condition.Split(new string[1] { "%" }, StringSplitOptions.None);
+                string[] sections = conditionStr.Split(new string[1] { "%" }, StringSplitOptions.None);
                 if (sections.Length < 3) continue;
 
                 string[] _all = sections[0].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
                 string[] _any = sections[1].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
                 string[] _none = sections[2].Split(new string[1] { "," }, StringSplitOptions.RemoveEmptyEntries);
 
-                var dict = new Dictionary<ExpressionType, HashSet<string>>
+                var condition = new Dictionary<ExpressionType, string[]>
                 {
-                    { ExpressionType.All, new HashSet<string>(_all) },
-                    { ExpressionType.Any, new HashSet<string>(_any) },
-                    { ExpressionType.None, new HashSet<string>(_none) },
+                    { ExpressionType.All, _all },
+                    { ExpressionType.Any, _any },
+                    { ExpressionType.None, _none },
                 };
-                conditions.Add(dict);
+                conditions.Add(condition);
 
-                // any not needed since there is no need to iterate a Unioned any to check if it is present in every condition
+                Any.UnionWith(_any);
                 _All.UnionWith(_all);
                 _None.UnionWith(_none);
             }
@@ -192,12 +192,6 @@ namespace ImageTagger.Database
                     }
                 }
                 if (presentInEveryCondition) All.Add(tag);
-            }
-
-            // find tags that should be added to global ANY
-            foreach (var condition in conditions)
-            {
-                Any.UnionWith(condition[ExpressionType.Any]);
             }
 
             // find tags that should be added to global NONE
@@ -220,7 +214,7 @@ namespace ImageTagger.Database
                 All = All.ToArray(),
                 Any = Any.ToArray(),
                 None = None.ToArray(),
-                Complex = conditions
+                Complex = conditions.ToArray()
             };
         }
 
@@ -228,26 +222,26 @@ namespace ImageTagger.Database
         {
             var query = info.Query;
             if (query is null) return;
-            if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Count == 0) return;
+            if (info.TagsAll?.Length == 0 && info.TagsAny?.Length == 0 && info.TagsNone?.Length == 0 && info.TagsComplex?.Length == 0) return;
             info.Filtered = true;
 
             if (info.TagsAll?.Length > 0) foreach (string tag in info.TagsAll) query = query.Where(x => x.Tags.Contains(tag));
             if (info.TagsAny?.Length > 0) query = query.Where("$.Tags ANY IN @0", BsonMapper.Global.Serialize(info.TagsAny));
             if (info.TagsNone?.Length > 0) query = query.Where("($.Tags[*] ANY IN @0) != true", BsonMapper.Global.Serialize(info.TagsNone));
-            if (info.TagsComplex?.Count > 0)
+            if (info.TagsComplex?.Length > 0)
             {
                 var conditions = new List<BsonExpression>();
                 foreach (var condition in info.TagsComplex)
                 {
-                    if (condition[ExpressionType.All].Count == 0 && condition[ExpressionType.Any].Count == 0 && condition[ExpressionType.None].Count == 0) continue;
+                    if (condition[ExpressionType.All].Length == 0 && condition[ExpressionType.Any].Length == 0 && condition[ExpressionType.None].Length == 0) continue;
 
                     var list = new List<BsonExpression>();
-                    if (condition[ExpressionType.All].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.All].ToArray(), ExpressionType.All));
-                    if (condition[ExpressionType.Any].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.Any].ToArray(), ExpressionType.Any));
-                    if (condition[ExpressionType.None].Count > 0)
-                        list.Add(CreateCondition(condition[ExpressionType.None].ToArray(), ExpressionType.None));
+                    if (condition[ExpressionType.All].Length > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.All], ExpressionType.All));
+                    if (condition[ExpressionType.Any].Length > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.Any], ExpressionType.Any));
+                    if (condition[ExpressionType.None].Length > 0)
+                        list.Add(CreateCondition(condition[ExpressionType.None], ExpressionType.None));
 
                     if (list.Count == 0) continue;
                     else if (list.Count == 1) conditions.Add(list[0]);

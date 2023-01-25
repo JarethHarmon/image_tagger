@@ -27,7 +27,7 @@ namespace ImageTagger.Database
         internal string[] TagsAll { get; set; }
         internal string[] TagsAny { get; set; }
         internal string[] TagsNone { get; set; }
-        internal List<Dictionary<ExpressionType, HashSet<string>>> TagsComplex { get; set; }
+        internal Dictionary<ExpressionType, string[]>[] TagsComplex { get; set; }
 
         internal TabType QueryType { get; set; }
         internal Sort Sort { get; set; }
@@ -144,14 +144,14 @@ namespace ImageTagger.Database
             return CalcHashFromArray(_colors);
         }
 
-        private string CalcHashFromCondition(Dictionary<ExpressionType, HashSet<string>> condition)
+        private string CalcHashFromCondition(Dictionary<ExpressionType, string[]> condition)
         {
             string[] arr = new string[]
             {
                 // really would like Span<T>, but Godot uses net472
-                CalcHashFromArray(condition[ExpressionType.All].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.Any].ToArray()),
-                CalcHashFromArray(condition[ExpressionType.None].ToArray()),
+                CalcHashFromArray(condition[ExpressionType.All]),
+                CalcHashFromArray(condition[ExpressionType.Any]),
+                CalcHashFromArray(condition[ExpressionType.None]),
             };
             return CalcHashFromString(string.Join("?", arr)); // to ensure they stay in correct relative order (instead of CalcHashFromArray() which calls Sort())
         }
@@ -159,7 +159,7 @@ namespace ImageTagger.Database
         private string CalcHashFromComplexTags()
         {
             if (TagsComplex is null) return string.Empty;
-            if (TagsComplex.Count == 0) return string.Empty;
+            if (TagsComplex.Length == 0) return string.Empty;
             var list = new List<string>();
 
             foreach (var condition in TagsComplex)
