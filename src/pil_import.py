@@ -42,9 +42,11 @@ def save_webp_thumbnail(im_path, sv_path, sv_size):
 
 def convert_binary_to_ulong(arr):
     result = ZERO
-    for i in range(0, len(arr)-1):
-        if arr[i]: result |= ONE
+    MAX = len(arr) - 1
+    for i,v in enumerate(arr[:-1]):
+        if v: result |= ONE
         result <<= ONE
+    if arr[MAX]: result |= ONE
     return result
 
 def calc_average_hash(imageL):
