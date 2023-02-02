@@ -1,5 +1,4 @@
-﻿using LiteDB;
-using System;
+﻿using System;
 
 namespace ImageTagger.Extension
 {
@@ -42,6 +41,28 @@ namespace ImageTagger.Extension
         public byte B { get; set; }
         public byte A { get; set; }
 
+        public static void Test()
+        {
+            var color = PastelGreen;
+            Console.WriteLine(color.ToString());
+            int _color = color.GetIntColor();
+            Console.WriteLine(_color);
+            var __color = new Color(_color);
+            Console.WriteLine(__color.ToString());
+        }
+
+        public Color(int color)
+        {
+            uint _color = (uint)color;
+            A = (byte)(_color & 0xff);
+            _color >>= 8;
+            B = (byte)(_color & 0xff);
+            _color >>= 8;
+            G = (byte)(_color & 0xff);
+            _color >>= 8;
+            R = (byte)_color;
+        }
+
         public Color(byte r, byte g, byte b)
         {
             R = r;
@@ -56,6 +77,18 @@ namespace ImageTagger.Extension
             G = g;
             B = b;
             A = a;
+        }
+
+        public int GetIntColor()
+        {
+            uint tmp = R;
+            tmp <<= 8;
+            tmp |= G;
+            tmp <<= 8;
+            tmp |= B;
+            tmp <<= 8;
+            tmp |= A;
+            return (int)tmp;
         }
 
         public override string ToString()
