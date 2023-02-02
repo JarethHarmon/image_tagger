@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using LiteDB;
 using ImageTagger.Core;
+using ImageTagger.Extension;
 
 namespace ImageTagger.Database
 {
@@ -21,13 +21,22 @@ namespace ImageTagger.Database
     internal sealed class QueryInfo
     {
         internal string Id { get; set; }
+
+        internal Filter Folders { get; set; }
+        internal Filter Imports { get; set; }
+        internal Filter Groups { get; set; }
+        internal Filter Creators { get; set; }
+        internal Filter Copyrights { get; set; }
+        internal Filter Subjects { get; set; }
+        internal Filter Descriptive { get; set; }
+
         internal string ImportId { get; set; }
         internal string GroupId { get; set; }
 
         internal string[] TagsAll { get; set; }
         internal string[] TagsAny { get; set; }
         internal string[] TagsNone { get; set; }
-        internal Dictionary<ExpressionType, string[]>[] TagsComplex { get; set; }
+        internal Dictionary<FilterType, string[]>[] TagsComplex { get; set; }
 
         internal TabType QueryType { get; set; }
         internal Sort Sort { get; set; }
@@ -144,14 +153,14 @@ namespace ImageTagger.Database
             return CalcHashFromArray(_colors);
         }
 
-        private string CalcHashFromCondition(Dictionary<ExpressionType, string[]> condition)
+        private string CalcHashFromCondition(Dictionary<FilterType, string[]> condition)
         {
             string[] arr = new string[]
             {
                 // really would like Span<T>, but Godot uses net472
-                CalcHashFromArray(condition[ExpressionType.All]),
-                CalcHashFromArray(condition[ExpressionType.Any]),
-                CalcHashFromArray(condition[ExpressionType.None]),
+                CalcHashFromArray(condition[FilterType.All]),
+                CalcHashFromArray(condition[FilterType.Any]),
+                CalcHashFromArray(condition[FilterType.None]),
             };
             return CalcHashFromString(string.Join("?", arr)); // to ensure they stay in correct relative order (instead of CalcHashFromArray() which calls Sort())
         }

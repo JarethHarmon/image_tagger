@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using LiteDB;
 using ImageTagger.Core;
+using ImageTagger.Extension;
 using ImageTagger.Metadata;
 
 namespace ImageTagger.Database
 {
-    internal sealed class DatabaseAccess
+    internal static class DatabaseAccess
     {
         private static LiteDatabase dbImageInfo, dbImportInfo;
         private static ILiteCollection<ImageInfo> colImageInfo;
@@ -18,16 +19,22 @@ namespace ImageTagger.Database
         {
             try
             {
-                string metadataPath = Global.GetMetadataPath();
+                // register custom types and ids
+                BsonMapper.Global.Entity<Filter>();
                 BsonMapper.Global.Entity<ImageInfo>().Id(x => x.Hash); // still need to test if int id is better; last test was inconclusive
+
+                // create databases
+                string metadataPath = Global.GetMetadataPath();
                 dbImageInfo = new LiteDatabase(metadataPath + "image_info.db");
                 dbImportInfo = new LiteDatabase(metadataPath + "import_info.db");
 
+                // create collections
                 colImageInfo = dbImageInfo.GetCollection<ImageInfo>("images");
                 colImportInfo = dbImportInfo.GetCollection<ImportInfo>("imports");
                 colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
 
+                // create indices
                 colImageInfo.EnsureIndex(x => x.Imports);
                 colImageInfo.EnsureIndex(x => x.Tags);
                 colImageInfo.EnsureIndex(x => x.Colors);

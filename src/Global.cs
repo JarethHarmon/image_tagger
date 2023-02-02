@@ -21,7 +21,7 @@ namespace ImageTagger
     public enum SortSimilarity { Averaged=0, Average, Difference, Wavelet, Perceptual }
 
     public enum TabType { Default, Similarity }
-    public enum ExpressionType { All, Any, None }
+    public enum FilterType { All, Any, None }
 
     public sealed class Global : Node
     {
