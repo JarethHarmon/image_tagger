@@ -12,8 +12,8 @@ namespace ImageTagger.Managers
 {
     public sealed class ThumbnailManager : Node
     {
-        private static string currentPageId;
-        private static QueryInfo currentQuery;
+        private string currentPageId;
+        private QueryInfo currentQuery;
         private int offset;
         private string thumbnailPath;
 
@@ -22,7 +22,7 @@ namespace ImageTagger.Managers
 
         private static readonly object locker = new object();
 
-        private ItemList list;
+        private ItemList ilist;
         private ImageTexture failedIcon, bufferingIcon;
         private Node signals;
         private CenterContainer buffer;
@@ -45,9 +45,9 @@ namespace ImageTagger.Managers
         public override void _Ready()
         {
             timeTaken = GetNode<Label>("/root/main/margin/vbox/core_buttons/margin/flow/query_time");
-            list = GetNode<ItemList>("/root/main/margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails");
+            ilist = GetNode<ItemList>("/root/main/margin/vbox/hsplit/left/vsplit/thumbnail_list/margin/vbox/thumbnails");
             signals = GetNode<Node>("/root/Signals");
-            buffer = list.GetNode<CenterContainer>("cc");
+            buffer = ilist.GetNode<CenterContainer>("cc");
 
             var resBroken = ResourceLoader.Load<StreamTexture>("res://assets/icon-broken.png");
             failedIcon = new Godot.ImageTexture();
@@ -219,12 +219,12 @@ namespace ImageTagger.Managers
                 signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
                 signals.Call("emit_signal", "image_count_changed", queriedImageCount);
 
-                list.Set("current_hashes", results);
-                list.Clear();
+                ilist.Set("current_hashes", results);
+                ilist.Clear();
 
                 for (int i = 0; i < size; i++)
                 {
-                    list.AddIconItem(bufferingIcon);
+                    ilist.AddIconItem(bufferingIcon);
                 }
                 // set scroll value for tab (from tab history)
             }
@@ -252,7 +252,7 @@ namespace ImageTagger.Managers
             }
         }
 
-        private async void LoadThumbnail(ThumbnailTask x)
+        private async Task LoadThumbnail(ThumbnailTask x)
         {
             if (x.Hash is null) return;
             if (ThreadsafeSetIcon(x)) return; // try to set icon from history, return if time to stop loading, or loading succeeded
@@ -314,20 +314,20 @@ namespace ImageTagger.Managers
                 if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
                 if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
-                if (list.GetItemCount() < x.Index) return true;
-                list.SetItemIcon(x.Index, icon);
+                if (ilist.GetItemCount() < x.Index) return true;
+                ilist.SetItemIcon(x.Index, icon);
 
-                var tabInfo = TabInfoAccess.GetTabInfo(Global.currentTabId);
+                var tabInfo = TabInfoAccess.GetTabInfo(Global.CurrentTabId);
                 if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
                 if (tabInfo.TabType == TabType.Similarity)
                 {
                     switch (Global.Settings.CurrentSortSimilarity)
                     {
-                        case SortSimilarity.Average: list.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Difference: list.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Wavelet: list.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        case SortSimilarity.Perceptual: list.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
-                        default: list.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Average: ilist.SetItemText(x.Index, GetAverageSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Difference: ilist.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Wavelet: ilist.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Perceptual: ilist.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        default: ilist.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                     }
                 }
                 return true;

@@ -6,7 +6,7 @@ using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    internal sealed class TabInfoAccess
+    internal static class TabInfoAccess
     {
         private readonly static Dictionary<string, TabInfo> dictTabInfo = new Dictionary<string, TabInfo>();
 
@@ -60,7 +60,7 @@ namespace ImageTagger.Metadata
 
         internal static string[] GetTabIds(string importId)
         {
-            if (importId.Equals(string.Empty)) return Array.Empty<string>();
+            if (string.IsNullOrWhiteSpace(importId)) return Array.Empty<string>();
             var query = DatabaseAccess.GetTabInfoQuery();
             query = query.Where(x => x.ImportId.Equals(importId));
             return query.Select(x => x.Id).ToArray();

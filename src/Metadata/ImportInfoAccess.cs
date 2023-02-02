@@ -6,7 +6,7 @@ using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    internal sealed class ImportInfoAccess
+    internal static class ImportInfoAccess
     {
         private readonly static Dictionary<string, ImportInfo> dictImportInfo = new Dictionary<string, ImportInfo>();
 

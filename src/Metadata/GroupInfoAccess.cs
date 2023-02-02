@@ -4,7 +4,7 @@ using ImageTagger.Core;
 
 namespace ImageTagger.Metadata
 {
-    internal sealed class GroupInfoAccess
+    internal static class GroupInfoAccess
     {
         private readonly static Dictionary<string, GroupInfo> dictGroupInfo = new Dictionary<string, GroupInfo>();
 

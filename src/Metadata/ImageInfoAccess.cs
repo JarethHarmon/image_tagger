@@ -6,7 +6,7 @@ using ImageTagger.Database;
 
 namespace ImageTagger.Metadata
 {
-    internal sealed class ImageInfoAccess
+    internal static class ImageInfoAccess
     {
         private static ImageInfo currentImageInfo = null;
 
@@ -56,14 +56,14 @@ namespace ImageTagger.Metadata
             {
                 info.Ratings[rating] = value;
                 info.RatingSum = info.Ratings.Values.Sum();
-                info.RatingAvg = info.RatingSum / info.Ratings.Count;
+                info.RatingAvg = (float)info.RatingSum / info.Ratings.Count;
             }
 
             if (_hashes.Contains(currentImageInfo?.Hash))
             {
                 currentImageInfo.Ratings[rating] = value;
                 currentImageInfo.RatingSum = currentImageInfo.Ratings.Values.Sum();
-                currentImageInfo.RatingAvg = currentImageInfo.RatingSum / currentImageInfo.Ratings.Count;
+                currentImageInfo.RatingAvg = (float)currentImageInfo.RatingSum / currentImageInfo.Ratings.Count;
             }
 
             DatabaseAccess.UpdateImageInfo(infos);
