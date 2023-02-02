@@ -33,22 +33,10 @@ namespace ImageTagger.Extension
                 _All = new HashSet<string>(), _None = new HashSet<string>();
             var conditions = new List<Dictionary<FilterType, string[]>>();
 
-            // convert global all/any/none into a condition
-            if (All.Length > 0 || Any.Length > 0 || None.Length > 0)
-            {
-                var condition = new Dictionary<FilterType, string[]>
-                {
-                    { FilterType.All, All },
-                    { FilterType.Any, Any },
-                    { FilterType.None, None }
-                };
-                conditions.Add(condition);
-            }
-
             // iterate each string condition in complex, convert it to a condition (would be better to avoid storing them as strings to begin with)
             foreach (string conditionStr in complex)
             {
-                // later versions of .NET support just using a single char like '%', but not this version
+                // later versions of .NET support just using a single char like '%', but not 4.7.2
                 string[] sections = conditionStr.Split(PERCENT, StringSplitOptions.None);
                 if (sections.Length < 3) continue;
 
