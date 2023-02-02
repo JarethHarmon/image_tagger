@@ -11,8 +11,9 @@ namespace ImageTagger.Managers
     public sealed class ImportManager : Node
     {
         private const int BULK_IMPORT_SIZE = 100;
-        public Node signals, globals;
-        public MetadataManager mdm;
+        public Node Signals { get; set; }
+        public Node Globals { get; set; }
+        public MetadataManager MetadataManager { get; set; }
 
         private static readonly object locker = new object();
         private readonly Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
@@ -21,9 +22,9 @@ namespace ImageTagger.Managers
 
         public override void _Ready()
         {
-            globals = GetNode<Node>("/root/Globals");
-            signals = GetNode<Node>("/root/Signals");
-            mdm = GetNode<MetadataManager>("/root/MetadataManager");
+            Globals = GetNode<Node>("/root/Globals");
+            Signals = GetNode<Node>("/root/Signals");
+            MetadataManager = GetNode<MetadataManager>("/root/MetadataManager");
         }
 
         public static void Shutdown()
@@ -52,14 +53,14 @@ namespace ImageTagger.Managers
         public int LoadGif(string path, string hash)
         {
             var error = ImageImporter.LoadGif(path, hash);
-            signals.Call("emit_signal", "finish_animation", hash);
+            Signals.Call("emit_signal", "finish_animation", hash);
             return (int)error;
         }
 
         public int LoadApng(string path, string hash)
         {
             var error = ImageImporter.LoadApng(path, hash);
-            signals.Call("emit_signal", "finish_animation", hash);
+            Signals.Call("emit_signal", "finish_animation", hash);
             return (int)error;
         }
 
@@ -67,7 +68,7 @@ namespace ImageTagger.Managers
         {
             currentGridIndex = 0;
             var error = ImageImporter.LoadLargeImage(path, hash, columns, rows);
-            signals.Call("emit_signal", "finish_large_image", hash);
+            Signals.Call("emit_signal", "finish_large_image", hash);
             return (int)error;
         }
 
@@ -76,13 +77,13 @@ namespace ImageTagger.Managers
         =========================================================================================*/
         internal bool StopLoading(string hash)
         {
-            return mdm.IncorrectImage(hash);
+            return MetadataManager.IncorrectImage(hash);
         }
 
         private bool frameOne = true;
         internal void SendFrameCount(int count)
         {
-            signals.Call("emit_signal", "set_animation_info", count, 24);
+            Signals.Call("emit_signal", "set_animation_info", count, 24);
             frameOne = true;
         }
 
@@ -113,7 +114,7 @@ namespace ImageTagger.Managers
 
             var texture = GetImageTexture(data, hash, type);
             if (StopLoading(hash)) return;
-            signals.Call("emit_signal", "add_animation_texture", texture, hash, delay, frameOne);
+            Signals.Call("emit_signal", "add_animation_texture", texture, hash, delay, frameOne);
             frameOne = false;
         }
 
@@ -126,7 +127,7 @@ namespace ImageTagger.Managers
 
             var texture = GetImageTexture(data, hash, type);
             if (StopLoading(hash)) return;
-            signals.Call("emit_signal", "add_large_image_section", texture, hash, currentGridIndex);
+            Signals.Call("emit_signal", "add_large_image_section", texture, hash, currentGridIndex);
             currentGridIndex++;
         }
 
@@ -203,12 +204,9 @@ namespace ImageTagger.Managers
         {
             lock (locker)
             {
-                if (tempImageInfo.TryGetValue(importId, out var dict))
+                if (tempImageInfo.TryGetValue(importId, out var dict) && dict.TryGetValue(hash, out var info))
                 {
-                    if (dict.TryGetValue(hash, out var info))
-                    {
-                        return info;
-                    }
+                    return info;
                 }
 
                 return ImageInfoAccess.GetImageInfo(hash);
@@ -230,12 +228,9 @@ namespace ImageTagger.Managers
 
                 if (info.Sections.Count == 0)
                 {
-                    if (tempImageInfo.TryGetValue(importId, out var iinfo))
+                    if (tempImageInfo.TryGetValue(importId, out var iinfo) && iinfo.Count > 0)
                     {
-                        if (iinfo.Count > 0)
-                        {
-                            DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
-                        }
+                        DatabaseAccess.UpsertImageInfo(tempImageInfo[importId].Values);
                     }
                     tempImageInfo.Remove(importId);
                     CompleteImport(importId);
@@ -257,13 +252,13 @@ namespace ImageTagger.Managers
             if (stopImporting) return;
             DatabaseAccess.UpdateImportInfo(infos);
             string[] tabs = TabInfoAccess.GetTabIds(importId);
-            signals.Call("emit_signal", "finish_import_buttons", tabs);
+            Signals.Call("emit_signal", "finish_import_buttons", tabs);
         }
 
         public void ImportImages(string importId, string sectionId)
         {
             var info = ImportInfoAccess.GetImportInfo(importId);
-            if ((info is null || info.Total <= 0 || importId.Equals(string.Empty)) && !sectionId.Equals(string.Empty))
+            if ((info is null || info.Total <= 0 || string.IsNullOrWhiteSpace(importId)) && !string.IsNullOrWhiteSpace(sectionId))
             {
                 DatabaseAccess.DeleteImportSection(sectionId);
                 return;
@@ -284,10 +279,10 @@ namespace ImageTagger.Managers
                 {
                     ImportStatus result = ImportImage(importId, path);
                     UpdateImportCount(importId, result);
-                    signals.Call("emit_signal", "increment_import_buttons", tabs);
+                    Signals.Call("emit_signal", "increment_import_buttons", tabs);
                     if (result == ImportStatus.Success)
                     {
-                        signals.Call("emit_signal", "increment_all_button");
+                        Signals.Call("emit_signal", "increment_all_button");
                     }
                 }
             }

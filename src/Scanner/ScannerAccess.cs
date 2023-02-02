@@ -34,8 +34,12 @@ namespace ImageTagger.Scanner
         {
             int count = 0;
             lock (locker)
+            {
                 foreach (var section in tempPaths.Values)
+                {
                     count += section.Count;
+                }
+            }
             return count;
         }
 
