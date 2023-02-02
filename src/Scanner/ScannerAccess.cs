@@ -10,7 +10,7 @@ namespace ImageTagger.Scanner
         public long MaxSize { get; set; }
     }
 
-    internal sealed class ScannerAccess
+    internal static class ScannerAccess
     {
         private readonly static HashSet<string> extensionsToImport = new HashSet<string> { ".png", ".jpeg", ".jpg", ".jfif", ".apng", ".gif", ".webp", ".bmp", ".heic" };
         private readonly static List<string> blacklistedFolders = new List<string> { "SYSTEM VOLUME INFORMATION", "$RECYCLE.BIN", "TEMP_DELETION" };
@@ -102,22 +102,14 @@ namespace ImageTagger.Scanner
                 if (!recursive) return;
 
                 var enumeratedFolders = dir.EnumerateDirectories();
-                bool continuing = false;
                 foreach (var folder in enumeratedFolders)
                 {
                     if (cancelling) return;
-                    continuing = false;
                     if (!dir.FullName.Contains(" "))
                     {
-                        foreach (string blf in blacklistedFolders)
-                        {
-                            if (dir.FullName.Contains(blf))
-                            {
-                                continuing = true;
-                            }
-                        }
+                        if (blacklistedFolders.Any(blf => dir.FullName.Contains(blf, StringComparison.OrdinalIgnoreCase)))
+                            continue;
 
-                        if (continuing) continue;
                         ScanFolders(folder, recursive);
                     }
                 }
@@ -126,6 +118,11 @@ namespace ImageTagger.Scanner
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        internal static bool Contains(this string source, string toCheck, StringComparison comparer)
+        {
+            return source?.IndexOf(toCheck, comparer) >= 0;
         }
 
         internal static string[] GetScannedPaths()
