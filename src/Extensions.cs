@@ -32,5 +32,19 @@ namespace ImageTagger
         {
             return source?.IndexOf(toCheck, comparer) >= 0;
         }
+
+        public static string ReplaceBulk (this string str, HashSet<char> toReplace, char replace)
+        {
+            char[] tmp = new char[str.Length];
+            int ptr = 0;
+
+            for (int i = 0; i < str.Length; i++)
+            {
+                if (toReplace.Contains(str[i])) tmp[ptr++] = replace;
+                else tmp[ptr++] = str[i];
+            }
+
+            return tmp.ToString();
+        }
     }
 }

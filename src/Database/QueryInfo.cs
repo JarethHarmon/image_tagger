@@ -137,11 +137,11 @@ namespace ImageTagger.Database
             return sb.ToString();
         }
 
-        private string CalcHashFromArray(string[] tags)
+        private string CalcHashFromArray(string[] members)
         {
-            if (tags.Length == 0) return string.Empty;
-            Array.Sort(tags); // to ensure ["A", "B"] and ["B", "A"] give the same hash
-            string text = string.Join("?", tags);
+            if (members.Length == 0) return string.Empty;
+            Array.Sort(members); // to ensure ["A", "B"] and ["B", "A"] give the same hash
+            string text = string.Join("?", members);
             return CalcHashFromString(text);
         }
 
@@ -157,7 +157,6 @@ namespace ImageTagger.Database
         {
             string[] arr = new string[]
             {
-                // really would like Span<T>, but Godot uses net472
                 CalcHashFromArray(condition[FilterType.All]),
                 CalcHashFromArray(condition[FilterType.Any]),
                 CalcHashFromArray(condition[FilterType.None]),
@@ -176,6 +175,30 @@ namespace ImageTagger.Database
 
             // could also call CalcHashFromArray(list.ToArray())
             list.Sort(); // so order of individual conditions does not matter
+            return CalcHashFromString(string.Concat(list));
+        }
+
+        private string CalcHashFromComplex(List<Dictionary<FilterType, string[]>> complex)
+        {
+            if (complex.Count == 0) return string.Empty;
+            var list = new List<string>();
+
+            foreach (var condition in complex)
+                list.Add(CalcHashFromCondition(condition));
+
+            list.Sort(); // so order of individual conditions does not matter
+            return CalcHashFromString(string.Concat(list));
+        }
+
+        private string CalcHashFromFilter(Filter filter)
+        {
+            var list = new List<string>
+            {
+                CalcHashFromArray(filter.All),
+                CalcHashFromArray(filter.Any),
+                CalcHashFromArray(filter.None),
+                CalcHashFromComplex(filter.Complex)
+            };
             return CalcHashFromString(string.Concat(list));
         }
 

@@ -342,22 +342,19 @@ namespace ImageTagger.Database
 
         private static void AddFilters(QueryInfo info)
         {
-            // I can either leave this as is and figure out how to serialize a Filter object to the database; or I can change it into 
-            //  a Dictionary<ExpressionType, string[]> Filter and a Dictionary<ExpressionType, string[]>[] ComplexFilter in order to 
-            //  serialize them easily; in the second case I would need to rewrite all the Filter functions to be static and accept more arguments
-            // also it would probably be best to move AddNumericalFilter, AddCountFilter, AddStringFilter to the Filter class and change them to 
+            // it would probably be best to move AddNumericalFilter, AddCountFilter, AddStringFilter to the Filter class and change them to 
             //  return a BsonExpression instead of taking a QueryInfo argument
 
             // also I think I will merge queryInfo into tabInfo and just pass tabInfo around while querying; this will also allow per-tab filters
             //  for global filters, easiest option is to just use GetTabInfo(Global.All) for every query (overriding most of their tabInfo)
 
-            //AddStringFilter(info, "Imports", info.Imports); // might remove
-            //AddStringFilter(info, "Folders", info.Folders);
-            //AddStringFilter(info, "Groups", info.Groups);
-            //AddStringFilter(info, "Creators", info.Creators);
-            //AddStringFilter(info, "Copyrights", info.Copyrights);
-            //AddStringFilter(info, "Subjects", info.Subjects);
-            //AddStringFilter(info, "Descriptive", info.Descriptive);
+            AddStringFilter(info, "Imports", info.Imports); // might remove
+            AddStringFilter(info, "Folders", info.Folders);
+            AddStringFilter(info, "Groups", info.Groups);
+            AddStringFilter(info, "Creators", info.Creators);
+            AddStringFilter(info, "Copyrights", info.Copyrights);
+            AddStringFilter(info, "Subjects", info.Subjects);
+            AddStringFilter(info, "Descriptive", info.Descriptive);
 
             AddNumericalFilter(info, "Width", info.MinWidth, info.MaxWidth);
             AddNumericalFilter(info, "Height", info.MinHeight, info.MaxHeight);

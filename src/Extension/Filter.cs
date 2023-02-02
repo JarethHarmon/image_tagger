@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ImageTagger.Extension
 {
@@ -168,18 +170,58 @@ namespace ImageTagger.Extension
             return false;
         }
 
-        public string BulkReplace(string str, HashSet<char> toReplace, char replace)
+        private static string CalcHashFromString(string text)
         {
-            char[] tmp = new char[str.Length];
-            int ptr = 0;
+            var hash = SHA256.Create();
+            byte[] bytes = hash.ComputeHash(Encoding.UTF8.GetBytes(text));
+            var sb = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+                sb.Append(bytes[i].ToString("x2"));
+            hash.Dispose();
+            return sb.ToString();
+        }
 
-            for (int i = 0; i < str.Length; i++)
+        private static string CalcHashFromArray(string[] members)
+        {
+            if (members.Length == 0) return string.Empty;
+            Array.Sort(members); // to ensure ["A", "B"] and ["B", "A"] give the same hash
+            string text = string.Join("?", members);
+            return CalcHashFromString(text);
+        }
+
+        private static string CalcHashFromCondition(Dictionary<FilterType, string[]> condition)
+        {
+            string[] arr = new string[]
             {
-                if (toReplace.Contains(str[i])) tmp[ptr++] = replace;
-                else tmp[ptr++] = str[i];
-            }
+                CalcHashFromArray(condition[FilterType.All]),
+                CalcHashFromArray(condition[FilterType.Any]),
+                CalcHashFromArray(condition[FilterType.None]),
+            };
+            return CalcHashFromString(string.Join("?", arr)); // to ensure they stay in correct relative order (instead of CalcHashFromArray() which calls Sort())
+        }
 
-            return tmp.ToString();
+        private static string CalcHashFromComplex(List<Dictionary<FilterType, string[]>> complex)
+        {
+            if (complex.Count == 0) return string.Empty;
+            var list = new List<string>();
+
+            foreach (var condition in complex)
+                list.Add(CalcHashFromCondition(condition));
+
+            list.Sort(); // so order of individual conditions does not matter
+            return CalcHashFromString(string.Concat(list));
+        }
+
+        public string GetHash()
+        {
+            var list = new List<string>
+            {
+                CalcHashFromArray(All),
+                CalcHashFromArray(Any),
+                CalcHashFromArray(None),
+                CalcHashFromComplex(Complex)
+            };
+            return CalcHashFromString(string.Concat(list));
         }
     }
 }
