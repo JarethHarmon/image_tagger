@@ -546,7 +546,7 @@ namespace ImageTagger.Database
                 exprs.Add(expr.ToString());
             }
 
-            Console.WriteLine(string.Join(" * ", exprs));
+            //Console.WriteLine(string.Join(" * ", exprs));
             return (BsonExpression)string.Join(" * ", exprs);
         }
 
