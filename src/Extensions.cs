@@ -27,5 +27,10 @@ namespace ImageTagger
                     .Replace(selector(i), match => match.Value.PadLeft(digits, '0')),
                     comparer ?? StringComparer.CurrentCulture);
         }
+
+        internal static bool Contains(this string source, string toCheck, StringComparison comparer)
+        {
+            return source?.IndexOf(toCheck, comparer) >= 0;
+        }
     }
 }

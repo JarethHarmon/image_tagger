@@ -120,11 +120,6 @@ namespace ImageTagger.Scanner
             }
         }
 
-        internal static bool Contains(this string source, string toCheck, StringComparison comparer)
-        {
-            return source?.IndexOf(toCheck, comparer) >= 0;
-        }
-
         internal static string[] GetScannedPaths()
         {
             var list = new List<string>();
