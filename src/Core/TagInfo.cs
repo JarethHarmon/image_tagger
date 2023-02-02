@@ -1,4 +1,5 @@
 ﻿using System;
+using ImageTagger.Extension;
 
 namespace ImageTagger.Core
 {
