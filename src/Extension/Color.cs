@@ -53,14 +53,14 @@ namespace ImageTagger.Extension
 
         public Color(int color)
         {
-            uint _color = (uint)color;
-            A = (byte)(_color & 0xff);
-            _color >>= 8;
-            B = (byte)(_color & 0xff);
-            _color >>= 8;
-            G = (byte)(_color & 0xff);
-            _color >>= 8;
-            R = (byte)_color;
+            uint tmp = (uint)color;
+            A = (byte)(tmp & 0xff);
+            tmp >>= 8;
+            B = (byte)(tmp & 0xff);
+            tmp >>= 8;
+            G = (byte)(tmp & 0xff);
+            tmp >>= 8;
+            R = (byte)tmp;
         }
 
         public Color(byte r, byte g, byte b)
