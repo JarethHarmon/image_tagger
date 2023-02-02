@@ -1,6 +1,7 @@
 using Godot;
 using ImageTagger.Database;
 using ImageTagger.Importer;
+using ImageTagger.Managers;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -24,18 +25,18 @@ namespace ImageTagger
 
     public sealed class Global : Node
     {
-        public static Godot.ImageTexture DefaultIcon = new Godot.ImageTexture();
+        public static readonly Godot.ImageTexture DefaultIcon = new Godot.ImageTexture();
         public const string DefaultIconHash = "2c160bfdb8d0423b958083202dc7b58d499cbef22f28d2a58626884378ce9b7f";
 
         public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
         public const string ALL = "All";
-        internal static string currentTabId = ALL;
+        internal static string CurrentTabId { get; private set; }
 
-        public static void SetCurrentTabId(string id) { currentTabId = id; }
+        public static void SetCurrentTabId(string id) { CurrentTabId = id; }
 
         // I hope to find a better solution eventually, Godot is convinced that Settings is null, even if I make it not static
         // might be possible to fix this by moving all godot functions that access settings at program start into call_deferred
-        public static Settings Settings;
+        public static Settings Settings { get; set; }
 
         // manual get/set of Setting properties, because see above
         public static void SetMaxQueriesToStore(int num) { Settings.MaxQueriesToStore = num; }
@@ -121,6 +122,7 @@ namespace ImageTagger
 
         public int Setup()
         {
+            CurrentTabId = ALL;
             CreateDefaultIcon();
             Settings = Settings.LoadFromJsonFile();
             try
@@ -148,6 +150,7 @@ namespace ImageTagger
             Settings.Save();
             DatabaseAccess.Shutdown();
             ImageImporter.Shutdown();
+            ImportManager.Shutdown();
         }
 
         public static void OpenSettingsFile()
@@ -216,7 +219,7 @@ namespace ImageTagger
 
         public static Color GetRandomGodotPastelColor()
         {
-            var color = Core.Color.GetRandomPastelColor();
+            var color = Extension.Color.GetRandomPastelColor();
             return new Color((float)color.R / 255, (float)color.G / 255, (float)color.B / 255);
         }
 

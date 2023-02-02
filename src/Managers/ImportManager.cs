@@ -17,12 +17,18 @@ namespace ImageTagger.Managers
         private static readonly object locker = new object();
         private readonly Dictionary<string, Dictionary<string, ImageInfo>> tempImageInfo = new Dictionary<string, Dictionary<string, ImageInfo>>();
         private static readonly Godot.File file = new Godot.File();
+        private static bool stopImporting = false;
 
         public override void _Ready()
         {
             globals = GetNode<Node>("/root/Globals");
             signals = GetNode<Node>("/root/Signals");
             mdm = GetNode<MetadataManager>("/root/MetadataManager");
+        }
+
+        public static void Shutdown()
+        {
+            stopImporting = true;
         }
 
         /*=========================================================================================
@@ -216,6 +222,7 @@ namespace ImageTagger.Managers
                 var info = ImportInfoAccess.GetImportInfo(importId);
                 info.Sections.Remove(sectionId);
 
+                if (stopImporting) return;
                 // fixes issue with sections not being deleted, should fix desync issue with imports when closing program during import
                 // unfortunately, causes import process to stop for a bit due to the lock
                 DatabaseAccess.UpdateImportInfo(info);
@@ -247,6 +254,7 @@ namespace ImageTagger.Managers
             infos[0].Finished = true;
             infos[0].FinishTime = DateTime.UtcNow.Ticks;
 
+            if (stopImporting) return;
             DatabaseAccess.UpdateImportInfo(infos);
             string[] tabs = TabInfoAccess.GetTabIds(importId);
             signals.Call("emit_signal", "finish_import_buttons", tabs);
@@ -283,6 +291,7 @@ namespace ImageTagger.Managers
                     }
                 }
             }
+            if (stopImporting) return;
             CompleteImportSection(importId, sectionId);
         }
 
@@ -303,6 +312,7 @@ namespace ImageTagger.Managers
             var result = ImportStatus.Success;
             int numFrames = 0;
 
+            if (stopImporting) return ImportStatus.Failed;
             bool thumbnailExisted = true;
             if (!ImageImporter.FileExists(thumbPath))
             {
@@ -322,6 +332,7 @@ namespace ImageTagger.Managers
                 }
             }
 
+            if (stopImporting) return ImportStatus.Failed;
             var imageInfo = GetImportingImageInfo(importId, hash);
             if (imageInfo is null)
             {
@@ -384,6 +395,7 @@ namespace ImageTagger.Managers
                 }
             }
 
+            if (stopImporting) return ImportStatus.Failed;
             StoreTempImageInfo(importId, imageInfo);
             return result;
         }
