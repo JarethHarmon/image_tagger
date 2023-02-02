@@ -19,6 +19,9 @@ namespace ImageTagger.Importer
             try
             {
                 // will need to handle this better if I intend to release on other OS
+                // const string pyFolder = "python-3.10.7-embed-amd64";
+                // const string pyFile = "python310.dll";
+                // const string pyPathWin10 = $"./lib/{pyFolder}/{pyFile}";
                 const string pyPathWin10 = "./lib/python-3.10.7-embed-amd64/python310.dll";
                 Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", pyPathWin10);
                 PythonEngine.Initialize();
@@ -177,7 +180,6 @@ namespace ImageTagger.Importer
 
                 image.Strip();
                 image.Thumbnail(thumbSize, thumbSize);
-                //image.Resize(thumbSize, thumbSize);
                 image.Format = MagickFormat.WebP;
                 image.Write(thumbPath);
 
@@ -225,9 +227,16 @@ namespace ImageTagger.Importer
         {
             try
             {
-                var image = (path.Length < Global.MAX_PATH_LENGTH)
-                    ? new MagickImage(path)
-                    : new MagickImage(TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>());
+                if (path.Length < Global.MAX_PATH_LENGTH)
+                {
+                    _ = new MagickImage(path);
+                }
+                else
+                {
+                    if (TryLoadFile(path, out byte[] data))
+                        _ = new MagickImage(data);
+                    else return true;
+                }
                 return false;
             }
             catch
@@ -284,9 +293,17 @@ namespace ImageTagger.Importer
             {
                 try
                 {
-                    var info = (path.Length < Global.MAX_PATH_LENGTH)
-                        ? new MagickImageInfo(path)
-                        : new MagickImageInfo(TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>());
+                    MagickImageInfo info;
+                    if (path.Length < Global.MAX_PATH_LENGTH)
+                    {
+                        info = new MagickImageInfo(path);
+                    }
+                    else
+                    {
+                        if (TryLoadFile(path, out byte[] data))
+                            info = new MagickImageInfo(data);
+                        else info = new MagickImageInfo(Array.Empty<byte>());
+                    }
 
                     ImageType = ImageType.Other;
                     Width = info.Width;
@@ -310,9 +327,17 @@ namespace ImageTagger.Importer
             {
                 try
                 {
-                    var info = (path.Length < Global.MAX_PATH_LENGTH)
-                        ? new MagickImageInfo(path)
-                        : new MagickImageInfo(TryLoadFile(path, out byte[] data) ? data : Array.Empty<byte>());
+                    MagickImageInfo info;
+                    if (path.Length < Global.MAX_PATH_LENGTH)
+                    {
+                        info = new MagickImageInfo(path);
+                    }
+                    else
+                    {
+                        if (TryLoadFile(path, out byte[] data))
+                            info = new MagickImageInfo(data);
+                        else info = new MagickImageInfo(Array.Empty<byte>());
+                    }
 
                     ImageType = type;
                     Width = info.Width;
