@@ -9,11 +9,12 @@ namespace ImageTagger.Database
 {
     internal static class DatabaseAccess
     {
-        private static LiteDatabase dbImageInfo, dbImportInfo;
+        private static LiteDatabase dbImageInfo, dbImportInfo, dbGroups;
         private static ILiteCollection<ImageInfo> colImageInfo;
         private static ILiteCollection<ImportInfo> colImportInfo;
         private static ILiteCollection<ImportSection> colImportSection;
         private static ILiteCollection<TabInfo> colTabInfo;
+        private static ILiteCollection<GroupInfo> colGroups;
 
         internal static Error Create()
         {
@@ -27,12 +28,14 @@ namespace ImageTagger.Database
                 string metadataPath = Global.GetMetadataPath();
                 dbImageInfo = new LiteDatabase(metadataPath + "image_info.db");
                 dbImportInfo = new LiteDatabase(metadataPath + "import_info.db");
+                dbGroups = new LiteDatabase(metadataPath + "groups.db");
 
                 // create collections
                 colImageInfo = dbImageInfo.GetCollection<ImageInfo>("images");
                 colImportInfo = dbImportInfo.GetCollection<ImportInfo>("imports");
                 colImportSection = dbImportInfo.GetCollection<ImportSection>("sections");
                 colTabInfo = dbImportInfo.GetCollection<TabInfo>("tabs");
+                colGroups = dbGroups.GetCollection<GroupInfo>("groups");
 
                 // create indices
                 colImageInfo.EnsureIndex(x => x.Imports);
@@ -53,12 +56,16 @@ namespace ImageTagger.Database
             if (colImageInfo is null) return Error.Database;
             if (colImportInfo is null) return Error.Database;
             if (colTabInfo is null) return Error.Database;
+            if (colGroups is null) return Error.Database;
 
             var imports = colImportInfo.FindAll();
             ImportInfoAccess.CreateDictionary(imports);
 
             var tabs = colTabInfo.FindAll();
             TabInfoAccess.CreateDictionary(tabs);
+
+            var groups = colGroups.FindAll();
+            GroupInfoAccess.CreateDictionary(groups);
 
             return Error.OK;
         }
@@ -67,6 +74,7 @@ namespace ImageTagger.Database
         {
             dbImageInfo?.Dispose();
             dbImportInfo?.Dispose();
+            dbGroups?.Dispose();
         }
 
         /* ===================================================================================
@@ -169,6 +177,34 @@ namespace ImageTagger.Database
         internal static void DeleteTabInfo(string id)
         {
             colTabInfo?.Delete(id);
+        }
+
+        /* ===================================================================================
+                                                Groups 
+        =================================================================================== */
+        internal static ILiteQueryable<GroupInfo> GetGroupQuery()
+        {
+            return colGroups?.Query();
+        }
+
+        internal static void InsertGroup(GroupInfo group)
+        {
+            colGroups?.Insert(group);
+        }
+
+        internal static void InsertGroup(IEnumerable<GroupInfo> groups)
+        {
+            colGroups?.Insert(groups);
+        }
+
+        internal static void UpdateGroup(GroupInfo group)
+        {
+            colGroups?.Update(group);
+        }
+
+        internal static void UpdateGroup(IEnumerable<GroupInfo> groups)
+        {
+            colGroups?.Update(groups);
         }
     }
 }
