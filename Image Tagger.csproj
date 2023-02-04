@@ -2,7 +2,20 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <RootNamespace>ImageTagger</RootNamespace>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ExportDebug|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ExportRelease|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
   <ItemGroup>
 	<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="12.2.2" />
 	<PackageReference Include="AlphaFS" Version="2.2.6" />
