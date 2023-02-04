@@ -36,7 +36,12 @@ namespace ImageTagger.ScanImport
 
         public static void StartImport()
         {
-            ScannerAccess.StartImport();
+            _ = StartImportAsync();
+        }
+
+        private static async Task StartImportAsync()
+        {
+            await Task.Run(() => ScannerAccess.StartImport());
         }
 
         public static void CancelImport()
