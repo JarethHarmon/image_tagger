@@ -23,7 +23,7 @@ namespace ImageTagger.Core
 
         public ImportInfo()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Sections = new HashSet<string>();
         }
     }
@@ -35,7 +35,7 @@ namespace ImageTagger.Core
 
         public ImportSection()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Paths = Array.Empty<string>();
         }
     }

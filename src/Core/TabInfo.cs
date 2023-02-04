@@ -13,7 +13,7 @@
 
         public TabInfo()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = "import";
 
             TabType = TabType.Default;

@@ -28,6 +28,11 @@ namespace ImageTagger
                     comparer ?? StringComparer.CurrentCulture);
         }
 
+        internal static bool Contains(this string source, char toCheck)
+        {
+            return source?.IndexOf(toCheck) >= 0;
+        }
+
         internal static bool Contains(this string source, string toCheck, StringComparison comparer)
         {
             return source?.IndexOf(toCheck, comparer) >= 0;
@@ -45,6 +50,61 @@ namespace ImageTagger
             }
 
             return tmp.ToString();
+        }
+
+        internal static bool ContainsOrdinalIgnore(this string[] items, string item)
+        {
+            if (items is null) return false;
+            if (items.Length == 0) return false;
+            return items.Any(x => x.Equals(item, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal static bool ContainsOrdinalIgnore(this HashSet<string> items, string item)
+        {
+            if (items is null) return false;
+            if (items.Count == 0) return false;
+            return items.Any(x => x.Equals(item, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal static bool ContainsKeyOrdinalIgnore<TKey, TValue>(this Dictionary<TKey, TValue> items, TKey item)
+        {
+            if (items is null) return false;
+            if (items.Count == 0) return false;
+
+            if (!(item is string key)) return items.ContainsKey(item);
+            if (!(items is Dictionary<string, TValue> _items)) return items.ContainsKey(item);
+
+            return _items.Keys.Any(x => x.Equals(key, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal static unsafe string RemoveCharUnsafe(this string source, char toRemove)
+        {
+            char* newChars = stackalloc char[source.Length];
+            char* currChar = newChars;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == toRemove) continue;
+                *currChar++ = c;
+            }
+
+            return new string(newChars, 0, (int)(currChar - newChars));
+        }
+
+        internal static string RemoveChar(this string source, char toRemove)
+        {
+            char[] temp = new char[source.Length];
+            int ptr = 0;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == toRemove) continue;
+                temp[ptr++] = c;
+            }
+
+            return new string(temp, 0, ptr);
         }
     }
 }

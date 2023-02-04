@@ -22,7 +22,7 @@ namespace ImageTagger.Core
 
         public CreatorInfo()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = "unknown";
             Description = string.Empty;
             Color = Color.Grey;
@@ -40,7 +40,7 @@ namespace ImageTagger.Core
         public CreatorInfo(string name)
         {
             if (string.IsNullOrEmpty(name)) name = "unknown";
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = name;
             Description = string.Empty;
             Color = Color.GetRandomPastelColor();

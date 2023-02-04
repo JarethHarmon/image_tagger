@@ -25,6 +25,8 @@ namespace ImageTagger
 
     public sealed class Global : Node
     {
+        private static readonly byte[] bytes = new byte[8];
+        internal static readonly RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
         public static readonly Godot.ImageTexture DefaultIcon = new Godot.ImageTexture();
         public const string DefaultIconHash = "2c160bfdb8d0423b958083202dc7b58d499cbef22f28d2a58626884378ce9b7f";
 
@@ -232,13 +234,16 @@ namespace ImageTagger
             DefaultIcon.CreateFromImage(image, 0);
         }
 
-        public static string GetRandomId(int numBytes)
+        public static string GetRandomId()
         {
-            byte[] bytes = new byte[numBytes];
-            var rng = new RNGCryptoServiceProvider();
-            rng.GetBytes(bytes);
-            rng?.Dispose();
-            return BitConverter.ToString(bytes).Replace("-", string.Empty);
+            RNG.GetBytes(bytes);
+            return BitConverter.ToString(bytes).RemoveCharUnsafe('-');
+        }
+
+        public static ulong GetRandomInt64Id()
+        {
+            RNG.GetBytes(bytes);
+            return BitConverter.ToUInt64(bytes, 0);
         }
     }
 }

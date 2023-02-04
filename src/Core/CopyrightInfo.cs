@@ -18,7 +18,7 @@ namespace ImageTagger.Core
 
         public CopyrightInfo()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = "default";
             Description = string.Empty;
             Color = Color.Grey;
@@ -31,7 +31,7 @@ namespace ImageTagger.Core
         public CopyrightInfo(string name)
         {
             if (string.IsNullOrEmpty(name)) name = "unknown";
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = name;
             Description = string.Empty;
             Color = Color.GetRandomPastelColor();

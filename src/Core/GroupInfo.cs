@@ -18,7 +18,7 @@ namespace ImageTagger.Core
 
         public GroupInfo()
         {
-            Id = Global.GetRandomId(8);
+            Id = Global.GetRandomId();
             Name = "default";
             Description = string.Empty;
             CoverImage = string.Empty; // I think just check against string.Empty, and use Global.DefaultIcon if they match
