@@ -141,12 +141,9 @@ namespace ImageTagger.ScanImport
 
         private static void IterateFolders(string importId)
         {
-            if (fileList.Count > 0)
+            foreach (var fileKV in fileList)
             {
-                foreach (var fileKV in fileList)
-                {
-                    CreateImportSections(importId, fileKV.Key, fileKV.Value);
-                }
+                CreateImportSections(importId, fileKV.Key, fileKV.Value);
             }
 
             foreach (var folderKV in folderList)
