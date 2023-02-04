@@ -54,6 +54,7 @@ namespace ImageTagger.ScanImport
         // Scanning
         internal static void ScanFolders(string path, bool recursive)
         {
+            Cancel = false;
             try
             {
                 var dir = new DirectoryInfo(path);
@@ -101,6 +102,7 @@ namespace ImageTagger.ScanImport
 
         internal static void ScanFiles(string[] paths)
         {
+            Cancel = false;
             try
             {
                 foreach (string path in paths)
