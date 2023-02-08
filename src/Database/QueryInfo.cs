@@ -97,7 +97,7 @@ namespace ImageTagger.Database
             Filtered = false;
 
             MinSimilarity = Global.Settings.MinSimilarity;
-            BucketPrecision = 2;
+            BucketPrecision = 0;
             Buckets = defaultBuckets;
 
             TagsAll = Array.Empty<string>();

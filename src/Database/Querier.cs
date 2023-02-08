@@ -586,6 +586,7 @@ namespace ImageTagger.Database
             else if (info.QueryType == TabType.Similarity)
             {
                 PrefilterSimilarity(info);
+                //query = query.OrderByDescending(x => x.SimilarityTo(info.DifferenceHash));
                 var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }

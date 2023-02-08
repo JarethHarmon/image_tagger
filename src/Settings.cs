@@ -73,7 +73,7 @@ namespace ImageTagger
             CurrentOrder = Order.Ascending;
             CurrentSortSimilarity = SortSimilarity.Averaged;
             PreferSpeed = true; // whether to prefer speed or RAM when counting results
-            MinSimilarity = 74.999f;
+            MinSimilarity = 70f;
 
             // scanning
             ScanRecursively = false;
