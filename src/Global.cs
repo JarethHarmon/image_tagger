@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 
 namespace ImageTagger
 {
-    public enum Error {  OK, Generic, Database, Dictionary, IO, Python}
+    public enum Error {  OK, Generic, Database, Dictionary, IO, Python, Image }
     public enum ImportStatus {  Success, Duplicate, Ignored, Failed }
 
     public enum ImageType { Jpeg, Png, Apng, Gif, Webp, Other=15, Error=-1 }
@@ -30,7 +30,7 @@ namespace ImageTagger
         public static readonly Godot.ImageTexture DefaultIcon = new Godot.ImageTexture();
         public const string DefaultIconHash = "2c160bfdb8d0423b958083202dc7b58d499cbef22f28d2a58626884378ce9b7f";
 
-        public const int MAX_PATH_LENGTH = 256, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
+        public const int MAX_PATH_LENGTH = 248, THUMBNAIL_SIZE = 256, PROGRESS_SECTION_SIZE = 16;
         public const string ALL = "All";
         internal static string CurrentTabId { get; private set; }
 
@@ -237,7 +237,7 @@ namespace ImageTagger
         public static string GetRandomId()
         {
             RNG.GetBytes(bytes);
-            return BitConverter.ToString(bytes).RemoveCharUnsafe('-');
+            return BitConverter.ToString(bytes).RemoveChar('-');
         }
 
         public static ulong GetRandomInt64Id()

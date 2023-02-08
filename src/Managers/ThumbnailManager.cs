@@ -102,6 +102,12 @@ namespace ImageTagger.Managers
                 currentQuery.DifferenceHash = hashes.Difference;
                 currentQuery.PerceptualHash = hashes.Perceptual;
                 currentQuery.WaveletHash = hashes.Wavelet;
+
+                var imInfo = ImageInfoAccess.GetImageInfo(tabInfo.SimilarityHash);
+                if (imInfo != null)
+                {
+                    currentQuery.Buckets = imInfo.Buckets;
+                }
             }
 
             var iinfo = ImportInfoAccess.GetImportInfo(currentQuery.ImportId);

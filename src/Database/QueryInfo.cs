@@ -52,6 +52,7 @@ namespace ImageTagger.Database
         internal ulong PerceptualHash { get; set; }
         internal float MinSimilarity { get; set; }
         internal int BucketPrecision { get; set; }
+        internal int[] Buckets { get; set; }
 
         internal int MinWidth { get; set; }
         internal int MaxWidth { get; set; }
@@ -82,6 +83,7 @@ namespace ImageTagger.Database
         internal IEnumerable<string> ResultsRandom { get; set; }
         internal int LastQueriedCount { get; set; }
 
+        private static readonly int[] defaultBuckets = new int[4];
         internal QueryInfo()
         {
             Id = string.Empty;
@@ -95,7 +97,8 @@ namespace ImageTagger.Database
             Filtered = false;
 
             MinSimilarity = Global.Settings.MinSimilarity;
-            BucketPrecision = 3;
+            BucketPrecision = 2;
+            Buckets = defaultBuckets;
 
             TagsAll = Array.Empty<string>();
             TagsAny = Array.Empty<string>();
@@ -202,6 +205,7 @@ namespace ImageTagger.Database
             return CalcHashFromString(string.Concat(list));
         }
 
+        // similarityHash (if set) should be the only perceptualHash needed
         internal string CalcId()
         {
             Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}",
@@ -242,7 +246,7 @@ namespace ImageTagger.Database
                 BucketPrecision = queryInfo.BucketPrecision,
 
                 Colors = queryInfo.Colors,
-
+                Buckets = queryInfo.Buckets,
                 // numerical
 
                 Success = queryInfo.Success,

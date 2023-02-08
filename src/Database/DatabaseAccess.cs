@@ -41,6 +41,7 @@ namespace ImageTagger.Database
                 colImageInfo.EnsureIndex(x => x.Imports);
                 colImageInfo.EnsureIndex(x => x.Tags);
                 colImageInfo.EnsureIndex(x => x.Colors);
+                colImageInfo.EnsureIndex(x => x.Buckets);
 
                 return Error.OK;
             }

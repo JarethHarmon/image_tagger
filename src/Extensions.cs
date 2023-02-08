@@ -38,6 +38,28 @@ namespace ImageTagger
             return source?.IndexOf(toCheck, comparer) >= 0;
         }
 
+        internal static bool Contains(this ReadOnlySpan<byte> bytes, byte[] checkBytes)
+        {
+            if (checkBytes.Length > bytes.Length) return false;
+            int ptr = 0;
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                // check if remaining length < length of checkBytes (take into account current progress)
+                if (ptr + bytes.Length - i < checkBytes.Length) return false;
+                // if scanned checkBytes.Length matching bytes in a row, must be true
+                if (ptr == checkBytes.Length) return true;
+                // increment ptr if this byte matches
+                if (bytes[i] == checkBytes[ptr]) ptr++;
+                // reset ptr if this byte does not match
+                else ptr = 0;
+            }
+
+            // if the final checkBytes.Length bytes were a match for checkBytes, return true
+            if (ptr == checkBytes.Length) return true;
+            return false;
+        }
+
         public static string ReplaceBulk (this string str, HashSet<char> toReplace, char replace)
         {
             char[] tmp = new char[str.Length];

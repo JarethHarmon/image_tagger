@@ -290,6 +290,31 @@ namespace ImageTagger.Managers
             CompleteImportSection(importId, sectionId);
         }
 
+        // could probably still use the global method for this (need to test)
+        private static int CountBits(ulong num)
+        {
+            int bits = 0;
+            ulong tmp = num;
+            for (; tmp > 0; tmp >>= 1)
+                if ((tmp & 0x1) == 1)
+                    bits++;
+            return bits;
+        }
+
+        private static int[] GetBuckets(ImageImporter.PerceptualHashes phashes)
+        {
+            ulong hash = phashes.Difference;
+            int[] result = new int[4];
+            result[0] = CountBits(hash & 0xffff);
+            hash >>= 16;
+            result[1] = CountBits(hash & 0xffff);
+            hash >>= 16;
+            result[2] = CountBits(hash & 0xffff);
+            hash >>= 16;
+            result[3] = CountBits(hash & 0xffff);
+            return result;
+        }
+
         private ImportStatus ImportImage(string importId, string imagePath)
         {
             var fileInfo = new ImageImporter.FileInfo(imagePath);
@@ -358,7 +383,7 @@ namespace ImageTagger.Managers
                     WaveletHash = phashes.Wavelet,
                     PerceptualHash = phashes.Perceptual,
 
-                    Bucket = Global.CountAllBits(phashes) / 4,
+                    Buckets = GetBuckets(phashes),
                     Colors = colors.Colors,
                     NumFrames = numFrames,
 

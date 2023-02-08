@@ -547,6 +547,17 @@ namespace ImageTagger.Database
             return (BsonExpression)string.Join(" * ", exprs);
         }
 
+        private static readonly BsonExpression[] buckets = new BsonExpression[4];
+        private static void PrefilterSimilarity(QueryInfo info)
+        {
+            buckets[0] = (BsonExpression)$"($.Buckets[0] >= {info.Buckets[0] - info.BucketPrecision}) AND ($.Buckets[0] <= {info.Buckets[0] + info.BucketPrecision})";
+            buckets[1] = (BsonExpression)$"($.Buckets[1] >= {info.Buckets[1] - info.BucketPrecision}) AND ($.Buckets[1] <= {info.Buckets[1] + info.BucketPrecision})";
+            buckets[2] = (BsonExpression)$"($.Buckets[2] >= {info.Buckets[2] - info.BucketPrecision}) AND ($.Buckets[2] <= {info.Buckets[2] + info.BucketPrecision})";
+            buckets[3] = (BsonExpression)$"($.Buckets[3] >= {info.Buckets[3] - info.BucketPrecision}) AND ($.Buckets[3] <= {info.Buckets[3] + info.BucketPrecision})";
+
+            info.Query = info.Query.Where(Query.Or(buckets));
+        }
+
         private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
         {
             if (info.Query is null) return;
@@ -574,6 +585,7 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.Similarity)
             {
+                PrefilterSimilarity(info);
                 var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
