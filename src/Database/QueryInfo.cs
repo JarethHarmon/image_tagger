@@ -15,6 +15,7 @@ namespace ImageTagger.Database
         public ulong Average { get; set; }
         public ulong Wavelet { get; set; }
         public ulong Perceptual { get; set; }
+        public ulong Color { get; set; }
         public float Similarity { get; set; }
     }
 
@@ -50,6 +51,7 @@ namespace ImageTagger.Database
         internal ulong DifferenceHash { get; set; }
         internal ulong WaveletHash { get; set; }
         internal ulong PerceptualHash { get; set; }
+        internal ulong ColorHash { get; set; }
         internal float MinSimilarity { get; set; }
         internal int BucketPrecision { get; set; }
         internal int[] Buckets { get; set; }
@@ -208,9 +210,9 @@ namespace ImageTagger.Database
         // similarityHash (if set) should be the only perceptualHash needed
         internal string CalcId()
         {
-            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}",
+            Id = "Q" + CalcHashFromString(string.Format("{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}{15}{16}{17}{18}{19}{20}{21}{22}{23}{24}{25}{26}{27}{28}{29}{30}{31}{32}{33}{34}{35}{36}{37}{38}{39}",
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
-                QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash,
+                QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash, ColorHash,
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success, CalcHashFromArray(Colors),
                 MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
             ));
@@ -242,6 +244,7 @@ namespace ImageTagger.Database
                 DifferenceHash = queryInfo.DifferenceHash,
                 PerceptualHash = queryInfo.PerceptualHash,
                 WaveletHash = queryInfo.WaveletHash,
+                ColorHash = queryInfo.ColorHash,
                 MinSimilarity = queryInfo.MinSimilarity,
                 BucketPrecision = queryInfo.BucketPrecision,
 

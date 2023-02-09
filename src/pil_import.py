@@ -116,42 +116,53 @@ def calc_phash_simple(imageL):
 
 def calc_color_buckets(image, imageL):
     a = np.asarray(image.convert('RGBA'))[:,:,3]
-    divisor = min(image.width, image.height)
-    alpha = (a < 255).sum() // divisor
     aa = (a > 16)
+    image_dimensions = image.width * image.height
+    divisor = image_dimensions / 255
+    alpha = int((a < 255).sum() // divisor)
 
     pixels = np.asarray(image.convert('HSV'))
     h = pixels[:,:,0]
     s = pixels[:,:,1]
     v = pixels[:,:,2] 
     
-    ss = s >= 10
-    vv = v >= 10
+    ss = s >= 12
+    vv = v >= 12
     sva = np.logical_and(np.logical_and(ss, vv), aa)
     
-    rr = np.logical_and(np.logical_or(h < 21, h > 234), sva)
-    gg = np.logical_and(np.logical_and(h > 63, h < 106), sva)
-    bb = np.logical_and(np.logical_and(h > 149, h < 191), sva)
+    rr = np.logical_and(np.logical_or(h < 21, h > 234), sva).sum()
+    gg = np.logical_and(np.logical_and(h > 63, h < 106), sva).sum()
+    bb = np.logical_and(np.logical_and(h > 149, h < 191), sva).sum()
+    yy = np.logical_and(np.logical_and(h >= 21, h <= 63), sva).sum()
+    cc = np.logical_and(np.logical_and(h >= 106, h <= 149), sva).sum()
+    ff = np.logical_and(np.logical_and(h >= 191, h <= 234), sva).sum()
+    hue_normalizer = image_dimensions / max(1, (rr + gg + bb + yy + cc + ff))
 
-    yy = np.logical_and(np.logical_and(h >= 21, h <= 63), sva)
-    cc = np.logical_and(np.logical_and(h >= 106, h <= 149), sva)
-    ff = np.logical_and(np.logical_and(h >= 191, h <= 234), sva)
-    
-    red = rr.sum() // divisor
-    green = gg.sum() // divisor
-    blue = bb.sum() // divisor
-    
-    yellow = yy.sum() // divisor
-    cyan = cc.sum() // divisor
-    fuchsia  = ff.sum() // divisor
+    red = int(hue_normalizer * rr // divisor)
+    green = int(hue_normalizer * gg // divisor)
+    blue = int(hue_normalizer * bb // divisor)
+    yellow = int(hue_normalizer * yy // divisor)
+    cyan = int(hue_normalizer * cc // divisor)
+    fuchsia  = int(hue_normalizer * ff // divisor)
 
-    vv = np.asarray(imageL.convert('HSV'))[:,:,2]
-    light = np.logical_and(aa, vv > 67).sum() // divisor
-    medium = np.logical_and(aa, np.logical_and(vv <= 67, vv >= 33)).sum() // divisor
-    dark = np.logical_and(aa, vv < 33).sum() // divisor
+    vd = np.logical_and(aa, s > 67).sum()
+    nn = np.logical_and(aa, np.logical_and(s <= 67, s >= 34)).sum()
+    dd = np.logical_and(aa, s < 34).sum()
+    sat_normalizer = image_dimensions / max(1, (vd + nn + dd))
     
-    vivid = np.logical_and(aa, s > 67).sum() // divisor
-    neutral = np.logical_and(aa, np.logical_and(s <= 67, s >= 33)).sum() // divisor
-    dull = np.logical_and(aa, s < 33).sum() // divisor
+    vivid = int(sat_normalizer * vd // divisor)
+    neutral = int(sat_normalizer * nn // divisor)
+    dull = int(sat_normalizer * dd // divisor)
+
+    val = np.asarray(imageL.convert('HSV'))[:,:,2]
+    ll = np.logical_and(aa, val > 67).sum()
+    mm = np.logical_and(aa, np.logical_and(val <= 67, val >= 33)).sum()
+    kk = np.logical_and(aa, val < 33).sum()
+    val_normalizer = image_dimensions / max(1, (ll + mm + kk))
+    
+    light = int(val_normalizer * ll // divisor)
+    medium = int(val_normalizer * mm // divisor)
+    dark = int(val_normalizer * kk // divisor)
 
     return f'{red}?{green}?{blue}?{yellow}?{cyan}?{fuchsia}?{vivid}?{neutral}?{dull}?{light}?{medium}?{dark}?{alpha}'
+

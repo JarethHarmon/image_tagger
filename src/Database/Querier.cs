@@ -374,7 +374,7 @@ namespace ImageTagger.Database
             if (info?.Query is null) return Array.Empty<string>();
             var query = info.Query;
             IEnumerable<SimilarityQueryResult> results;
-            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+            if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
 
             if (info.SortSimilarity == SortSimilarity.Averaged)
             {
@@ -385,10 +385,11 @@ namespace ImageTagger.Database
                     Average = x.AverageHash,
                     Difference = x.DifferenceHash,
                     Perceptual = x.PerceptualHash,
+                    Color = x.ColorHash
                 });
 
-                Thread.Sleep(100);
-                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
                 foreach (var result in results)
@@ -397,7 +398,8 @@ namespace ImageTagger.Database
                     float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);
                     float simi3 = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
                     float simi4 = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
-                    result.Similarity = (simi1 + simi2 + simi3 + simi4) / 4;
+                    float simi5 = Global.CalcHammingSimilarity(info.ColorHash, result.Color);
+                    result.Similarity = (simi1 + simi2 + simi3 + simi4 + simi5) / 5;
                 }
             }
             else if (info.SortSimilarity == SortSimilarity.Average)
@@ -408,8 +410,8 @@ namespace ImageTagger.Database
                     Average = x.AverageHash,
                 });
 
-                Thread.Sleep(100);
-                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
                 foreach (var result in results)
@@ -426,8 +428,8 @@ namespace ImageTagger.Database
                     Wavelet = x.WaveletHash
                 });
 
-                Thread.Sleep(100);
-                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
                 foreach (var result in results)
@@ -443,8 +445,8 @@ namespace ImageTagger.Database
                     Difference = x.DifferenceHash,
                 });
 
-                Thread.Sleep(100);
-                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
                 foreach (var result in results)
@@ -460,8 +462,8 @@ namespace ImageTagger.Database
                     Perceptual = x.PerceptualHash
                 });
 
-                Thread.Sleep(100);
-                if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
                 results = tmp.ToArray();
 
                 foreach (var result in results)
@@ -469,12 +471,30 @@ namespace ImageTagger.Database
                     result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
                 }
             }
+            else if (info.SortSimilarity == SortSimilarity.Color)
+            {
+                var tmp = query.Select(x => new SimilarityQueryResult
+                {
+                    Hash = x.Hash,
+                    Color = x.ColorHash
+                });
+
+                //Thread.Sleep(20);
+                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
+                results = tmp.ToArray();
+
+                foreach (var result in results)
+                {
+                    result.Similarity = Global.CalcHammingSimilarity(info.ColorHash, result.Color);
+                }
+            }
             else
             {
                 return Array.Empty<string>();
             }
 
-            var _results = results.Where(x => x.Similarity > info.MinSimilarity)
+            var _results = results
+                .Where(x => x.Similarity > info.MinSimilarity)
                 .OrderByDescending(x => x.Similarity)
                 .Select(x => x.Hash)
                 .Skip(offset)
@@ -547,15 +567,98 @@ namespace ImageTagger.Database
             return (BsonExpression)string.Join(" * ", exprs);
         }
 
-        private static readonly BsonExpression[] buckets = new BsonExpression[4];
+        //private static readonly BsonExpression[] buckets = new BsonExpression[4];
         private static void PrefilterSimilarity(QueryInfo info)
         {
-            buckets[0] = (BsonExpression)$"($.Buckets[0] >= {info.Buckets[0] - info.BucketPrecision}) AND ($.Buckets[0] <= {info.Buckets[0] + info.BucketPrecision})";
-            buckets[1] = (BsonExpression)$"($.Buckets[1] >= {info.Buckets[1] - info.BucketPrecision}) AND ($.Buckets[1] <= {info.Buckets[1] + info.BucketPrecision})";
-            buckets[2] = (BsonExpression)$"($.Buckets[2] >= {info.Buckets[2] - info.BucketPrecision}) AND ($.Buckets[2] <= {info.Buckets[2] + info.BucketPrecision})";
-            buckets[3] = (BsonExpression)$"($.Buckets[3] >= {info.Buckets[3] - info.BucketPrecision}) AND ($.Buckets[3] <= {info.Buckets[3] + info.BucketPrecision})";
+            // this code does not make use of the index, so have to use ANY IN for now even though it is less accurate
+            // make sure to call GetPlan().ToString() and ensure that things that are supposed to use index are NOT doing a 'Full Index Scan'
+            var query = info.Query;
+            if (query is null) return;
 
-            info.Query = info.Query.Where(Query.Or(buckets));
+            var buckets = new HashSet<int>(1028);
+            foreach (int num in info.Buckets)
+                buckets.UnionWith(GetAlts(num, 2));
+
+            //info.Query = info.Query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(info.Buckets));
+            info.Query = info.Query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(buckets.ToArray()));
+        }
+
+        private static readonly int[] andMasks = new int[16]
+        {
+            0b1111_1111_1111_1110,
+            0b1111_1111_1111_1101,
+            0b1111_1111_1111_1011,
+            0b1111_1111_1111_0111,
+
+            0b1111_1111_1110_1111,
+            0b1111_1111_1101_1111,
+            0b1111_1111_1011_1111,
+            0b1111_1111_0111_1111,
+
+            0b1111_1110_1111_1111,
+            0b1111_1101_1111_1111,
+            0b1111_1011_1111_1111,
+            0b1111_0111_1111_1111,
+
+            0b1110_1111_1111_1111,
+            0b1101_1111_1111_1111,
+            0b1011_1111_1111_1111,
+            0b0111_1111_1111_1111
+        };
+
+        private static readonly int[] orMasks = new int[16]
+        {
+            0b0000_0000_0000_0001,
+            0b0000_0000_0000_0010,
+            0b0000_0000_0000_0100,
+            0b0000_0000_0000_1000,
+
+            0b0000_0000_0001_0000,
+            0b0000_0000_0010_0000,
+            0b0000_0000_0100_0000,
+            0b0000_0000_1000_0000,
+
+            0b0000_0001_0000_0000,
+            0b0000_0010_0000_0000,
+            0b0000_0100_0000_0000,
+            0b0000_1000_0000_0000,
+
+            0b0001_0000_0000_0000,
+            0b0010_0000_0000_0000,
+            0b0100_0000_0000_0000,
+            0b1000_0000_0000_0000,
+        };
+
+        private static int[] GetAlts(int num, int precision)
+        {
+            if (precision == 0) return new int[1] { num };
+            if (precision == 1)
+            {
+                var result = new int[33];
+                result[0] = num;
+                for (int i = 0; i < 16; i++)
+                {
+                    result[i + 1] = num & andMasks[i];
+                    result[i + 17] = num | orMasks[i];
+                }
+                return result;
+            }
+            if (precision == 2)
+            {
+                var result = new int[257];
+                result[0] = num;
+                // not optimized, but easier to code
+                for (int i = 0; i < 16; i++)
+                {
+                    for (int j = 0; j < 16; j++)
+                    {
+                        result[(16 * i) + j] = num & andMasks[i] | orMasks[j];
+                    }
+                }
+                return result;
+            }
+
+            return Array.Empty<int>();
         }
 
         private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
@@ -563,6 +666,7 @@ namespace ImageTagger.Database
             if (info.Query is null) return;
             var query = info.Query;
 
+            // OrderBy($.Hash) is not working at all and I have no idea why; it is the only one that does not work
             if (info.QueryType == TabType.Default)
             {
                 int order = (info.Order == Order.Ascending) ? 1 : -1;
@@ -585,14 +689,19 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.Similarity)
             {
-                PrefilterSimilarity(info);
-                //query = query.OrderByDescending(x => x.SimilarityTo(info.DifferenceHash));
+                if (Global.Settings.UsePrefilter) PrefilterSimilarity(info);
                 var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
                 query = query.Where(x => hashes.Contains(x.Hash));
             }
 
             info.Query = query;
             info.Results = query.Select(x => x.Hash);
+        }
+
+        private static void WriteTime(string text, ref DateTime prev)
+        {
+            Console.WriteLine($"{text}: " + (DateTime.Now - prev).ToString());
+            prev = DateTime.Now;
         }
 
         internal static async Task<string[]> QueryDatabase(QueryInfo info, int offset, int limit, bool forceUpdate)
@@ -616,8 +725,8 @@ namespace ImageTagger.Database
                 queryHistory[info.Id] = info;
             }
 
-            Thread.Sleep(50);
-            if (!pageId.Equals(CurrentId, StringComparison.InvariantCultureIgnoreCase)) return Array.Empty<string>();
+            //Thread.Sleep(20);
+            if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
 
             if (info.Filtered && Global.Settings.PreferSpeed)
             {

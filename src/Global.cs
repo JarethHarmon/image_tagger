@@ -18,7 +18,7 @@ namespace ImageTagger
         Dimensions, Width, Height, TagCount, NumFrames, Quality, Appeal, ArtStyle, Color, Random
     }
     public enum Colors { Red, Green, Blue, Yellow, Cyan, Fuchsia, Vivid, Neutral, Dull, Light, Medium, Dark, Alpha };
-    public enum SortSimilarity { Averaged=0, Average, Difference, Wavelet, Perceptual }
+    public enum SortSimilarity { Averaged=0, Average, Difference, Wavelet, Perceptual, Color }
 
     public enum TabType { Default, Similarity }
     public enum FilterType { All, Any, None }

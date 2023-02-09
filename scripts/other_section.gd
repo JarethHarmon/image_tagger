@@ -43,4 +43,4 @@ func load_metadata(image_hash:String) -> void:
 		phash_buttons[i].text = phashes[i]
 		
 	for i in range(colors.size()):
-		color_labels[i].text = "%1.2f" % [float(colors[i] * 100) / 256] + "%"
+		color_labels[i].text = "%1.2f" % [float(colors[i] * 100) / 255] + "%"

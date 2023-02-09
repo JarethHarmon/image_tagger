@@ -28,7 +28,7 @@ namespace ImageTagger.Metadata
 
         internal static ImageInfo GetImageInfo(string hash)
         {
-            if (currentImageInfo?.Hash.Equals(hash, System.StringComparison.InvariantCultureIgnoreCase) ?? false)
+            if (currentImageInfo?.Hash.Equals(hash, StringComparison.OrdinalIgnoreCase) ?? false)
                 return currentImageInfo;
             return DatabaseAccess.FindImageInfo(hash);
         }

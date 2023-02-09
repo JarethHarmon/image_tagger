@@ -107,6 +107,7 @@ namespace ImageTagger.Managers
                 if (imInfo != null)
                 {
                     currentQuery.Buckets = imInfo.Buckets;
+                    currentQuery.ColorHash = imInfo.ColorHash;
                 }
             }
 
@@ -171,14 +172,14 @@ namespace ImageTagger.Managers
             if (thumbnailPath is null) return;
 
             var now = DateTime.Now;
-            System.Threading.Thread.Sleep(100);
-            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+            //System.Threading.Thread.Sleep(20);
+            if (!currentPageId.Equals(pageId, StringComparison.OrdinalIgnoreCase)) return;
             string[] results = await Querier.QueryDatabase(info, offset, Global.Settings.MaxImagesPerPage, forceUpdate);
             timeTaken.Text = (DateTime.Now - now).ToString();
 
             SetupList(results.Length, pageId, results);
             await LoadThumbnails(results, pageId);
-            if (currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase))
+            if (currentPageId.Equals(pageId, StringComparison.OrdinalIgnoreCase))
                 buffer.Hide();
         }
 
@@ -219,7 +220,7 @@ namespace ImageTagger.Managers
         {
             lock (locker)
             {
-                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+                if (!currentPageId.Equals(pageId, StringComparison.OrdinalIgnoreCase)) return;
                 int queriedImageCount = Querier.GetLastQueriedCount(pageId);
                 int queriedPageCount = (int)Math.Ceiling((float)queriedImageCount / Global.Settings.MaxImagesPerPage);
                 signals.Call("emit_signal", "max_pages_changed", queriedPageCount);
@@ -238,7 +239,7 @@ namespace ImageTagger.Managers
 
         private async Task LoadThumbnails(string[] hashes, string pageId)
         {
-            if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+            if (!currentPageId.Equals(pageId, StringComparison.OrdinalIgnoreCase)) return;
 
             var tasks = new ActionBlock<ThumbnailTask>(x => LoadThumbnail(x));
             for (int i = 0; i < hashes.Length; i++)
@@ -248,7 +249,7 @@ namespace ImageTagger.Managers
 
             try
             {
-                if (!currentPageId.Equals(pageId, StringComparison.InvariantCultureIgnoreCase)) return;
+                if (!currentPageId.Equals(pageId, StringComparison.OrdinalIgnoreCase)) return;
                 tasks.Complete();
                 await tasks.Completion;
             }
@@ -269,29 +270,29 @@ namespace ImageTagger.Managers
             {
                 await Task.Run(() =>
                 {
-                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                     byte[] data = System.IO.File.ReadAllBytes(path);
 
-                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                     var image = new Godot.Image();
                     var err = image.LoadWebpFromBuffer(data);
-                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                     if (err != Godot.Error.Ok) ThreadsafeSetIcon(x, true);
 
-                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                     var texture = new Godot.ImageTexture();
                     texture.CreateFromImage(image, 0);
                     texture.SetMeta("image_hash", x.Hash);
                     AddToHistory(x.Hash, texture); // may as well store it in history once loaded
 
-                    if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                    if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                     ThreadsafeSetIcon(x);
                 });
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return;
+                if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return;
                 ThreadsafeSetIcon(x, true);
             }
         }
@@ -319,12 +320,12 @@ namespace ImageTagger.Managers
 
                 if (icon is null) return false; // not in history, not failed ;; ie return to try and load it
 
-                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
+                if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return true;
                 if (ilist.GetItemCount() < x.Index) return true;
                 ilist.SetItemIcon(x.Index, icon);
 
                 var tabInfo = TabInfoAccess.GetTabInfo(Global.CurrentTabId);
-                if (!currentPageId.Equals(x.Id, StringComparison.InvariantCultureIgnoreCase)) return true;
+                if (!currentPageId.Equals(x.Id, StringComparison.OrdinalIgnoreCase)) return true;
                 if (tabInfo.TabType == TabType.Similarity)
                 {
                     switch (Global.Settings.CurrentSortSimilarity)
@@ -333,6 +334,7 @@ namespace ImageTagger.Managers
                         case SortSimilarity.Difference: ilist.SetItemText(x.Index, GetDifferenceSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                         case SortSimilarity.Wavelet: ilist.SetItemText(x.Index, GetWaveletSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                         case SortSimilarity.Perceptual: ilist.SetItemText(x.Index, GetPerceptualSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
+                        case SortSimilarity.Color: ilist.SetItemText(x.Index, GetColorSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                         default: ilist.SetItemText(x.Index, GetAveragedSimilarityTo(tabInfo.SimilarityHash, x.Hash).ToString("0.00")); break;
                     }
                 }
@@ -351,7 +353,8 @@ namespace ImageTagger.Managers
             float simi2 = Global.CalcHammingSimilarity(info1.DifferenceHash, info2.DifferenceHash);
             float simi3 = Global.CalcHammingSimilarity(info1.WaveletHash, info2.WaveletHash);
             float simi4 = Global.CalcHammingSimilarity(info1.PerceptualHash, info2.PerceptualHash);
-            return (simi1 + simi2 + simi3 + simi4) / 4;
+            float simi5 = Global.CalcHammingSimilarity(info1.ColorHash, info2.ColorHash);
+            return (simi1 + simi2 + simi3 + simi4 + simi5) / 5;
         }
 
         public float GetAverageSimilarityTo(string hash1, string hash2)
@@ -380,6 +383,13 @@ namespace ImageTagger.Managers
             var info1 = ImageInfoAccess.GetImageInfo(hash1);
             var info2 = ImageInfoAccess.GetImageInfo(hash2);
             return Global.CalcHammingSimilarity(info1.PerceptualHash, info2.PerceptualHash);
+        }
+
+        public float GetColorSimilarityTo(string hash1, string hash2)
+        {
+            var info1 = ImageInfoAccess.GetImageInfo(hash1);
+            var info2 = ImageInfoAccess.GetImageInfo(hash2);
+            return Global.CalcHammingSimilarity(info1.ColorHash, info2.ColorHash);
         }
     }
 }

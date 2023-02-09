@@ -310,10 +310,10 @@ namespace ImageTagger.Importer
                     Height = info.Height;
 
                     string format = info.Format.ToString().ToUpperInvariant().Replace("JPG", "JPEG").Replace("JFIF", "JPEG");
-                    if (format.Equals("jpeg", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Jpeg;
-                    else if (format.Equals("png", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Png;
-                    else if (format.Equals("gif", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Gif;
-                    else if (format.Equals("webp", StringComparison.InvariantCultureIgnoreCase)) ImageType = ImageType.Webp;
+                    if (format.Equals("jpeg", StringComparison.OrdinalIgnoreCase)) ImageType = ImageType.Jpeg;
+                    else if (format.Equals("png", StringComparison.OrdinalIgnoreCase)) ImageType = ImageType.Png;
+                    else if (format.Equals("gif", StringComparison.OrdinalIgnoreCase)) ImageType = ImageType.Gif;
+                    else if (format.Equals("webp", StringComparison.OrdinalIgnoreCase)) ImageType = ImageType.Webp;
                 }
                 catch
                 {

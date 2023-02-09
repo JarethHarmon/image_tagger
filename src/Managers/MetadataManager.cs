@@ -16,7 +16,7 @@ namespace ImageTagger.Managers
             if (string.IsNullOrWhiteSpace(hash)) return true;
             string _hash = ImageInfoAccess.GetCurrentHash();
             if (string.IsNullOrWhiteSpace(_hash)) return true;
-            return !hash.Equals(_hash, StringComparison.InvariantCultureIgnoreCase);
+            return !hash.Equals(_hash, StringComparison.OrdinalIgnoreCase);
         }
 
         public void LoadCurrentImageInfo(string hash)

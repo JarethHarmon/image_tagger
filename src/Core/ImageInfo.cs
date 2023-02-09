@@ -6,6 +6,8 @@ namespace ImageTagger.Core
 {
     public sealed class ImageInfo
     {
+        private static readonly int[] defaultBuckets = new int[4];
+
         public string Hash { get; set; }
         public string Name { get; set; }
 
@@ -13,8 +15,9 @@ namespace ImageTagger.Core
         public ulong WaveletHash { get; set; }
         public ulong DifferenceHash { get; set; }
         public ulong PerceptualHash { get; set; }
+        public ulong ColorHash { get; set; }
 
-        public int Bucket { get; set; }
+        public int[] Buckets { get; set; }
         public int NumFrames { get; set; }
         public int[] Colors { get; set; }
 
@@ -28,6 +31,7 @@ namespace ImageTagger.Core
         public long LastEditTime { get; set; }
         public long UploadTime { get; set; }
 
+        //public HashSet<string> Folders { get; set; } // string[] Folders, Files // Dictionary<string, string[]> Paths (Folder:[FileNames]) // string[] Folder, Files int[] Indices
         public HashSet<string> Imports { get; set; }
         public HashSet<string> Paths { get; set; }
         public HashSet<string> Groups { get; set; }
@@ -55,6 +59,7 @@ namespace ImageTagger.Core
             Tags = new HashSet<string>();
             Colors = Array.Empty<int>();
             Ratings = new Dictionary<string, int>();
+            Buckets = defaultBuckets;
         }
 
         public void Merge(ImageInfo other)

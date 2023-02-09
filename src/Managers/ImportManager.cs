@@ -5,6 +5,7 @@ using ImageTagger.Database;
 using ImageTagger.Core;
 using System.Collections.Generic;
 using System;
+using System.Security.Policy;
 
 namespace ImageTagger.Managers
 {
@@ -91,7 +92,7 @@ namespace ImageTagger.Managers
         {
             byte[] bytes = System.Convert.FromBase64String(data);
             var image = new Godot.Image();
-            if (type.Equals("jpeg", System.StringComparison.InvariantCultureIgnoreCase))
+            if (type.Equals("jpeg", System.StringComparison.OrdinalIgnoreCase))
                 image.LoadJpgFromBuffer(bytes);
             else image.LoadPngFromBuffer(bytes);
             if (StopLoading(hash)) return null;
@@ -305,14 +306,75 @@ namespace ImageTagger.Managers
         {
             ulong hash = phashes.Difference;
             int[] result = new int[4];
-            result[0] = CountBits(hash & 0xffff);
+            result[0] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
             hash >>= 16;
-            result[1] = CountBits(hash & 0xffff);
+            result[1] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
             hash >>= 16;
-            result[2] = CountBits(hash & 0xffff);
+            result[2] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
             hash >>= 16;
-            result[3] = CountBits(hash & 0xffff);
+            result[3] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
             return result;
+        }
+
+        private static void AddByte(byte color, ref ulong hash)
+        {
+            if (color > 196) hash |= 255;       // 1111 1111
+            else if (color > 160) hash |= 127;  // 0111 1111
+            else if (color > 132) hash |= 63;   // 0011 1111
+            else if (color > 96) hash |= 31;    // 0001 1111
+            else if (color > 64) hash |= 15;    // 0000 1111
+            else if (color > 32) hash |= 7;     // 0000 0111
+            else if (color > 16) hash |= 3;     // 0000 0011
+            else if (color > 0) hash |= 1;      // 0000 0001
+            hash <<= 8;
+            //WriteUlong(hash);
+        }
+
+        private static void AddNibble(byte color, ref ulong hash, bool last=false)
+        {
+            if (color > 192) hash |= 15;
+            else if (color > 128) hash |= 7;
+            else if (color > 64) hash |= 3;
+            else if (color > 0) hash |= 1;
+            if (!last) hash <<= 4;
+        }
+
+        private static void WriteUlong(ulong value)
+        {
+            string tmp = "";
+            for (; value > 0; value >>= 1)
+                tmp = (value & 0x1).ToString() + tmp;
+            Console.WriteLine(tmp);
+        }
+
+        private static ulong GetColorHash(int[] colors)
+        {
+            ulong hash = 0ul;
+
+            // 48 bits
+            AddByte((byte)colors[(byte)Colors.Red], ref hash);
+            AddByte((byte)colors[(byte)Colors.Green], ref hash);
+            AddByte((byte)colors[(byte)Colors.Blue], ref hash);
+            AddByte((byte)colors[(byte)Colors.Yellow], ref hash);
+            AddByte((byte)colors[(byte)Colors.Cyan], ref hash);
+            AddByte((byte)colors[(byte)Colors.Fuchsia], ref hash);
+
+            // 12 bits
+            AddNibble((byte)colors[(byte)Colors.Vivid], ref hash);
+            AddNibble((byte)colors[(byte)Colors.Neutral], ref hash);
+            AddNibble((byte)colors[(byte)Colors.Dull], ref hash, true);
+
+            // 4 bits
+            hash <<= 1;
+            if (colors[(byte)Colors.Light] > 84) hash |= 1;
+            hash <<= 1;
+            if (colors[(byte)Colors.Medium] > 84) hash |= 1;
+            hash <<= 1;
+            if (colors[(byte)Colors.Dark] > 84) hash |= 1;
+            hash <<= 1;
+            if (colors[(byte)Colors.Alpha] < 255) hash |= 1;
+
+            return hash;
         }
 
         private ImportStatus ImportImage(string importId, string imagePath)
@@ -338,7 +400,7 @@ namespace ImageTagger.Managers
             {
                 thumbnailExisted = false;
                 // will need to check other types that require imageMagick here as well
-                if (System.IO.Path.GetExtension(imagePath).Equals(".heic", StringComparison.InvariantCultureIgnoreCase))
+                if (System.IO.Path.GetExtension(imagePath).Equals(".heic", StringComparison.OrdinalIgnoreCase))
                 {
                     (numFrames, phashes, colors) = ImageImporter.SaveThumbnailAndGetPerceptualHashesAndColorsOther(imagePath, thumbPath, Global.THUMBNAIL_SIZE);
                 }
@@ -382,6 +444,7 @@ namespace ImageTagger.Managers
                     DifferenceHash = phashes.Difference,
                     WaveletHash = phashes.Wavelet,
                     PerceptualHash = phashes.Perceptual,
+                    ColorHash = GetColorHash(colors.Colors),
 
                     Buckets = GetBuckets(phashes),
                     Colors = colors.Colors,
