@@ -24,6 +24,7 @@ namespace ImageTagger
         public bool PreferSpeed { get; set; }
         public float MinSimilarity { get; set; }
         public bool UsePrefilter { get; set; }
+        public int BucketVariance { get; set; }
 
         public bool ScanRecursively { get; set; }
         public int MaxImportThreads { get; set; }
@@ -76,6 +77,7 @@ namespace ImageTagger
             PreferSpeed = true; // whether to prefer speed or RAM when counting results
             MinSimilarity = 70f;
             UsePrefilter = false;
+            BucketVariance = 2;
 
             // scanning
             ScanRecursively = false;

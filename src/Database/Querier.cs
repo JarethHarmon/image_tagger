@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using ImageTagger.Extension;
 using LiteDB;
@@ -570,16 +569,14 @@ namespace ImageTagger.Database
         //private static readonly BsonExpression[] buckets = new BsonExpression[4];
         private static void PrefilterSimilarity(QueryInfo info)
         {
-            // this code does not make use of the index, so have to use ANY IN for now even though it is less accurate
             // make sure to call GetPlan().ToString() and ensure that things that are supposed to use index are NOT doing a 'Full Index Scan'
             var query = info.Query;
             if (query is null) return;
 
-            var buckets = new HashSet<int>(1028);
+            var buckets = new HashSet<int>(548);
             foreach (int num in info.Buckets)
-                buckets.UnionWith(GetAlts(num, 2));
+                buckets.UnionWith(GetBuckets(num, Global.Settings.BucketVariance));
 
-            //info.Query = info.Query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(info.Buckets));
             info.Query = info.Query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(buckets.ToArray()));
         }
 
@@ -629,51 +626,45 @@ namespace ImageTagger.Database
             0b1000_0000_0000_0000,
         };
 
+        private static readonly HashSet<int> emptyHashSet = new HashSet<int>();
+
         // note: and/or are both needed; example:
         //  bucket (have) = 1101    bucket (want from database) = 0111
         //  the and mask (0111) would fill in one missing bit, resulting in 0101
         //  but the or mask (0010) is also needed to get to 0111
         // (this is a simplified example as an actual bucket/mask is 16 bits)
         // (this example also assumes that the precision is set to <= +-2 incorrect bits)
-        private static int[] GetAlts(int num, int precision)
+        private static HashSet<int> GetBuckets(int bucket, int variance)
         {
-            if (precision == 0) return new int[1] { num };
-            if (precision == 1)
+            if (variance == 0)
             {
-                var result = new int[33];
-                result[0] = num;
-                for (int i = 0; i < 16; i++)
-                {
-                    result[i + 1] = num & andMasks[i];
-                    result[i + 17] = num | orMasks[i];
-                }
-                return result;
+                return new HashSet<int>(1) { bucket };
             }
-            if (precision == 2)
+            if (variance == 1)
             {
-                var result = new int[257];
-                result[0] = num;
-                // not optimized, but easier to code (there are a lot of duplicates processed this way, need to lookup/remember the proper way to code this)
-                // also need to expand the array to 769 and process and & and, or | or, and | or
-                // (currently it only processes and | or)
+                var tmp = new HashSet<int>(17) { bucket };
                 for (int i = 0; i < 16; i++)
                 {
-                    // result[?] = num & andMasks[i];
-                    // result[?] = num & orMasks[i];
-                    // for (int j = 1 + 1; j < 15; j++)
+                    tmp.Add(bucket & andMasks[i]);
+                    tmp.Add(bucket | orMasks[i]);
+                }
+                return tmp;
+            }
+            if (variance == 2)
+            {
+                var tmp = new HashSet<int>(137) { bucket };
+                for (int i = 0; i < 16; i++)
+                {
                     for (int j = 0; j < 16; j++)
                     {
-                        result[(16 * i) + j] = (num & andMasks[i]) | orMasks[j];
-                        // = num & andMasks[i] & andMasks[j]; // a ton of duplicates need to be removed
-                        // = num | orMasks[i] | orMasks[j]; // ""
+                        tmp.Add((bucket & andMasks[i]) | orMasks[j]);
+                        tmp.Add(bucket & andMasks[i] & andMasks[j]);
+                        tmp.Add(bucket | orMasks[i] | orMasks[j]);
                     }
-                    // 136 is the size of each and/or array (so multiply by 2) (272)
-                    // I think and | or needs the full 256 though (so 528 total) (doesn't actually, the matching ones cancel out
                 }
-                return result;
+                return tmp;
             }
-
-            return Array.Empty<int>();
+            return emptyHashSet;
         }
 
         private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)

@@ -53,7 +53,6 @@ namespace ImageTagger.Database
         internal ulong PerceptualHash { get; set; }
         internal ulong ColorHash { get; set; }
         internal float MinSimilarity { get; set; }
-        internal int BucketPrecision { get; set; }
         internal int[] Buckets { get; set; }
 
         internal int MinWidth { get; set; }
@@ -99,7 +98,6 @@ namespace ImageTagger.Database
             Filtered = false;
 
             MinSimilarity = Global.Settings.MinSimilarity;
-            BucketPrecision = 0;
             Buckets = defaultBuckets;
 
             TagsAll = Array.Empty<string>();
@@ -214,7 +212,7 @@ namespace ImageTagger.Database
                 ImportId, GroupId, CalcHashFromArray(TagsAll), CalcHashFromArray(TagsAny), CalcHashFromArray(TagsNone), CalcHashFromComplexTags(),
                 QueryType.ToString(), Sort.ToString(), Order.ToString(), SortSimilarity.ToString(), SimilarityHash, AverageHash, DifferenceHash, WaveletHash, PerceptualHash, ColorHash,
                 MinWidth, MaxWidth, MinHeight, MaxHeight, MinSize, MaxSize, MinCreationTime, MaxCreationTime, MinUploadTime, MaxUploadTime, MinLastEditTime, Success, CalcHashFromArray(Colors),
-                MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, BucketPrecision
+                MaxLastEditTime, MinLastWriteTime, MaxLastWriteTime, MinTagCount, MaxTagCount, MinRatingSum, MaxRatingSum, MinRatingAvg, MaxRatingAvg, MinSimilarity, Global.Settings.BucketVariance
             ));
             return Id;
         }
@@ -246,7 +244,6 @@ namespace ImageTagger.Database
                 WaveletHash = queryInfo.WaveletHash,
                 ColorHash = queryInfo.ColorHash,
                 MinSimilarity = queryInfo.MinSimilarity,
-                BucketPrecision = queryInfo.BucketPrecision,
 
                 Colors = queryInfo.Colors,
                 Buckets = queryInfo.Buckets,
