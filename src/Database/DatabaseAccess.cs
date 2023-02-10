@@ -38,6 +38,7 @@ namespace ImageTagger.Database
                 colGroups = dbGroups.GetCollection<GroupInfo>("groups");
 
                 // create indices
+                colImageInfo.EnsureIndex(x => x.Hash);
                 colImageInfo.EnsureIndex(x => x.Imports);
                 colImageInfo.EnsureIndex(x => x.Tags);
                 colImageInfo.EnsureIndex(x => x.Colors);

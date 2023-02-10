@@ -629,6 +629,12 @@ namespace ImageTagger.Database
             0b1000_0000_0000_0000,
         };
 
+        // note: and/or are both needed; example:
+        //  bucket (have) = 1101    bucket (want from database) = 0111
+        //  the and mask (0111) would fill in one missing bit, resulting in 0101
+        //  but the or mask (0010) is also needed to get to 0111
+        // (this is a simplified example as an actual bucket/mask is 16 bits)
+        // (this example also assumes that the precision is set to <= +-2 incorrect bits)
         private static int[] GetAlts(int num, int precision)
         {
             if (precision == 0) return new int[1] { num };
@@ -647,13 +653,22 @@ namespace ImageTagger.Database
             {
                 var result = new int[257];
                 result[0] = num;
-                // not optimized, but easier to code
+                // not optimized, but easier to code (there are a lot of duplicates processed this way, need to lookup/remember the proper way to code this)
+                // also need to expand the array to 769 and process and & and, or | or, and | or
+                // (currently it only processes and | or)
                 for (int i = 0; i < 16; i++)
                 {
+                    // result[?] = num & andMasks[i];
+                    // result[?] = num & orMasks[i];
+                    // for (int j = 1 + 1; j < 15; j++)
                     for (int j = 0; j < 16; j++)
                     {
-                        result[(16 * i) + j] = num & andMasks[i] | orMasks[j];
+                        result[(16 * i) + j] = (num & andMasks[i]) | orMasks[j];
+                        // = num & andMasks[i] & andMasks[j]; // a ton of duplicates need to be removed
+                        // = num | orMasks[i] | orMasks[j]; // ""
                     }
+                    // 136 is the size of each and/or array (so multiply by 2) (272)
+                    // I think and | or needs the full 256 though (so 528 total) (doesn't actually, the matching ones cancel out
                 }
                 return result;
             }
@@ -684,6 +699,7 @@ namespace ImageTagger.Database
                         info.ResultsRandom = query.ToEnumerable().Select(x => x.Hash);
                         info.Query = query;
                         return;
+                    case Sort.Hash: query = query.OrderBy("$._id", order); break;
                     default: query = query.OrderBy($"$.{info.Sort}", order); break;
                 }
             }
