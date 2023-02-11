@@ -8,17 +8,6 @@ using ImageTagger.Extension;
 
 namespace ImageTagger.Database
 {
-    internal sealed class SimilarityQueryResult
-    {
-        public string Hash { get; set; }
-        public ulong Difference { get; set; }
-        public ulong Average { get; set; }
-        public ulong Wavelet { get; set; }
-        public ulong Perceptual { get; set; }
-        public ulong Color { get; set; }
-        public float Similarity { get; set; }
-    }
-
     internal sealed class QueryInfo
     {
         internal string Id { get; set; }
@@ -53,7 +42,7 @@ namespace ImageTagger.Database
         internal ulong PerceptualHash { get; set; }
         internal ulong ColorHash { get; set; }
         internal float MinSimilarity { get; set; }
-        internal int[] Buckets { get; set; }
+        internal ushort[] Buckets { get; set; }
 
         internal int MinWidth { get; set; }
         internal int MaxWidth { get; set; }
@@ -84,7 +73,7 @@ namespace ImageTagger.Database
         internal IEnumerable<string> ResultsRandom { get; set; }
         internal int LastQueriedCount { get; set; }
 
-        private static readonly int[] defaultBuckets = new int[4];
+        private static readonly ushort[] defaultBuckets = new ushort[4];
         internal QueryInfo()
         {
             Id = string.Empty;

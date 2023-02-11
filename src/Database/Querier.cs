@@ -368,142 +368,6 @@ namespace ImageTagger.Database
             AddCountFilter(info, "Descriptive", info.MinTagCount, info.MaxTagCount);
         }
 
-        private static IEnumerable<string> SimilarityQuery(QueryInfo info, int offset, int limit, string pageId)
-        {
-            if (info?.Query is null) return Array.Empty<string>();
-            var query = info.Query;
-            IEnumerable<SimilarityQueryResult> results;
-            if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-
-            if (info.SortSimilarity == SortSimilarity.Averaged)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Wavelet = x.WaveletHash,
-                    Average = x.AverageHash,
-                    Difference = x.DifferenceHash,
-                    Perceptual = x.PerceptualHash,
-                    Color = x.ColorHash
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    float simi1 = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
-                    float simi2 = Global.CalcHammingSimilarity(info.AverageHash, result.Average);
-                    float simi3 = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
-                    float simi4 = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
-                    float simi5 = Global.CalcHammingSimilarity(info.ColorHash, result.Color);
-                    result.Similarity = (simi1 + simi2 + simi3 + simi4 + simi5) / 5;
-                }
-            }
-            else if (info.SortSimilarity == SortSimilarity.Average)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Average = x.AverageHash,
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    float temp = Global.CalcHammingSimilarity(info.AverageHash, result.Average) / 100;
-                    result.Similarity = (float)Math.Pow(temp, 3) * 100;
-                }
-            }
-            else if (info.SortSimilarity == SortSimilarity.Wavelet)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Wavelet = x.WaveletHash
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    result.Similarity = Global.CalcHammingSimilarity(info.WaveletHash, result.Wavelet);
-                }
-            }
-            else if (info.SortSimilarity == SortSimilarity.Difference)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Difference = x.DifferenceHash,
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    result.Similarity = Global.CalcHammingSimilarity(info.DifferenceHash, result.Difference);
-                }
-            }
-            else if (info.SortSimilarity == SortSimilarity.Perceptual)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Perceptual = x.PerceptualHash
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    result.Similarity = Global.CalcHammingSimilarity(info.PerceptualHash, result.Perceptual);
-                }
-            }
-            else if (info.SortSimilarity == SortSimilarity.Color)
-            {
-                var tmp = query.Select(x => new SimilarityQueryResult
-                {
-                    Hash = x.Hash,
-                    Color = x.ColorHash
-                });
-
-                //Thread.Sleep(20);
-                if (!pageId.Equals(CurrentId, StringComparison.OrdinalIgnoreCase)) return Array.Empty<string>();
-                results = tmp.ToArray();
-
-                foreach (var result in results)
-                {
-                    result.Similarity = Global.CalcHammingSimilarity(info.ColorHash, result.Color);
-                }
-            }
-            else
-            {
-                return Array.Empty<string>();
-            }
-
-            var _results = results
-                .Where(x => x.Similarity > info.MinSimilarity)
-                .OrderByDescending(x => x.Similarity)
-                .Select(x => x.Hash)
-                .Skip(offset)
-                .Take(limit)
-                .ToArray();
-
-            info.LastQueriedCount = _results.Length;
-            return _results;
-        }
-
         // can create a + and - color[] and multiply out the positive ones, then subtract the multiplied negative ones
         // to allow the user to filter out specific colors as well
         private static BsonExpression ConstructColorSort(Colors[] colors)
@@ -573,11 +437,12 @@ namespace ImageTagger.Database
             var query = info.Query;
             if (query is null) return;
 
-            var buckets = new HashSet<int>(548);
-            foreach (int num in info.Buckets)
+            buckets.Clear();
+            foreach (ushort num in info.Buckets)
                 buckets.UnionWith(GetBuckets(num, Global.Settings.BucketVariance));
 
-            info.Query = info.Query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(buckets.ToArray()));
+            query = query.Where("$.Buckets[*] ANY IN @0", BsonMapper.Global.Serialize(buckets));
+            info.Query = query;
         }
 
         private static readonly int[] andMasks = new int[16]
@@ -626,7 +491,11 @@ namespace ImageTagger.Database
             0b1000_0000_0000_0000,
         };
 
-        private static readonly HashSet<int> emptyHashSet = new HashSet<int>();
+        private static readonly HashSet<ushort> emptyBuckets = new HashSet<ushort>(0);
+        private static readonly HashSet<ushort> buckets0 = new HashSet<ushort>(1);
+        private static readonly HashSet<ushort> buckets1 = new HashSet<ushort>(17);
+        private static readonly HashSet<ushort> buckets2 = new HashSet<ushort>(137);
+        private static readonly HashSet<ushort> buckets = new HashSet<ushort>(548);
 
         // note: and/or are both needed; example:
         //  bucket (have) = 1101    bucket (want from database) = 0111
@@ -634,40 +503,47 @@ namespace ImageTagger.Database
         //  but the or mask (0010) is also needed to get to 0111
         // (this is a simplified example as an actual bucket/mask is 16 bits)
         // (this example also assumes that the precision is set to <= +-2 incorrect bits)
-        private static HashSet<int> GetBuckets(int bucket, int variance)
+        private static HashSet<ushort> GetBuckets(ushort bucket, byte variance)
         {
             if (variance == 0)
             {
-                return new HashSet<int>(1) { bucket };
+                buckets0.Clear();
+                buckets0.Add(bucket);
+                return buckets0;
             }
             if (variance == 1)
             {
-                var tmp = new HashSet<int>(17) { bucket };
+                buckets1.Clear();
+                buckets1.Add(bucket);
                 for (int i = 0; i < 16; i++)
                 {
-                    tmp.Add(bucket & andMasks[i]);
-                    tmp.Add(bucket | orMasks[i]);
+                    buckets1.Add((ushort)(bucket & andMasks[i]));
+                    buckets1.Add((ushort)(bucket | orMasks[i]));
                 }
-                return tmp;
+                return buckets1;
             }
             if (variance == 2)
             {
-                var tmp = new HashSet<int>(137) { bucket };
+                // there might be a clever way of iterating this that would allow me to use an int[137] instead
+                // (maybe iterating backwards with j?) (this creates a very large number of duplicates, hence the hashset)
+                buckets2.Clear();
+                buckets2.Add(bucket);
                 for (int i = 0; i < 16; i++)
                 {
                     for (int j = 0; j < 16; j++)
                     {
-                        tmp.Add((bucket & andMasks[i]) | orMasks[j]);
-                        tmp.Add(bucket & andMasks[i] & andMasks[j]);
-                        tmp.Add(bucket | orMasks[i] | orMasks[j]);
+                        buckets2.Add((ushort)((bucket & andMasks[i]) | orMasks[j]));
+                        buckets2.Add((ushort)(bucket & andMasks[i] & andMasks[j]));
+                        buckets2.Add((ushort)(bucket | orMasks[i] | orMasks[j]));
                     }
                 }
-                return tmp;
+                //Console.WriteLine(string.Join(", ", tmp));
+                return buckets2;
             }
-            return emptyHashSet;
+            return emptyBuckets;
         }
 
-        private static void OrderSortQuery(QueryInfo info, int offset, int limit, string pageId)
+        private static void OrderSortQuery(QueryInfo info)
         {
             if (info.Query is null) return;
             var query = info.Query;
@@ -697,8 +573,49 @@ namespace ImageTagger.Database
             else if (info.QueryType == TabType.Similarity)
             {
                 if (Global.Settings.UsePrefilter) PrefilterSimilarity(info);
-                var hashes = new HashSet<string>(SimilarityQuery(info, offset, limit, pageId));
-                query = query.Where(x => hashes.Contains(x.Hash));
+                switch (info.SortSimilarity)
+                {
+                    case SortSimilarity.Averaged:
+                        const string condition1 = "SIMILARITY_AVERAGED([$.AverageHash, $.ColorHash, $.DifferenceHash, $.PerceptualHash, $.WaveletHash], ";
+                        string condition2 = $"[{(long)info.AverageHash}, {(long)info.ColorHash}, {(long)info.DifferenceHash}, {(long)info.PerceptualHash}, {(long)info.WaveletHash}])";
+                        string averaged = condition1 + condition2;
+                        query = query
+                            .Where((BsonExpression)$"({averaged}) > {info.MinSimilarity}")
+                            .OrderBy(averaged, -1);
+                        break;
+                    case SortSimilarity.Average:
+                        string average = $"SIMILARITY($.AverageHash, {(long)info.AverageHash})";
+                        query = query
+                            .Where((BsonExpression)$"({average}) > {info.MinSimilarity}")
+                            .OrderBy(average, -1);
+                        break;
+                    case SortSimilarity.Color:
+                        string color = $"SIMILARITY($.ColorHash, {(long)info.ColorHash})";
+                        query = query
+                            .Where((BsonExpression)$"({color}) > {info.MinSimilarity}")
+                            .OrderBy(color, -1);
+                        break;
+                    case SortSimilarity.Difference:
+                        string difference = $"SIMILARITY($.DifferenceHash, {(long)info.DifferenceHash})";
+                        query = query
+                            .Where((BsonExpression)$"({difference}) > {info.MinSimilarity}")
+                            .OrderBy(difference, -1);
+                        break;
+                    case SortSimilarity.Perceptual:
+                        string perceptual = $"SIMILARITY($.PerceptualHash, {(long)info.PerceptualHash})";
+                        query = query
+                            .Where((BsonExpression)$"({perceptual}) > {info.MinSimilarity}")
+                            .OrderBy(perceptual, -1);
+                        break;
+                    case SortSimilarity.Wavelet:
+                        string wavelet = $"SIMILARITY($.WaveletHash, {(long)info.WaveletHash})";
+                        query = query
+                            .Where((BsonExpression)$"({wavelet}) > {info.MinSimilarity}")
+                            .OrderBy(wavelet, -1);
+                        break;
+                    default: query = query.OrderBy("$._id", -1); break;
+                }
+                info.LastQueriedCount = query.Count();
             }
 
             info.Query = query;
@@ -728,7 +645,7 @@ namespace ImageTagger.Database
                 info.Query = DatabaseAccess.GetImageInfoQuery();
                 AddNumericalFilters(info);
                 AddTagFilters(info);
-                OrderSortQuery(info, modOffset, modLimit, pageId);
+                OrderSortQuery(info);
                 queryHistory[info.Id] = info;
             }
 

@@ -291,28 +291,17 @@ namespace ImageTagger.Managers
             CompleteImportSection(importId, sectionId);
         }
 
-        // could probably still use the global method for this (need to test)
-        private static int CountBits(ulong num)
-        {
-            int bits = 0;
-            ulong tmp = num;
-            for (; tmp > 0; tmp >>= 1)
-                if ((tmp & 0x1) == 1)
-                    bits++;
-            return bits;
-        }
-
-        private static int[] GetBuckets(ImageImporter.PerceptualHashes phashes)
+        private static ushort[] GetBuckets(ImageImporter.PerceptualHashes phashes)
         {
             ulong hash = phashes.Difference;
-            int[] result = new int[4];
-            result[0] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
+            ushort[] result = new ushort[4];
+            result[0] = (ushort)(hash & 0xffff);
             hash >>= 16;
-            result[1] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
+            result[1] = (ushort)(hash & 0xffff);
             hash >>= 16;
-            result[2] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
+            result[2] = (ushort)(hash & 0xffff);
             hash >>= 16;
-            result[3] = (int)hash & 0xffff; //CountBits(hash & 0xffff);
+            result[3] = (ushort)(hash & 0xffff);
             return result;
         }
 

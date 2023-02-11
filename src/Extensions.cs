@@ -56,8 +56,7 @@ namespace ImageTagger
             }
 
             // if the final checkBytes.Length bytes were a match for checkBytes, return true
-            if (ptr == checkBytes.Length) return true;
-            return false;
+            return ptr == checkBytes.Length;
         }
 
         public static string ReplaceBulk (this string str, HashSet<char> toReplace, char replace)

@@ -24,7 +24,7 @@ namespace ImageTagger
         public bool PreferSpeed { get; set; }
         public float MinSimilarity { get; set; }
         public bool UsePrefilter { get; set; }
-        public int BucketVariance { get; set; }
+        public byte BucketVariance { get; set; }
 
         public bool ScanRecursively { get; set; }
         public int MaxImportThreads { get; set; }

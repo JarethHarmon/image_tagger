@@ -6,7 +6,7 @@ namespace ImageTagger.Core
 {
     public sealed class ImageInfo
     {
-        private static readonly int[] defaultBuckets = new int[4];
+        private static readonly ushort[] defaultBuckets = new ushort[4];
 
         public string Hash { get; set; }
         public string Name { get; set; }
@@ -17,7 +17,7 @@ namespace ImageTagger.Core
         public ulong PerceptualHash { get; set; }
         public ulong ColorHash { get; set; }
 
-        public int[] Buckets { get; set; }
+        public ushort[] Buckets { get; set; }
         public int NumFrames { get; set; }
         public int[] Colors { get; set; }
 
