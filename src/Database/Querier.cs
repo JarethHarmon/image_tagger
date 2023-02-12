@@ -543,6 +543,30 @@ namespace ImageTagger.Database
             return emptyBuckets;
         }
 
+        private static void OrderBySimilarity(QueryInfo info, string hashType, ulong hash)
+        {
+            string condition = $"SIMILARITY($.{hashType}, {(long) hash})";
+            info.Query = info.Query
+                .Where((BsonExpression)$"({condition}) > {info.MinSimilarity}")
+                .OrderBy(condition, -1);
+        }
+
+        private static void OrderBySimilarity(QueryInfo info, IEnumerable<string> hashTypes, IEnumerable<ulong> hashes)
+        {
+            string left = string.Join(", $.", hashTypes);
+            var list = new List<string>();
+            foreach (ulong hash in hashes)
+            {
+                list.Add(((long)hash).ToString());
+            }
+            var right = string.Join(", ", list);
+            string condition = $"SIMILARITY_AVERAGED([$.{left}], [{right}])";
+            info.Query = info.Query
+                .Where((BsonExpression)$"({condition}) > {info.MinSimilarity}")
+                .OrderBy(condition, -1);
+        }
+
+        private static readonly string[] averaged = new string[]{ "AverageHash", "ColorHash", "DifferenceHash", "PerceptualHash", "WaveletHash" };
         private static void OrderSortQuery(QueryInfo info)
         {
             if (info.Query is null) return;
@@ -572,47 +596,17 @@ namespace ImageTagger.Database
             }
             else if (info.QueryType == TabType.Similarity)
             {
+                // note: change info.PerceptualHashes to be a Dictionary<string, ulong> to avoid having 5 separate conditions
+                // alternatively, define a new function that takes the QueryInfo, and the ulong perceptual hash as arguments and applies them to the query*
                 if (Global.Settings.UsePrefilter) PrefilterSimilarity(info);
                 switch (info.SortSimilarity)
                 {
-                    case SortSimilarity.Averaged:
-                        const string condition1 = "SIMILARITY_AVERAGED([$.AverageHash, $.ColorHash, $.DifferenceHash, $.PerceptualHash, $.WaveletHash], ";
-                        string condition2 = $"[{(long)info.AverageHash}, {(long)info.ColorHash}, {(long)info.DifferenceHash}, {(long)info.PerceptualHash}, {(long)info.WaveletHash}])";
-                        string averaged = condition1 + condition2;
-                        query = query
-                            .Where((BsonExpression)$"({averaged}) > {info.MinSimilarity}")
-                            .OrderBy(averaged, -1);
-                        break;
-                    case SortSimilarity.Average:
-                        string average = $"SIMILARITY($.AverageHash, {(long)info.AverageHash})";
-                        query = query
-                            .Where((BsonExpression)$"({average}) > {info.MinSimilarity}")
-                            .OrderBy(average, -1);
-                        break;
-                    case SortSimilarity.Color:
-                        string color = $"SIMILARITY($.ColorHash, {(long)info.ColorHash})";
-                        query = query
-                            .Where((BsonExpression)$"({color}) > {info.MinSimilarity}")
-                            .OrderBy(color, -1);
-                        break;
-                    case SortSimilarity.Difference:
-                        string difference = $"SIMILARITY($.DifferenceHash, {(long)info.DifferenceHash})";
-                        query = query
-                            .Where((BsonExpression)$"({difference}) > {info.MinSimilarity}")
-                            .OrderBy(difference, -1);
-                        break;
-                    case SortSimilarity.Perceptual:
-                        string perceptual = $"SIMILARITY($.PerceptualHash, {(long)info.PerceptualHash})";
-                        query = query
-                            .Where((BsonExpression)$"({perceptual}) > {info.MinSimilarity}")
-                            .OrderBy(perceptual, -1);
-                        break;
-                    case SortSimilarity.Wavelet:
-                        string wavelet = $"SIMILARITY($.WaveletHash, {(long)info.WaveletHash})";
-                        query = query
-                            .Where((BsonExpression)$"({wavelet}) > {info.MinSimilarity}")
-                            .OrderBy(wavelet, -1);
-                        break;
+                    case SortSimilarity.Averaged: OrderBySimilarity(info, averaged, info.GetPerceptualHashes()); break;
+                    case SortSimilarity.Average: OrderBySimilarity(info, "AverageHash", info.AverageHash); break;
+                    case SortSimilarity.Color: OrderBySimilarity(info, "ColorHash", info.ColorHash); break;
+                    case SortSimilarity.Difference: OrderBySimilarity(info, "DifferenceHash", info.DifferenceHash); break;
+                    case SortSimilarity.Perceptual: OrderBySimilarity(info, "PerceptualHash", info.PerceptualHash); break;
+                    case SortSimilarity.Wavelet: OrderBySimilarity(info, "WaveletHash", info.WaveletHash); break;
                     default: query = query.OrderBy("$._id", -1); break;
                 }
                 info.LastQueriedCount = query.Count();

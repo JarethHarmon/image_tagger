@@ -242,5 +242,16 @@ namespace ImageTagger.Database
                 LastQueriedCount = -1,
             };
         }
+
+        private static readonly ulong[] PerceptualHashes = new ulong[5];
+        internal ulong[] GetPerceptualHashes()
+        {
+            PerceptualHashes[0] = AverageHash;
+            PerceptualHashes[1] = ColorHash;
+            PerceptualHashes[2] = DifferenceHash;
+            PerceptualHashes[3] = PerceptualHash;
+            PerceptualHashes[4] = WaveletHash;
+            return PerceptualHashes;
+        }
     }
 }
